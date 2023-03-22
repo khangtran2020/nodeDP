@@ -1,13 +1,14 @@
 import dgl
 
-def read_data(data_name, ratio):
+def read_data(args, data_name, ratio):
     if data_name == 'cora':
         data = dgl.data.CoraGraphDataset()
     elif data_name == 'citeseer':
         data = dgl.data.CiteseerGraphDataset()
     elif data_name == 'pubmed':
         data = dgl.data.PubmedGraphDataset()
-
+    args.num_feat = data[0].ndata['feat'].shape[1]
+    args.num_class = data.num_classes
     g_train, g_val, g_test = train_test_split(data=data, ratio=ratio)
     return g_train, g_val, g_test
 
