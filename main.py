@@ -16,6 +16,10 @@ def run(args, current_time, device):
     train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, ratio=ratio)
 
     # create dataloader
+    if args.mode == 'clean':
+        pass
+    elif args.mode == 'dp':
+        pass
 
     # init optimizers, models, saving names
     model = init_model(args=args)
