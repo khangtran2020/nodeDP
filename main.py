@@ -1,25 +1,25 @@
 import datetime
 import warnings
 import torch
+import dgl
 
 from config import parse_args
-from Data.read import read_data
+from Data.read import read_data, init_loader
 from Utils.utils import seed_everything, get_name
 from Models.init import init_model, init_optimizer
-
+from Runs.run_clean import run as run_clean
+from Runs.run_dp import  run as run_dp
 
 warnings.filterwarnings("ignore")
 
 
 def run(args, current_time, device):
-    ratio = [1 - args.ratio, args.ratio/2, args.ratio/2]
+    ratio = [1 - args.ratio, args.ratio / 2, args.ratio / 2]
     train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, ratio=ratio)
 
     # create dataloader
-    if args.mode == 'clean':
-        pass
-    elif args.mode == 'dp':
-        pass
+    tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, val_g=val_g,
+                                                   test_g=test_g)
 
     # init optimizers, models, saving names
     model = init_model(args=args)
@@ -27,6 +27,10 @@ def run(args, current_time, device):
     name = get_name(args=args, current_date=current_time)
 
     # run
+    if args.mode == 'clean':
+        run_clean(dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer, name=name)
+    elif args.mode == 'dp':
+        run_dp()
 
 
 if __name__ == "__main__":
