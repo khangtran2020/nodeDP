@@ -15,7 +15,7 @@ def add_general_group(group):
 
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
-    group.add_argument('--dataset', type=str, default='adult', help="name of dataset")
+    group.add_argument('--dataset', type=str, default='cora', help="name of dataset")
     group.add_argument('--n_neighbor', type=int, default=4, help="# of neighbor each layer")
     group.add_argument('--ratio', type=float, default=0.2, help="train/test split ratio")
     group.add_argument('--folds', type=int, default=5, help='number of folds for cross-validation')

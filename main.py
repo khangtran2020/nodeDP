@@ -8,19 +8,20 @@ from Data.read import read_data, init_loader
 from Utils.utils import seed_everything, get_name
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
-from Runs.run_dp import  run as run_dp
+from Runs.run_dp import run as run_dp
 
 warnings.filterwarnings("ignore")
 
 
 def run(args, current_time, device):
-    ratio = [1 - args.ratio, args.ratio / 2, args.ratio / 2]
-    train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, ratio=ratio)
+    train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
 
     # create dataloader
-    tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, val_g=val_g,
-                                                   test_g=test_g)
+    tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
+                                                   num_fold=folds, fold=0)
 
+    print("One batch:", next(iter(tr_loader)))
+    return
     # init optimizers, models, saving names
     model = init_model(args=args)
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
