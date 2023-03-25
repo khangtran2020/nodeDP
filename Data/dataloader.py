@@ -35,7 +35,7 @@ class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
             seed_nodes = block.srcdata[NID]
             blocks.insert(0, block)
 
-        return seed_nodes, output_nodes, blocks
+        return blocks
 
     def sample(self, g, seed_nodes, exclude_eids=None):
         sub_graph = {}

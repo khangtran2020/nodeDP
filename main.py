@@ -1,26 +1,31 @@
 import datetime
 import warnings
 import torch
-import dgl
-
+import logging
 from config import parse_args
 from Data.read import read_data, init_loader
-from Utils.utils import seed_everything, get_name
+from Utils.utils import seed_everything, get_name, timeit
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_dp import run as run_dp
-
+from Trim.base import get_node_counts
 warnings.filterwarnings("ignore")
+logging.basicConfig(format='%(asctime)s | %(levelname)s | %(name)s | %(message)s')
+logger = logging.getLogger('exp')
+logger.setLevel(logging.INFO)
+
 
 
 def run(args, current_time, device):
-    train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
+    with timeit(logger, 'init-data'):
+        train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
+        tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
+                                                       num_fold=folds, fold=0)
 
-    # create dataloader
-    tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
-                                                   num_fold=folds, fold=0)
-
-    print("One batch:", next(iter(tr_loader)))
+    with timeit(logger, 'test-counter'):
+        dst_node, subtree = next(iter(tr_loader))
+        appear_dict = get_node_counts(dst_node=dst_node,subtree=subtree)
+        print(len(appear_dict))
     return
     # init optimizers, models, saving names
     model = init_model(args=args)
