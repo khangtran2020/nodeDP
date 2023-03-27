@@ -40,6 +40,7 @@ def add_dp_group(group):
     group.add_argument('--tar_delt', type=float, default=1e-4, help='targeted delta')
     group.add_argument("--ns", type=float, default=1.0, help='noise scale for dp')
     group.add_argument("--clip", type=float, default=1.0, help='clipping gradient bound')
+    group.add_argument("--clip_node", type=int, default=4, help='number of allowed appearance')
 
 
 def parse_args():

@@ -1,5 +1,8 @@
 import datetime
 import warnings
+
+import dgl
+import numpy as np
 import torch
 import logging
 from config import parse_args
@@ -8,12 +11,12 @@ from Utils.utils import seed_everything, get_name, timeit
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_dp import run as run_dp
-from Trim.base import get_node_counts
+from Trim.base import get_node_counts, sort_by_num_tree, trim
+
 warnings.filterwarnings("ignore")
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(name)s | %(message)s')
 logger = logging.getLogger('exp')
 logger.setLevel(logging.INFO)
-
 
 
 def run(args, current_time, device):
@@ -21,11 +24,19 @@ def run(args, current_time, device):
         train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
         tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                        num_fold=folds, fold=0)
-
     with timeit(logger, 'test-counter'):
         dst_node, subtree = next(iter(tr_loader))
-        appear_dict = get_node_counts(dst_node=dst_node,subtree=subtree)
-        print(len(appear_dict))
+        dst_node = np.sort(dst_node)
+        appear_dict, subtree_node_dict, node_appear = get_node_counts(dst_node=dst_node, subtree=subtree)
+        node_appear = sort_by_num_tree(appear_dict=appear_dict)
+        print("Before:", node_appear)
+        # for node in dst_node:
+        #     print(node, appear_dict[node])
+    print('\n'*10)
+    with timeit(logger, 'test-trimmer'):
+        appear_dict, node_appear = trim(appear_dict=appear_dict, sub_graph=subtree, num_worker=1,
+                                        sampling_rule='random', k=args.clip_node, subtree_node_dict=subtree_node_dict)
+        print("After:", node_appear)
     return
     # init optimizers, models, saving names
     model = init_model(args=args)
