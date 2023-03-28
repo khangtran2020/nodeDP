@@ -11,7 +11,7 @@ from Utils.utils import seed_everything, get_name, timeit
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_dp import run as run_dp
-from Trim.base import get_node_counts, sort_by_num_tree, trim
+from Trim.base import AppearDict
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(name)s | %(message)s')
@@ -24,20 +24,16 @@ def run(args, current_time, device):
         train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
         tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                        num_fold=folds, fold=0)
-    with timeit(logger, 'test-counter'):
-        dst_node, subtree = next(iter(tr_loader))
-        dst_node = np.sort(dst_node)
-        appear_dict, subtree_node_dict, node_appear = get_node_counts(dst_node=dst_node, subtree=subtree)
-        node_appear = sort_by_num_tree(appear_dict=appear_dict)
-        print("Before:", node_appear)
-        # for node in dst_node:
-        #     print(node, appear_dict[node])
-    print('\n'*10)
-    with timeit(logger, 'test-trimmer'):
-        appear_dict, node_appear = trim(appear_dict=appear_dict, sub_graph=subtree, num_worker=1,
-                                        sampling_rule='random', k=args.clip_node, subtree_node_dict=subtree_node_dict)
-        print("After:", node_appear)
-    return
+    if args.debug:
+        with timeit(logger, 'test-counter'):
+            dst_node, subgraphs = next(iter(tr_loader))
+            dst_node = dst_node.tolist()
+            appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule='random', k=args.clip_node)
+        with timeit(logger, 'test-trimmer'):
+            appear_dict.trim()
+            subgraphs = appear_dict.subgraphs
+            appear_dict_ = AppearDict(roots=dst_node, subgraphs=subgraphs)
+
     # init optimizers, models, saving names
     model = init_model(args=args)
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)

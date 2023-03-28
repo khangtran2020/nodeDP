@@ -30,7 +30,7 @@ class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
             frontier = g.sample_neighbors(
                 seed_nodes, fanout, output_device=self.device)
             eid = frontier.edata[EID]
-            block = transforms.to_block(frontier, seed_nodes)
+            block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=False)
             block.edata[EID] = eid
             seed_nodes = block.srcdata[NID]
             blocks.insert(0, block)

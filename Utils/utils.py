@@ -33,3 +33,10 @@ def get_name(args, current_date):
     elif args.mode == 'dp':
         res_str = dataset_str + model_str + dp_str + date_str
     return res_str
+
+
+def get_index_by_value(a, val):
+    return (a == val).nonzero(as_tuple=True)[0]
+
+def get_index_bynot_value(a, val):
+    return (a != val).nonzero(as_tuple=True)[0]
