@@ -5,7 +5,7 @@ __pycache__/
 
 .idea
 *.idea
-
+results
 # C extensions
 *.so
 

@@ -93,7 +93,7 @@ def eval_fn(data_loader, model, criterion, device):
         for bi, d in enumerate(data_loader):
             target, pred, loss = eval_clean(model=model, objective=criterion, batch=d)
             loss_eval += loss.item()
-            outputs = target.cpu().detach().numpy()
+            outputs = pred.cpu().detach().numpy()
             fin_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
             fin_outputs.extend(outputs)
     return loss_eval, fin_outputs, fin_targets
@@ -102,7 +102,7 @@ def performace_eval(args, y_true, y_pred):
     if args.performance_metric == 'acc':
         return accuracy_score(y_true=y_true, y_pred=y_pred)
     elif args.performance_metric == 'f1':
-        return f1_score(y_true=y_true, y_pred=y_pred)
+        return f1_score(y_true=y_true, y_pred=y_pred, average='macro')
     elif args.performance_metric == 'auc':
         return roc_auc_score(y_true=y_true, y_score=y_pred)
     elif args.performance_metric == 'pre':
