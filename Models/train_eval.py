@@ -82,7 +82,6 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
         train_loss += loss.item()
     return train_loss, train_outputs, train_targets
 
-
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
     fin_targets = []

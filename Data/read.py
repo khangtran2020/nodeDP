@@ -17,8 +17,8 @@ def read_data(args, data_name, ratio):
     args.num_feat = data[0].ndata['feat'].shape[1]
     args.num_class = data.num_classes
     g_train, g_test, folds = graph_split(data=data, ratio=ratio, folds=args.folds)
+    args.num_data_point = len(g_train.nodes())
     return g_train, g_test, folds
-
 
 def graph_split(data, ratio, folds):
     g = data[0]
@@ -30,7 +30,6 @@ def graph_split(data, ratio, folds):
     test_g = g.subgraph(torch.LongTensor(id_test))
     folds = fold_separation(train_g, num_folds=folds)
     return train_g, test_g, folds
-
 
 def init_loader(args, device, train_g, test_g, num_fold, fold):
 
@@ -57,14 +56,12 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
                                              num_workers=args.num_worker)
     return train_loader, val_loader, test_loader
 
-
 def fold_separation(g, num_folds):
     skf = StratifiedKFold(n_splits=num_folds)
     node_id = range(len(g.nodes().tolist()))
     node_label = g.ndata['label'].tolist()
     folds = [x for x in skf.split(node_id, node_label)]
     return folds
-
 
 def fold_assign(g, folds, current_fold):
     tr_mask = np.zeros(len(g.nodes().tolist()))
