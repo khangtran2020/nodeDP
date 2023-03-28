@@ -40,7 +40,6 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
 
     val_g = train_g.subgraph(torch.LongTensor(val_nodes))
     train_g = train_g.subgraph(torch.LongTensor(train_nodes))
-
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_hid)])
     if args.mode == 'dp':
         train_loader = NodeDataLoader(g=train_g, batch_size=args.batch_size, shuffle=False, num_workers=0,
@@ -51,10 +50,10 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
                                                   batch_size=args.batch_size, shuffle=True, drop_last=True,
                                                   num_workers=args.num_worker)
     val_loader = dgl.dataloading.DataLoader(val_g, val_g.nodes(), sampler, device=device,
-                                            batch_size=args.batch_size, shuffle=True, drop_last=True,
+                                            batch_size=args.batch_size, shuffle=True, drop_last=False,
                                             num_workers=args.num_worker)
     test_loader = dgl.dataloading.DataLoader(test_g, test_g.nodes(), sampler, device=device,
-                                             batch_size=args.batch_size, shuffle=True, drop_last=True,
+                                             batch_size=args.batch_size, shuffle=True, drop_last=False,
                                              num_workers=args.num_worker)
     return train_loader, val_loader, test_loader
 

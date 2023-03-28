@@ -20,30 +20,32 @@ logger.setLevel(logging.INFO)
 
 
 def run(args, current_time, device):
-    with timeit(logger, 'init-data'):
-        train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
-        tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
-                                                       num_fold=folds, fold=0)
     if args.debug:
-        with timeit(logger, 'test-counter'):
-            dst_node, subgraphs = next(iter(tr_loader))
-            dst_node = dst_node.tolist()
-            appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule='random', k=args.clip_node)
-        with timeit(logger, 'test-trimmer'):
-            appear_dict.trim()
-            subgraphs = appear_dict.subgraphs
-            appear_dict_ = AppearDict(roots=dst_node, subgraphs=subgraphs)
+        fold = 0
+        with timeit(logger, 'init-data'):
+            train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
+            tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
+                                                            num_fold=folds, fold=fold)
+        if args.mode == 'dp':
+            with timeit(logger, 'test-counter'):
+                dst_node, subgraphs = next(iter(tr_loader))
+                dst_node = dst_node.tolist()
+                appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule='random', k=args.clip_node)
+            with timeit(logger, 'test-trimmer'):
+                appear_dict.trim()
+                subgraphs = appear_dict.subgraphs
+                appear_dict_ = AppearDict(roots=dst_node, subgraphs=subgraphs)
 
-    # init optimizers, models, saving names
-    model = init_model(args=args)
-    optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
-    name = get_name(args=args, current_date=current_time)
-
-    # run
-    if args.mode == 'clean':
-        run_clean(dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer, name=name)
-    elif args.mode == 'dp':
-        run_dp()
+        # init optimizers, models, saving names
+        model = init_model(args=args)
+        optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
+        name = get_name(args=args, current_date=current_time, fold=fold)
+        # run
+        if args.mode == 'clean':
+            run_clean(args=args, dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer, name=name,
+                      device=device)
+        elif args.mode == 'dp':
+            run_dp()
 
 
 if __name__ == "__main__":

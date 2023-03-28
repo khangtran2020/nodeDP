@@ -1,5 +1,6 @@
 import dgl
 import dgl.nn.pytorch as dglnn
+import torch.nn
 from torch import nn
 
 class GraphSAGE(nn.Module):
@@ -7,19 +8,21 @@ class GraphSAGE(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(dglnn.SAGEConv(in_feats, n_hidden, 'gcn'))
-        for i in range(1, n_layers - 1):
+        for i in range(0, n_layers - 1):
             self.layers.append(dglnn.SAGEConv(n_hidden, n_hidden, 'gcn'))
         self.layers.append(nn.Linear(n_hidden, n_classes))
         self.dropout = nn.Dropout(dropout)
+        self.n_layers = n_layers
+        self.activation = torch.nn.ReLU()
 
     def forward(self, blocks, x):
         h = x
-        for i in range(0, self.n_layers - 1):
+        for i in range(0, self.n_layers):
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
             h = self.dropout(h)
 
-        h = self.layers[self.n_layers - 1](h)
+        h = self.layers[-1](h)
         return h
 
 class GAT(nn.Module):
@@ -27,19 +30,19 @@ class GAT(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(dglnn.GATConv(in_feats, n_hidden, num_heads=num_head))
-        for i in range(1, n_layers - 1):
+        for i in range(0, n_layers - 1):
             self.layers.append(dglnn.GATConv(n_hidden, n_hidden, num_heads=num_head))
         self.layers.append(nn.Linear(n_hidden, n_classes))
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, blocks, x):
         h = x
-        for i in range(0, self.n_layers - 1):
+        for i in range(0, self.n_layers):
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
             h = self.dropout(h)
 
-        h = self.layers[self.n_layers - 1](h)
+        h = self.layers[-1](h)
         return h
 
 class GIN(nn.Module):
@@ -47,17 +50,17 @@ class GIN(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(dglnn.GINConv(nn.Linear(in_feats, n_hidden), aggregator_type=aggregator_type))
-        for i in range(1, n_layers - 1):
+        for i in range(0, n_layers - 1):
             self.layers.append(dglnn.GINConv(nn.Linear(n_hidden, n_hidden), aggregator_type=aggregator_type))
         self.layers.append(nn.Linear(n_hidden, n_classes))
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, blocks, x):
         h = x
-        for i in range(0, self.n_layers - 1):
+        for i in range(0, self.n_layers):
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
             h = self.dropout(h)
 
-        h = self.layers[self.n_layers - 1](h)
+        h = self.layers[-1](h)
         return h

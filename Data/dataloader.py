@@ -9,7 +9,7 @@ from dgl.dataloading import transforms, DataLoader
 
 
 class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
-    def __init__(self, num_neighbors, device):
+    def __init__(self, num_neighbors, device='cpu'):
         super().__init__(len(num_neighbors))
         self.num_layers = len(num_neighbors)
         self.fanouts = num_neighbors
@@ -50,7 +50,7 @@ class NodeDataLoader(object):
 
     def __init__(self, g: dgl.DGLGraph, batch_size: int, shuffle: bool, num_workers: int,
                  num_nodes: Union[int, List], cache_result: bool = False, drop_last: bool = True, mode: str = 'train',
-                 device: device = 'cpu'):
+                 device = 'cpu'):
 
         self.num_nodes = num_nodes
         self.g = g
