@@ -20,6 +20,7 @@ def read_data(args, data_name, ratio):
     args.num_data_point = len(g_train.nodes())
     return g_train, g_test, folds
 
+
 def graph_split(data, ratio, folds):
     g = data[0]
     node_id = g.nodes().numpy()
@@ -31,8 +32,8 @@ def graph_split(data, ratio, folds):
     folds = fold_separation(train_g, num_folds=folds)
     return train_g, test_g, folds
 
-def init_loader(args, device, train_g, test_g, num_fold, fold):
 
+def init_loader(args, device, train_g, test_g, num_fold, fold):
     fold_assign(g=train_g, folds=num_fold, current_fold=fold)
     train_nodes = torch.index_select(train_g.nodes(), 0, train_g.ndata['train_mask'].nonzero().squeeze())
     val_nodes = torch.index_select(train_g.nodes(), 0, train_g.ndata['val_mask'].nonzero().squeeze())
@@ -41,9 +42,10 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
     train_g = train_g.subgraph(torch.LongTensor(train_nodes))
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_hid)])
     if args.mode == 'dp':
-        train_loader = NodeDataLoader(g=train_g, batch_size=args.batch_size, shuffle=False, num_workers=0,
+        train_loader = NodeDataLoader(g=train_g, batch_size=int(args.sampling_rate * len(train_g.nodes())),
+                                      shuffle=False, num_workers=0,
                                       num_nodes=[args.n_neighbor for i in range(args.n_hid)], cache_result=False,
-                                      device=device)
+                                      device=device, sampling_rate=args.sampling_rate)
     else:
         train_loader = dgl.dataloading.DataLoader(train_g, train_g.nodes(), sampler, device=device,
                                                   batch_size=args.batch_size, shuffle=True, drop_last=True,
@@ -56,12 +58,14 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
                                              num_workers=args.num_worker)
     return train_loader, val_loader, test_loader
 
+
 def fold_separation(g, num_folds):
     skf = StratifiedKFold(n_splits=num_folds)
     node_id = range(len(g.nodes().tolist()))
     node_label = g.ndata['label'].tolist()
     folds = [x for x in skf.split(node_id, node_label)]
     return folds
+
 
 def fold_assign(g, folds, current_fold):
     tr_mask = np.zeros(len(g.nodes().tolist()))

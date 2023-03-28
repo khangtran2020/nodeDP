@@ -26,15 +26,6 @@ def run(args, current_time, device):
             train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
             tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                             num_fold=folds, fold=fold)
-        if args.mode == 'dp':
-            with timeit(logger, 'test-counter'):
-                dst_node, subgraphs = next(iter(tr_loader))
-                dst_node = dst_node.tolist()
-                appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule='random', k=args.clip_node)
-            with timeit(logger, 'test-trimmer'):
-                appear_dict.trim()
-                subgraphs = appear_dict.subgraphs
-                appear_dict_ = AppearDict(roots=dst_node, subgraphs=subgraphs)
 
         # init optimizers, models, saving names
         model = init_model(args=args)
@@ -45,7 +36,8 @@ def run(args, current_time, device):
             run_clean(args=args, dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer, name=name,
                       device=device)
         elif args.mode == 'dp':
-            run_dp()
+            run_dp(args=args, dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer, name=name,
+                      device=device, graph=train_g)
 
 
 if __name__ == "__main__":

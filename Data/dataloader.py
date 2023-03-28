@@ -50,7 +50,7 @@ class NodeDataLoader(object):
 
     def __init__(self, g: dgl.DGLGraph, batch_size: int, shuffle: bool, num_workers: int,
                  num_nodes: Union[int, List], cache_result: bool = False, drop_last: bool = True, mode: str = 'train',
-                 device = 'cpu'):
+                 device='cpu', sampling_rate=0.2):
 
         self.num_nodes = num_nodes
         self.g = g
@@ -64,6 +64,7 @@ class NodeDataLoader(object):
         self.mode = mode
         self.device = device
         self.drop_last = drop_last
+        self.sampling_rate = sampling_rate
 
     def __iter__(self):
         yield from self.iter_sage()
@@ -79,7 +80,9 @@ class NodeDataLoader(object):
             seeds = torch.from_numpy(self.sample_seeds())
             sampler = ComputeSubgraphSampler(num_neighbors=self.num_nodes, device=self.device)
             bz = self.batch_size
-            dl = DataLoader(seeds, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
+            sm = torch.utils.data.WeightedRandomSampler(weights=torch.ones_like(seeds) * self.sampling_rate,
+                                                        num_samples=len(seeds))
+            dl = DataLoader(seeds, sampler=sm, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
 
             if self.cache_result:
                 self.cache = []

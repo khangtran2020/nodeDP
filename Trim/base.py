@@ -131,7 +131,6 @@ class Node(object):
         self.root_dict[root][rank]['ans'].remove(node_id)
         self.root_dict[root][rank]['out_deg'] -= 1
 
-
 class AppearDict(object):
 
     def __init__(self, roots, subgraphs, trimming_rule=None, k=2):
@@ -191,7 +190,7 @@ class AppearDict(object):
         highest_appeared_node = node_appear[0][0]
         val = node_appear[0][1]
         while self.node_dict[highest_appeared_node].num_tree > self.k:
-            print(f'Current highest node {highest_appeared_node}, appeared {val} times')
+            # print(f'Current highest node {highest_appeared_node}, appeared {val} times')
             self.trim_node(node_id=highest_appeared_node)
             node_appear = self.get_num_tree()
             highest_appeared_node = node_appear[0][0]
@@ -225,7 +224,7 @@ class AppearDict(object):
                 self.subgraphs[root] = blocks
 
     def remove_node_from_root_at_rank(self, node_id, root, rank, blocks, queue):
-        print(f"Removing node {node_id} from root {root} at rank {rank}")
+        # print(f"Removing node {node_id} from root {root} at rank {rank}")
         if rank == 0:
             block = blocks[0]
             src_node = block.srcdata[dgl.NID]
@@ -300,12 +299,17 @@ class AppearDict(object):
 
     def build_blocks(self, root):
         blocks = self.subgraphs[root]
-        for i, block in enumerate(blocks):
+        new_blocks = []
+        dst_n = root
+        for i, block in enumerate(reversed(blocks)):
             src_node = block.srcdata[dgl.NID]
             dst_node = block.dstdata[dgl.NID]
             src_edge, dst_edge = block.edges()
             src_node_new = torch.index_select(src_node, 0, src_edge)
             dst_node_new = torch.index_select(dst_node, 0, dst_edge)
             g = dgl.graph((src_node_new, dst_node_new))
-            blocks[i] = to_block(g=g, dst_nodes=dst_node, include_dst_in_src=True)
-        return blocks
+            blk = to_block(g=g, dst_nodes=dst_n, include_dst_in_src=True)
+            # print(blk.srcdata[dgl.NID], blk.dstdata[dgl.NID])
+            dst_n = blk.srcdata[dgl.NID]
+            new_blocks.insert(0, blk)
+        return new_blocks
