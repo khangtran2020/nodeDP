@@ -1,7 +1,7 @@
 import dgl
 import torch
 from Utils.utils import get_index_by_value, get_index_bynot_value
-from Trim.trimming_rule import random_trimming
+from Trim.trimming_rule import random_trimming, adhoc_trimming_rank
 from dgl.dataloading import to_block
 
 
@@ -131,6 +131,7 @@ class Node(object):
         self.root_dict[root][rank]['ans'].remove(node_id)
         self.root_dict[root][rank]['out_deg'] -= 1
 
+
 class AppearDict(object):
 
     def __init__(self, roots, subgraphs, trimming_rule=None, k=2):
@@ -138,8 +139,11 @@ class AppearDict(object):
         self.subgraphs = subgraphs
         self.node_dict = self.build_node_dict(roots, subgraphs)
         self.num_appear = self.get_num_tree()
+        self.trimming_rule = trimming_rule
         if trimming_rule == 'random':
-            self.trimming_rule = random_trimming
+            self.trimming_func = random_trimming
+        elif trimming_rule == 'adhoc':
+            self.trimming_func = adhoc_trimming_rank
         self.k = k
 
     def get_num_tree(self):
@@ -182,8 +186,12 @@ class AppearDict(object):
         return self.node_dict.keys()
 
     def get_list_trimming_root(self, node_id):
-        return self.trimming_rule(roots=self.node_dict[node_id].roots,
-                                  k=self.node_dict[node_id].num_tree - self.k, current_node=node_id)
+        if self.trimming_rule == 'random':
+            return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
+                                      current_node=node_id, appear_dict=None, model=None, graph=None)
+        elif self.trimming_rule == 'adhoc':
+            return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
+                                      current_node=node_id, appear_dict=self, model=None, graph=None)
 
     def trim(self):
         node_appear = self.get_num_tree()
