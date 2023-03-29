@@ -80,8 +80,8 @@ class NodeDataLoader(object):
             seeds = torch.from_numpy(self.sample_seeds())
             sampler = ComputeSubgraphSampler(num_neighbors=self.num_nodes, device=self.device)
             bz = self.batch_size
-            sm = None # torch.utils.data.WeightedRandomSampler(weights=torch.ones_like(seeds) * self.sampling_rate,
-                                                        # num_samples=len(seeds))
+            sm = torch.utils.data.WeightedRandomSampler(weights=torch.ones_like(seeds) * self.sampling_rate,
+                                                        num_samples=len(seeds))
             dl = DataLoader(seeds, sampler=sm, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
 
             if self.cache_result:
