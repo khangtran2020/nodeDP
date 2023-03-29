@@ -3,7 +3,7 @@
 #SBATCH -J NodeDP
 #SBATCH -p datasci
 #SBATCH --output=results/logs/adult_ns_0.8.out
-#SBATCH --mem=32G
+#SBATCH --mem=64G
 #SBATCH --gres=gpu:0
 module load python
 conda activate torch
