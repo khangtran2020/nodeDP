@@ -23,6 +23,7 @@ def read_data(args, data_name, ratio):
 
 def graph_split(data, ratio, folds):
     g = data[0]
+    g = dgl.remove_self_loop(g)
     node_id = g.nodes().numpy()
     node_label = g.ndata['label'].numpy()
     print(node_id.shape, node_label.shape)

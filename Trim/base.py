@@ -213,9 +213,10 @@ class AppearDict(object):
             for r in ranks:
                 queue.append((node_id, r))
             while (len(queue) > 0):
-                # print(root, queue)
                 n, r = queue[0]
                 queue.pop(0)
+                # if r not in self.node_dict[node_id].roots:
+                #     continue
                 if r == 0:
                     blocks[r], queue = self.remove_node_from_root_at_rank(node_id=n, root=root, rank=r,
                                                                           blocks=[blocks[r]],
@@ -243,7 +244,6 @@ class AppearDict(object):
             src_new = torch.index_select(input=src_node_new, dim=0, index=indices)
             dst_new = torch.index_select(input=dst_node_new, dim=0, index=indices)
             g = dgl.graph((src_new, dst_new))
-
             # update appear_dict
             if self.node_dict[node_id].root_dict[root]['num_appear'] > 1:
                 self.node_dict[node_id].root_dict[root]['num_appear'] -= 1
@@ -287,6 +287,8 @@ class AppearDict(object):
             dst_node = torch.index_select(input=dst_node, dim=0, index=index_not_node_id)
             g = dgl.graph((src_new, dst_new))
             block_r1 = to_block(g, dst_nodes=dst_node, include_dst_in_src=False)
+
+
             ancestor = self.node_dict[node_id].get_ans(root=root, rank=rank)
             for n in ancestor:
                 self.node_dict[n].del_child(node_id=node_id, root=root, rank=rank + 1)
@@ -295,6 +297,7 @@ class AppearDict(object):
                 self.node_dict[n].del_ans(node_id=node_id, root=root, rank=rank - 1)
                 if (self.node_dict[n].root_dict[root][rank - 1]['out_deg']) <= 0 and (n != root):
                     queue.append((n, rank - 1))
+
             if self.node_dict[node_id].root_dict[root]['num_appear'] > 1:
                 self.node_dict[node_id].root_dict[root]['num_appear'] -= 1
                 self.node_dict[node_id].root_dict[root]['rank'].remove(rank)
@@ -326,4 +329,4 @@ class AppearDict(object):
 
     def print_nodes(self):
         for key in self.node_dict.keys():
-            print(key, '\t', self.node_dict[key].roots)
+            print(key, '\t', self.node_dict[key].roots, [self.node_dict[key].root_dict[r]['num_appear'] for r in self.node_dict[key].roots])
