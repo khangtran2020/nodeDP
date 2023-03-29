@@ -3,6 +3,7 @@ from torch.optim import Adam, AdamW, SGD
 
 
 def init_model(args):
+    print("Training with graph {}".format(args.model_type))
     model = None
     if args.model_type == 'sage':
         model = GraphSAGE(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class, n_layers=args.n_hid,
@@ -17,6 +18,7 @@ def init_model(args):
 
 
 def init_optimizer(optimizer_name, model, lr):
+    print("Optimizing with optimizer {}".format(optimizer_name))
     if optimizer_name == 'adam':
         optimizer = Adam(model.parameters(), lr=lr)
     elif optimizer_name == 'adamw':

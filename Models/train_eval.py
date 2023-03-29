@@ -67,6 +67,7 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule, k=clip_node)
+    # appear_dict.print_nodes()
     appear_dict.trim()
     temp_par = {}
     loss_batch = 0
@@ -77,21 +78,22 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
     for i, root in enumerate(dst_node.tolist()):
         for p in model.named_parameters():
             p[1].grad = torch.zeros_like(p[1])
-        blocks = appear_dict.build_blocks(root=root)
-        nodes = blocks[0].srcdata[dgl.NID]
-        inputs = g.ndata['feat'][nodes, :]
-        labels = g.ndata['label'][blocks[-1].dstdata[dgl.NID]]
+        blocks = appear_dict.build_blocks(root=root, graph=g)
+        inputs = blocks[0].srcdata['feat']
+        labels = blocks[-1].dstdata['label']
         predictions = model(blocks, inputs)
         loss = objective(predictions, labels)
         loss_batch += loss.item()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad, norm_type=2)
+        for p in model.named_parameters():
+            temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
         pred = predictions.cpu().detach().argmax(1).numpy()
         train_targets.extend(labels.cpu().detach().numpy().astype(int).tolist())
         train_outputs.extend(pred)
 
     for p in model.named_parameters():
-        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=ns * clip_node, size=temp_par[p[0]].size()).to(
+        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=ns * clip_node * clip_grad, size=temp_par[p[0]].size()).to(
             device)
         p[1].grad = p[1].grad / len(dst_node)
     optimizer.step()

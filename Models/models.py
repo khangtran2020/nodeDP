@@ -18,6 +18,7 @@ class GraphSAGE(nn.Module):
     def forward(self, blocks, x):
         h = x
         for i in range(0, self.n_layers):
+            # print(blocks[i].srcdata[dgl.NID].size(), blocks[i].dstdata[dgl.NID].size())
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
             h = self.dropout(h)

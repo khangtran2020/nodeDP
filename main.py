@@ -28,6 +28,8 @@ def run(args, current_time, device):
                                                             num_fold=folds, fold=fold)
 
         # init optimizers, models, saving names
+        # _, _, blocks = next(iter(tr_loader))
+        # print(blocks[0].ndata)
         model = init_model(args=args)
         optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
         name = get_name(args=args, current_date=current_time, fold=fold)

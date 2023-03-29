@@ -53,80 +53,80 @@ class Node(object):
 
     def get_ans(self, root, rank):
         if root not in self.roots:
-            print(f"Node {self.id} is not in subgraph rooted at {root}")
+            print(f"Func get_ans: Node {self.id} is not in subgraph rooted at {root}")
             return
         if rank not in self.root_dict[root].keys():
-            print(f"Node {self.id} is not in rank {rank} of root {root}")
+            print(f"Func get_ans: Node {self.id} is not in rank {rank} of root {root}")
             return
         if rank == self.num_layer - 1:
-            print(f"Node {self.id} is in rank {rank} and don't have anscestors")
+            print(f"Func get_ans: Node {self.id} is in rank {rank} and don't have anscestors")
             return
         return self.root_dict[root][rank]['ans']
 
     def get_out_deg(self, root, rank):
         if root not in self.roots:
-            print(f"Node {self.id} is not in subgraph rooted at {root}")
+            print(f"Func get_out_deg: Node {self.id} is not in subgraph rooted at {root}")
             return
         if rank not in self.root_dict[root].keys():
-            print(f"Node {self.id} is not in rank {rank} of root {root}")
+            print(f"Func get_out_deg: Node {self.id} is not in rank {rank} of root {root}")
             return
         if rank == self.num_layer - 1:
-            print(f"Node {self.id} is in rank {rank} and don't have anscestors")
+            print(f"Func get_out_deg: Node {self.id} is in rank {rank} and don't have anscestors")
             return
         return self.root_dict[root][rank]['out_deg']
 
     def get_child(self, root, rank):
         if root not in self.roots:
-            print(f"Node {self.id} is not in subgraph rooted at {root}")
+            print(f"Func get_child: Node {self.id} is not in subgraph rooted at {root}")
             return
         if rank not in self.root_dict[root].keys():
-            print(f"Node {self.id} is not in rank {rank} of root {root}")
+            print(f"Func get_child: Node {self.id} is not in rank {rank} of root {root}")
             return
         if rank == 0:
-            print(f"Node {self.id} is in rank {rank} and don't have childs")
+            print(f"Func get_child: Node {self.id} is in rank {rank} and don't have childs")
             return
         return self.root_dict[root][rank]['child']
 
     def get_in_deg(self, root, rank):
         if root not in self.roots:
-            print(f"Node {self.id} is not in subgraph rooted at {root}")
+            print(f"Func get_in_deg: Node {self.id} is not in subgraph rooted at {root}")
             return
         if rank not in self.root_dict[root].keys():
-            print(f"Node {self.id} is not in rank {rank} of root {root}")
+            print(f"Func get_in_deg: Node {self.id} is not in rank {rank} of root {root}")
             return
         if rank == 0:
-            print(f"Node {self.id} is in rank {rank} and don't have childs")
+            print(f"Func get_in_deg: Node {self.id} is in rank {rank} and don't have childs")
             return
         return self.root_dict[root][rank]['in_deg']
 
     def del_child(self, node_id, root, rank):
         if root not in self.roots:
-            print(f"Node {self.id} is not in subgraph rooted at {root}")
+            print(f"Func del_child: Node {self.id} is not in subgraph rooted at {root}")
             return
         if rank not in self.root_dict[root].keys():
-            print(f"Node {self.id} is not in rank {rank} of root {root}")
+            print(f"Func del_child: Node {self.id} is not in rank {rank} of root {root}")
             return
         if rank == 0:
-            print(f"Node {self.id} is in rank {rank} and don't have childs")
+            print(f"Func del_child: Node {self.id} is in rank {rank} and don't have childs")
             return
         if node_id not in self.root_dict[root][rank]['child']:
-            print(f'Node {node_id} is not the child of node {self.id} in root {root}')
+            print(f'Func del_child: Node {node_id} is not the child of node {self.id} in root {root}')
             return
         self.root_dict[root][rank]['child'].remove(node_id)
         self.root_dict[root][rank]['in_deg'] -= 1
 
     def del_ans(self, node_id, root, rank):
         if root not in self.roots:
-            print(f"Node {self.id} is not in subgraph rooted at {root}")
+            print(f"Func del_ans: Node {self.id} is not in subgraph rooted at {root}")
             return
         if rank not in self.root_dict[root].keys():
-            print(f"Node {self.id} is not in rank {rank} of root {root}")
+            print(f"Func del_ans: Node {self.id} is not in rank {rank} of root {root}")
             return
         if rank == self.num_layer - 1:
-            print(f"Node {self.id} is in rank {rank} and don't have ancestors")
+            print(f"Func del_ans: Node {self.id} is in rank {rank} and don't have ancestors")
             return
         if node_id not in self.root_dict[root][rank]['ans']:
-            print(f'Node {node_id} is not the ancestor of node {self.id} in root {root}')
+            print(f'Func del_ans: Node {node_id} is not the ancestor of node {self.id} in root {root}')
             return
         self.root_dict[root][rank]['ans'].remove(node_id)
         self.root_dict[root][rank]['out_deg'] -= 1
@@ -190,7 +190,6 @@ class AppearDict(object):
         highest_appeared_node = node_appear[0][0]
         val = node_appear[0][1]
         while self.node_dict[highest_appeared_node].num_tree > self.k:
-            # print(f'Current highest node {highest_appeared_node}, appeared {val} times')
             self.trim_node(node_id=highest_appeared_node)
             node_appear = self.get_num_tree()
             highest_appeared_node = node_appear[0][0]
@@ -206,6 +205,7 @@ class AppearDict(object):
             for r in ranks:
                 queue.append((node_id, r))
             while (len(queue) > 0):
+                # print(root, queue)
                 n, r = queue[0]
                 queue.pop(0)
                 if r == 0:
@@ -224,7 +224,6 @@ class AppearDict(object):
                 self.subgraphs[root] = blocks
 
     def remove_node_from_root_at_rank(self, node_id, root, rank, blocks, queue):
-        # print(f"Removing node {node_id} from root {root} at rank {rank}")
         if rank == 0:
             block = blocks[0]
             src_node = block.srcdata[dgl.NID]
@@ -250,8 +249,9 @@ class AppearDict(object):
                 for n in ancestor:
                     self.node_dict[n].del_child(node_id=node_id, root=root, rank=rank + 1)
                 self.node_dict[node_id].num_tree -= 1
-                self.node_dict[node_id].roots.remove(root)
-                del self.node_dict[node_id].root_dict[root]
+                if node_id != root:
+                    self.node_dict[node_id].roots.remove(root)
+                    del self.node_dict[node_id].root_dict[root]
             return to_block(g, dst_nodes=dst_node, include_dst_in_src=False), queue
         else:
             block_r = blocks[0]
@@ -285,7 +285,7 @@ class AppearDict(object):
             childs = self.node_dict[node_id].get_child(root=root, rank=rank)
             for n in childs:
                 self.node_dict[n].del_ans(node_id=node_id, root=root, rank=rank - 1)
-                if self.node_dict[n].root_dict[root][rank - 1]['out_deg'] <= 0:
+                if (self.node_dict[n].root_dict[root][rank - 1]['out_deg']) <= 0 and (n != root):
                     queue.append((n, rank - 1))
             if self.node_dict[node_id].root_dict[root]['num_appear'] > 1:
                 self.node_dict[node_id].root_dict[root]['num_appear'] -= 1
@@ -293,11 +293,12 @@ class AppearDict(object):
                 del self.node_dict[node_id].root_dict[root][rank]
             else:
                 self.node_dict[node_id].num_tree -= 1
-                self.node_dict[node_id].roots.remove(root)
-                del self.node_dict[node_id].root_dict[root]
+                if (node_id != root):
+                    self.node_dict[node_id].roots.remove(root)
+                    del self.node_dict[node_id].root_dict[root]
             return (block_r, block_r1, queue)
 
-    def build_blocks(self, root):
+    def build_blocks(self, root, graph):
         blocks = self.subgraphs[root]
         new_blocks = []
         dst_n = root
@@ -307,9 +308,14 @@ class AppearDict(object):
             src_edge, dst_edge = block.edges()
             src_node_new = torch.index_select(src_node, 0, src_edge)
             dst_node_new = torch.index_select(dst_node, 0, dst_edge)
-            g = dgl.graph((src_node_new, dst_node_new))
+            g = dgl.graph((src_node_new, dst_node_new), num_nodes=len(graph.nodes()))
+            g.ndata['feat'] = graph.ndata['feat']
+            g.ndata['label'] = graph.ndata['label']
             blk = to_block(g=g, dst_nodes=dst_n, include_dst_in_src=True)
-            # print(blk.srcdata[dgl.NID], blk.dstdata[dgl.NID])
             dst_n = blk.srcdata[dgl.NID]
             new_blocks.insert(0, blk)
         return new_blocks
+
+    def print_nodes(self):
+        for key in self.node_dict.keys():
+            print(key, '\t', self.node_dict[key].roots)
