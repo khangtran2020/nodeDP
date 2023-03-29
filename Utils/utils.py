@@ -28,7 +28,7 @@ def get_name(args, current_date, fold=0):
     dataset_str = f'{args.dataset}_{fold}_{args.ratio}_'
     date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}-{current_date.second}'
     model_str = f'{args.mode}_{args.epochs}_{args.performance_metric}_{args.optimizer}_'
-    dp_str = f'{args.clip}_{args.ns}_'
+    dp_str = f'{args.trim_rule}_{args.clip_node}_{args.clip}_{args.ns}_'
     if args.mode == 'clean':
         res_str = dataset_str + model_str + date_str
     elif args.mode == 'dp':
