@@ -27,10 +27,7 @@ def run(args, current_time, device):
             train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
             tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                             num_fold=folds, fold=fold)
-        dst_node, _ = next(iter(tr_loader))
-        print(f'Each batch has {len(dst_node)} data point / Train graph has {len(train_g.nodes())} nodes')
-        del(dst_node)
-        del(_)
+
         model = init_model(args=args)
         optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
         name = get_name(args=args, current_date=current_time, fold=fold)
