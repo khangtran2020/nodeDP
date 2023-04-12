@@ -73,6 +73,7 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
     loss_batch = 0
     train_targets = []
     train_outputs = []
+    bz = len(dst_node)
     for p in model.named_parameters():
         temp_par[p[0]] = torch.zeros_like(p[1])
     for i, root in enumerate(dst_node.tolist()):
@@ -95,9 +96,9 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
     for p in model.named_parameters():
         p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=ns * clip_node * clip_grad, size=temp_par[p[0]].size()).to(
             device)
-        p[1].grad = p[1].grad / len(dst_node)
+        p[1].grad = p[1].grad / bz
     optimizer.step()
-    return train_targets, train_outputs, loss_batch
+    return train_targets, train_outputs, loss_batch/bz
 
 
 def eval_clean(model, objective, batch):

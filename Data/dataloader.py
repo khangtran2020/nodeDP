@@ -3,6 +3,7 @@ import torch
 import logging
 import numpy as np
 from torch import device
+from torch.utils.data import DataLoader as DL
 from typing import Tuple, Dict, List, Optional, Union, Set
 from dgl.dataloading.base import NID, EID
 from dgl.dataloading import transforms, DataLoader
@@ -67,35 +68,21 @@ class NodeDataLoader(object):
         self.sampling_rate = sampling_rate
 
     def __iter__(self):
-        yield from self.iter_sage()
-
-    def iter_sage(self):
-        if self.cache_result and self.cache and len(self.cache) == len(self):
-            self.logger.info('DL loaded from cache')
-            for e in self.cache:
-                yield e
-        else:
-            from torch.utils.data import DataLoader
-            g = self.g
-            seeds = torch.from_numpy(self.sample_seeds())
-            sampler = ComputeSubgraphSampler(num_neighbors=self.num_nodes, device=self.device)
-            bz = self.batch_size
-            sm = torch.utils.data.WeightedRandomSampler(weights=torch.ones_like(seeds) * self.sampling_rate,
-                                                        num_samples=len(seeds))
-            dl = DataLoader(seeds, sampler=sm, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
-
-            if self.cache_result:
-                self.cache = []
-            for seed in dl:
-                sub_graph = sampler.sample(g=g, seed_nodes=seed)
-                encoded_seeds = seed.numpy()
-                yield encoded_seeds, sub_graph
+        g = self.g
+        seeds = torch.from_numpy(self.sample_seeds())
+        sampler = ComputeSubgraphSampler(num_neighbors=self.num_nodes, device=self.device)
+        bz = self.batch_size
+        dl = DL(seeds, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
+        for seed in dl:
+            sub_graph = sampler.sample(g=g, seed_nodes=seed)
+            encoded_seeds = seed.numpy()
+            yield encoded_seeds, sub_graph
 
     def sample_seeds(self) -> List:
         g = self.g
         list_of_nodes = torch.index_select(g.nodes(), 0, g.ndata['train_mask'].nonzero().squeeze()).numpy()
-        seeds = np.random.choice(list_of_nodes, self.batch_size, replace=len(list_of_nodes) < self.batch_size)
-        return seeds.astype(int)
+        # seeds = np.random.choice(list_of_nodes, self.batch_size, replace=len(list_of_nodes) < self.batch_size)
+        return list_of_nodes.astype(int)
 
     def __len__(self):
         return self.n_batch

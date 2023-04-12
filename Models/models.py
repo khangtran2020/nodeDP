@@ -7,9 +7,9 @@ class GraphSAGE(nn.Module):
     def __init__(self, in_feats, n_hidden, n_classes, n_layers, dropout=0.2):
         super().__init__()
         self.layers = nn.ModuleList()
-        self.layers.append(dglnn.SAGEConv(in_feats, n_hidden, 'gcn'))
+        self.layers.append(dglnn.SAGEConv(in_feats, n_hidden, 'mean'))
         for i in range(0, n_layers - 1):
-            self.layers.append(dglnn.SAGEConv(n_hidden, n_hidden, 'gcn'))
+            self.layers.append(dglnn.SAGEConv(n_hidden, n_hidden, 'mean'))
         self.layers.append(nn.Linear(n_hidden, n_classes))
         self.dropout = nn.Dropout(dropout)
         self.n_layers = n_layers
@@ -21,7 +21,7 @@ class GraphSAGE(nn.Module):
             # print(blocks[i].srcdata[dgl.NID].size(), blocks[i].dstdata[dgl.NID].size())
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
-            h = self.dropout(h)
+            # h = self.dropout(h)
 
         h = self.layers[-1](h)
         return h

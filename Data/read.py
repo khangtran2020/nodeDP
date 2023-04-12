@@ -44,7 +44,7 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_hid)])
     if args.mode == 'dp':
         train_loader = NodeDataLoader(g=train_g, batch_size=int(args.sampling_rate * len(train_g.nodes())),
-                                      shuffle=False, num_workers=0,
+                                      shuffle=True, num_workers=0,
                                       num_nodes=[args.n_neighbor for i in range(args.n_hid)], cache_result=False,
                                       device=device, sampling_rate=args.sampling_rate)
     else:
