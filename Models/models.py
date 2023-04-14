@@ -8,22 +8,24 @@ class GraphSAGE(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(dglnn.SAGEConv(in_feats, n_hidden, 'mean'))
-        for i in range(0, n_layers - 1):
+        for i in range(0, n_layers - 2):
             self.layers.append(dglnn.SAGEConv(n_hidden, n_hidden, 'mean'))
-        self.layers.append(nn.Linear(n_hidden, n_classes))
+        self.layers.append(dglnn.SAGEConv(n_hidden, n_classes, 'mean'))
         self.dropout = nn.Dropout(dropout)
         self.n_layers = n_layers
         self.activation = torch.nn.ReLU()
+        self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
+        print(f"Using activation for last layer {self.last_activation}")
 
     def forward(self, blocks, x):
         h = x
-        for i in range(0, self.n_layers):
+        for i in range(0, self.n_layers-1):
             # print(blocks[i].srcdata[dgl.NID].size(), blocks[i].dstdata[dgl.NID].size())
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
-            # h = self.dropout(h)
+            h = self.dropout(h)
 
-        h = self.layers[-1](h)
+        h = self.last_activation(self.layers[-1](blocks[-1], h))
         return h
 
 class GAT(nn.Module):
@@ -31,19 +33,22 @@ class GAT(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(dglnn.GATConv(in_feats, n_hidden, num_heads=num_head))
-        for i in range(0, n_layers - 1):
+        for i in range(0, n_layers - 2):
             self.layers.append(dglnn.GATConv(n_hidden, n_hidden, num_heads=num_head))
-        self.layers.append(nn.Linear(n_hidden, n_classes))
+        self.layers.append(dglnn.GATConv(n_hidden, n_classes, num_heads=num_head))
         self.dropout = nn.Dropout(dropout)
+        self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
+        print(f"Using activation for last layer {self.last_activation}")
 
     def forward(self, blocks, x):
         h = x
-        for i in range(0, self.n_layers):
+        for i in range(0, self.n_layers - 1):
+            # print(blocks[i].srcdata[dgl.NID].size(), blocks[i].dstdata[dgl.NID].size())
             h = self.layers[i](blocks[i], h)
             h = self.activation(h)
             h = self.dropout(h)
 
-        h = self.layers[-1](h)
+        h = self.last_activation(self.layers[-1](blocks[-1], h))
         return h
 
 class GIN(nn.Module):

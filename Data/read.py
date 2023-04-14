@@ -26,7 +26,6 @@ def graph_split(data, ratio, folds):
     g = dgl.remove_self_loop(g)
     node_id = g.nodes().numpy()
     node_label = g.ndata['label'].numpy()
-    print(node_id.shape, node_label.shape)
     id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=ratio, stratify=node_label)
     train_g = g.subgraph(torch.LongTensor(id_train))
     test_g = g.subgraph(torch.LongTensor(id_test))
@@ -41,11 +40,11 @@ def init_loader(args, device, train_g, test_g, num_fold, fold):
 
     val_g = train_g.subgraph(torch.LongTensor(val_nodes))
     train_g = train_g.subgraph(torch.LongTensor(train_nodes))
-    sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_hid)])
+    sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
     if args.mode == 'dp':
         train_loader = NodeDataLoader(g=train_g, batch_size=int(args.sampling_rate * len(train_g.nodes())),
                                       shuffle=True, num_workers=0,
-                                      num_nodes=[args.n_neighbor for i in range(args.n_hid)], cache_result=False,
+                                      num_nodes=[args.n_neighbor for i in range(args.n_layers)], cache_result=False,
                                       device=device, sampling_rate=args.sampling_rate)
     else:
         train_loader = dgl.dataloading.DataLoader(train_g, train_g.nodes(), sampler, device=device,

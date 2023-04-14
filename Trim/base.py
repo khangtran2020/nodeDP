@@ -319,6 +319,8 @@ class AppearDict(object):
             src_edge, dst_edge = block.edges()
             src_node_new = torch.index_select(src_node, 0, src_edge)
             dst_node_new = torch.index_select(dst_node, 0, dst_edge)
+            src_node_new = torch.cat([src_node_new, dst_node_new], dim=0)
+            dst_node_new = torch.cat([dst_node_new, dst_node_new], dim=0)
             g = dgl.graph((src_node_new, dst_node_new), num_nodes=len(graph.nodes()))
             g.ndata['feat'] = graph.ndata['feat']
             g.ndata['label'] = graph.ndata['label']
@@ -328,5 +330,9 @@ class AppearDict(object):
         return new_blocks
 
     def print_nodes(self):
-        for key in self.node_dict.keys():
-            print(key, '\t', self.node_dict[key].roots, [self.node_dict[key].root_dict[r]['num_appear'] for r in self.node_dict[key].roots])
+        for key, val in self.get_num_tree():
+            print(key, '\t', self.node_dict[key].num_tree, self.node_dict[key].roots, self.node_dict[key].root_dict)
+
+    def print_root(self, roots):
+        for root in roots:
+            print(root, self.node_dict[root].root_dict)

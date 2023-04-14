@@ -25,7 +25,6 @@ class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
         return frontier
 
     def sample_blocks(self, g, seed_nodes, exclude_eids=None):
-        output_nodes = seed_nodes
         blocks = []
         for fanout in reversed(self.fanouts):
             frontier = g.sample_neighbors(
@@ -56,8 +55,13 @@ class NodeDataLoader(object):
         self.num_nodes = num_nodes
         self.g = g
         self.batch_size = batch_size
-        self.n_batch = int(len(g.nodes().tolist()) / self.batch_size) if drop_last else int(
-            (len(g.nodes().tolist()) + self.batch_size) / self.batch_size)
+        if len(g.nodes().tolist()) % self.batch_size == 0:
+            self.n_batch = int(len(g.nodes().tolist()) / self.batch_size)
+        else:
+            if drop_last:
+                self.n_batch = int(len(g.nodes().tolist()) / self.batch_size)
+            else:
+                self.n_batch = int((len(g.nodes().tolist()) + self.batch_size) / self.batch_size)
         self.shuffle = shuffle
         self.num_workers = num_workers
         self.cache_result = cache_result
@@ -66,13 +70,13 @@ class NodeDataLoader(object):
         self.device = device
         self.drop_last = drop_last
         self.sampling_rate = sampling_rate
+        self.seeds = torch.from_numpy(self.sample_seeds())
 
     def __iter__(self):
         g = self.g
-        seeds = torch.from_numpy(self.sample_seeds())
         sampler = ComputeSubgraphSampler(num_neighbors=self.num_nodes, device=self.device)
         bz = self.batch_size
-        dl = DL(seeds, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
+        dl = DL(self.seeds, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
         for seed in dl:
             sub_graph = sampler.sample(g=g, seed_nodes=seed)
             encoded_seeds = seed.numpy()
@@ -81,7 +85,6 @@ class NodeDataLoader(object):
     def sample_seeds(self) -> List:
         g = self.g
         list_of_nodes = torch.index_select(g.nodes(), 0, g.ndata['train_mask'].nonzero().squeeze()).numpy()
-        # seeds = np.random.choice(list_of_nodes, self.batch_size, replace=len(list_of_nodes) < self.batch_size)
         return list_of_nodes.astype(int)
 
     def __len__(self):

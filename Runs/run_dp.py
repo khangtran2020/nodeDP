@@ -3,15 +3,14 @@ import torch
 
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_dp, eval_fn, performace_eval
-from Utils.utils import get_name, save_res
-from dgl.dataloading import NeighborSampler
+from Utils.utils import save_res
 
 
-def run(args, dataloaders, model, optimizer, name, device, graph):
+def run(args, dataloaders, model, optimizer, name, device, graph, logger):
+    print(f'Data has {args.num_feat} features and {args.num_class} classes')
     tr_loader, val_loader, te_loader = dataloaders
     model_name = '{}.pt'.format(name)
     model.to(device)
-
     # DEfining criterion
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)

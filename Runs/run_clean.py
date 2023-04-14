@@ -7,7 +7,7 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 
 
-def run(args, dataloaders, model, optimizer, name, device):
+def run(args, dataloaders, model, optimizer, name, device, logger):
     tr_loader, val_loader, te_loader = dataloaders
     model_name = '{}.pt'.format(name)
     model.to(device)

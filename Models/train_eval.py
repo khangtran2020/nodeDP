@@ -64,16 +64,19 @@ def update_clean(model, optimizer, objective, batch):
 
 
 def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, device):
+    noise_std = clip_grad * clip_node * ns
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule, k=clip_node)
     # appear_dict.print_nodes()
     appear_dict.trim()
+    # appear_dict.print_root(dst_node)
     temp_par = {}
     loss_batch = 0
     train_targets = []
     train_outputs = []
     bz = len(dst_node)
+    average_norm = 0.0
     for p in model.named_parameters():
         temp_par[p[0]] = torch.zeros_like(p[1])
     for i, root in enumerate(dst_node.tolist()):
@@ -86,18 +89,19 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
         loss = objective(predictions, labels)
         loss_batch += loss.item()
         loss.backward()
+        grad = get_norm_grad(model=model)
+        average_norm += grad
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad, norm_type=2)
         for p in model.named_parameters():
             temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
         pred = predictions.cpu().detach().argmax(1).numpy()
         train_targets.extend(labels.cpu().detach().numpy().astype(int).tolist())
         train_outputs.extend(pred)
-
     for p in model.named_parameters():
-        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=ns * clip_node * clip_grad, size=temp_par[p[0]].size()).to(
-            device)
+        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(device)
         p[1].grad = p[1].grad / bz
     optimizer.step()
+    # print(f"Average l_2 norm gradient before {average_norm}")
     return train_targets, train_outputs, loss_batch/bz
 
 
@@ -139,6 +143,12 @@ def train_dp(dataloader, model, criterion, optimizer, device, scheduler, g, clip
 
     return loss, target, pred
 
+def get_norm_grad(model):
+    total_l2_norm = 0
+    for p in model.named_parameters():
+        total_l2_norm += p[1].grad.detach().norm(p=2)**2
+    return np.sqrt(total_l2_norm)
+
 
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
@@ -146,14 +156,17 @@ def eval_fn(data_loader, model, criterion, device):
     fin_outputs = []
     loss_eval = 0
     model.eval()
+    num_point = 0
     with torch.no_grad():
         for bi, d in enumerate(data_loader):
             target, pred, loss = eval_clean(model=model, objective=criterion, batch=d)
-            loss_eval += loss.item()
+            num_pt = pred.size(dim=0)
+            loss_eval += loss.item()*num_pt
+            num_point += num_pt
             outputs = pred.cpu().detach().numpy()
             fin_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
             fin_outputs.extend(outputs)
-    return loss_eval, fin_outputs, fin_targets
+    return loss_eval/num_point, fin_outputs, fin_targets
 
 
 def performace_eval(args, y_true, y_pred):
