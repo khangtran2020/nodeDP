@@ -67,7 +67,11 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
     noise_std = clip_grad * clip_node * ns
     optimizer.zero_grad()
     dst_node, subgraphs = batch
-    appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule, k=clip_node)
+    if trim_rule == 'impact':
+        appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
+                                 k=clip_node, model=model, graph=g)
+    else:
+        appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule, k=clip_node)
     # appear_dict.print_nodes()
     appear_dict.trim()
     # appear_dict.print_root(dst_node)

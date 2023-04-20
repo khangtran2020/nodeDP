@@ -1,7 +1,7 @@
 import dgl
 import torch
 from Utils.utils import get_index_by_value, get_index_bynot_value
-from Trim.trimming_rule import random_trimming, adhoc_trimming_rank
+from Trim.trimming_rule import random_trimming, adhoc_trimming_rank, impact_aware_trimming
 from dgl.dataloading import to_block
 
 
@@ -134,7 +134,7 @@ class Node(object):
 
 class AppearDict(object):
 
-    def __init__(self, roots, subgraphs, trimming_rule=None, k=2):
+    def __init__(self, roots, subgraphs, model=None, graph=None, trimming_rule=None, k=2):
         self.roots = roots
         self.subgraphs = subgraphs
         self.node_dict = self.build_node_dict(roots, subgraphs)
@@ -144,7 +144,11 @@ class AppearDict(object):
             self.trimming_func = random_trimming
         elif trimming_rule == 'adhoc':
             self.trimming_func = adhoc_trimming_rank
+        elif trimming_rule == 'impact':
+            self.trimming_func = impact_aware_trimming
         self.k = k
+        self.model = model
+        self.graph = graph
 
     def get_num_tree(self):
         keys = []
@@ -192,16 +196,17 @@ class AppearDict(object):
         elif self.trimming_rule == 'adhoc':
             return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
                                       current_node=node_id, appear_dict=self, model=None, graph=None)
+        elif self.trimming_rule == 'impact':
+            return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
+                                      current_node=node_id, appear_dict=self, model=self.model, graph=self.graph)
 
     def trim(self):
         node_appear = self.get_num_tree()
         highest_appeared_node = node_appear[0][0]
-        val = node_appear[0][1]
         while self.node_dict[highest_appeared_node].num_tree > self.k:
             self.trim_node(node_id=highest_appeared_node)
             node_appear = self.get_num_tree()
             highest_appeared_node = node_appear[0][0]
-            val = node_appear[0][1]
         self.num_appear = self.get_num_tree()
 
     def trim_node(self, node_id):
@@ -231,6 +236,33 @@ class AppearDict(object):
                     print(f"Node {node_id} is the root, can not be remove")
                     return
                 self.subgraphs[root] = blocks
+
+    def trim_node_from_root(self, node_id, root):
+        blocks = self.subgraphs[root]
+        ranks = self.node_dict[node_id].root_dict[root]['rank']
+        queue = []
+        for r in ranks:
+            queue.append((node_id, r))
+        while (len(queue) > 0):
+            n, r = queue[0]
+            queue.pop(0)
+            # if r not in self.node_dict[node_id].roots:
+            #     continue
+            if r == 0:
+                blocks[r], queue = self.remove_node_from_root_at_rank(node_id=n, root=root, rank=r,
+                                                                      blocks=[blocks[r]],
+                                                                      queue=queue)
+            elif (r < len(blocks)) and (r > 0):
+                blocks[r], blocks[r - 1], queue = self.remove_node_from_root_at_rank(node_id=n, root=root,
+                                                                                     rank=r,
+                                                                                     blocks=[blocks[r],
+                                                                                             blocks[r - 1]],
+                                                                                     queue=queue)
+            else:
+                print(f"Node {node_id} is the root, can not be remove")
+                return
+            self.subgraphs[root] = blocks
+
 
     def remove_node_from_root_at_rank(self, node_id, root, rank, blocks, queue):
         if rank == 0:
@@ -287,7 +319,6 @@ class AppearDict(object):
             dst_node = torch.index_select(input=dst_node, dim=0, index=index_not_node_id)
             g = dgl.graph((src_new, dst_new))
             block_r1 = to_block(g, dst_nodes=dst_node, include_dst_in_src=False)
-
 
             ancestor = self.node_dict[node_id].get_ans(root=root, rank=rank)
             for n in ancestor:
