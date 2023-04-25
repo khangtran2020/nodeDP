@@ -3,6 +3,7 @@ import os
 import numpy as np
 from copy import deepcopy
 from multiprocessing import Pool
+from joblib import Parallel, delayed
 
 def random_trimming(roots, k, current_node, appear_dict=None, model=None, graph=None):
     r = deepcopy(roots)
@@ -28,9 +29,7 @@ def impact_aware_trimming(roots, k, current_node, appear_dict=None, model=None, 
     args = [(r_, current_node, appear_dict, appear_dict_, model, graph) for r_ in r]
     with torch.no_grad():
         print(f'Working with {os.cpu_count()} threads, for {len(r)} tasks')
-        pool = Pool(processes=4)
-        results = pool.map(get_val, args)
-        pool.close()
+        results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(get_val)(arg) for arg in args)
         smape = [res for res in results]
     root_rank = sorted(smape, key=lambda x: x[1])
     list_of_root = [x[0] for x in root_rank]
