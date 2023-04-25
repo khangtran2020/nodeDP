@@ -29,7 +29,7 @@ def impact_aware_trimming(roots, k, current_node, appear_dict=None, model=None, 
     with torch.no_grad():
         print(f'Working with {os.cpu_count()} threads, for {len(r)} tasks')
         pool = Pool(processes=16)
-        results = [pool.apply_async(get_val, args=(arg,)) for arg in args]
+        results = [pool.apply(get_val, args=(arg,)) for arg in args]
         pool.close()
         pool.join()
         smape = [r.get() for r in results]
