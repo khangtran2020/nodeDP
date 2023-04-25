@@ -27,8 +27,8 @@ def impact_aware_trimming(roots, k, current_node, appear_dict=None, model=None, 
     if current_node in r: r.remove(current_node)
     args = [(r_, current_node, appear_dict, appear_dict_, model, graph) for r_ in r]
     with torch.no_grad():
-        pool = Pool(processes=os.cpu_count())
         print(f'Working with {os.cpu_count()} threads, for {len(r)} tasks')
+        pool = Pool(processes=16)
         results = [pool.apply_async(get_val, args=(arg,)) for arg in args]
         pool.close()
         pool.join()
