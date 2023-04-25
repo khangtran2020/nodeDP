@@ -28,11 +28,9 @@ def impact_aware_trimming(roots, k, current_node, appear_dict=None, model=None, 
     args = [(r_, current_node, appear_dict, appear_dict_, model, graph) for r_ in r]
     with torch.no_grad():
         print(f'Working with {os.cpu_count()} threads, for {len(r)} tasks')
-        pool = Pool(processes=16)
-        results = [pool.apply(get_val, args=(arg,)) for arg in args]
-        pool.close()
-        pool.join()
-        smape = [r.get() for r in results]
+        with Pool(processes=os.cpu_count()) as pool:
+            results = [pool.apply(get_val, args=(arg,)) for arg in args]
+            smape = [res.get() for res in results]
     root_rank = sorted(smape, key=lambda x: x[1])
     list_of_root = [x[0] for x in root_rank]
     return list_of_root[:k]
