@@ -1,5 +1,7 @@
 import datetime
 import warnings
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import dgl
 import numpy as np
