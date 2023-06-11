@@ -62,8 +62,7 @@ def update_clean(model, optimizer, objective, batch):
     optimizer.step()
     return labels, predictions.argmax(1), loss
 
-
-def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, device):
+def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, device):
     noise_std = clip_grad * clip_node * ns
     optimizer.zero_grad()
     dst_node, subgraphs = batch
@@ -108,7 +107,6 @@ def update_dp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, t
     # print(f"Average l_2 norm gradient before {average_norm}")
     return train_targets, train_outputs, loss_batch/bz
 
-
 def eval_clean(model, objective, batch):
     input_nodes, output_nodes, mfgs = batch
     inputs = mfgs[0].srcdata["feat"]
@@ -116,7 +114,6 @@ def eval_clean(model, objective, batch):
     predictions = model(mfgs, inputs)
     loss = objective(predictions, labels)
     return labels, predictions.argmax(1), loss
-
 
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
@@ -134,25 +131,18 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
         train_loss += loss.item()
     return train_loss, train_outputs, train_targets
 
-
-def train_dp(dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns, trim_rule):
+def train_nodedp(dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns, trim_rule):
     model.to(device)
     g.to(device)
     model.train()
     batch = next(iter(dataloader))
-    target, pred, loss = update_dp(model=model, optimizer=optimizer, objective=criterion, batch=batch, g=g,
-                                   clip_grad=clip_grad, clip_node=clip_node, ns=ns, trim_rule=trim_rule, device=device)
+    target, pred, loss = update_nodedp(model=model, optimizer=optimizer, objective=criterion, batch=batch, g=g,
+                                       clip_grad=clip_grad, clip_node=clip_node, ns=ns, trim_rule=trim_rule,
+                                       device=device)
     if scheduler is not None:
         scheduler.step()
 
     return loss, target, pred
-
-def get_norm_grad(model):
-    total_l2_norm = 0
-    for p in model.named_parameters():
-        total_l2_norm += p[1].grad.detach().norm(p=2)**2
-    return np.sqrt(total_l2_norm)
-
 
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
@@ -172,6 +162,11 @@ def eval_fn(data_loader, model, criterion, device):
             fin_outputs.extend(outputs)
     return loss_eval/num_point, fin_outputs, fin_targets
 
+def get_norm_grad(model):
+    total_l2_norm = 0
+    for p in model.named_parameters():
+        total_l2_norm += p[1].grad.detach().norm(p=2)**2
+    return np.sqrt(total_l2_norm)
 
 def performace_eval(args, y_true, y_pred):
     if args.performance_metric == 'acc':
@@ -182,3 +177,50 @@ def performace_eval(args, y_true, y_pred):
         return roc_auc_score(y_true=y_true, y_score=y_pred)
     elif args.performance_metric == 'pre':
         return precision_score(y_true=y_true, y_pred=y_pred)
+
+def update_dp(model, optimizer, objective, batch, clip, ns):
+    optimizer.zero_grad()
+    input_nodes, output_nodes, mfgs = batch
+    inputs = mfgs[0].srcdata["feat"]
+    labels = mfgs[-1].dstdata["label"]
+    predictions = model(mfgs, inputs)
+    losses = objective(predictions, labels)
+    running_loss = torch.mean(losses).item()
+    num_data = predictions.size(dim=0)
+    # print(losses)
+
+    saved_var = dict()
+    for tensor_name, tensor in model.named_parameters():
+        saved_var[tensor_name] = torch.zeros_like(tensor)
+
+    for pos, j in enumerate(losses):
+        j.backward(retain_graph=True)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+        for tensor_name, tensor in model.named_parameters():
+            if tensor.grad is not None:
+                new_grad = tensor.grad
+                saved_var[tensor_name].add_(new_grad)
+        model.zero_grad()
+
+    for tensor_name, tensor in model.named_parameters():
+        if tensor.grad is not None:
+            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns*clip))
+            tensor.grad = saved_var[tensor_name] / num_data
+
+    optimizer.step()
+    return labels, predictions.argmax(1), running_loss
+
+def train_dp(loader, model, criter, optimizer, device, clip, ns):
+    model.to(device)
+    model.train()
+    train_targets = []
+    train_outputs = []
+    train_loss = 0
+    d = next(iter(loader))
+    target, pred, loss = update_dp(model=model, optimizer=optimizer, objective=criter, batch=d, clip=clip, ns=ns)
+
+    pred = pred.cpu().detach().numpy()
+    train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
+    train_outputs.extend(pred)
+    train_loss += loss
+    return train_loss, train_outputs, train_targets

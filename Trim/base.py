@@ -350,8 +350,8 @@ class AppearDict(object):
             src_edge, dst_edge = block.edges()
             src_node_new = torch.index_select(src_node, 0, src_edge)
             dst_node_new = torch.index_select(dst_node, 0, dst_edge)
-            src_node_new = torch.cat([src_node_new, dst_node_new], dim=0)
-            dst_node_new = torch.cat([dst_node_new, dst_node_new], dim=0)
+            # src_node_new = torch.cat([src_node_new, dst_node_new], dim=0)
+            # dst_node_new = torch.cat([dst_node_new, dst_node_new], dim=0)
             g = dgl.graph((src_node_new, dst_node_new), num_nodes=len(graph.nodes()))
             g.ndata['feat'] = graph.ndata['feat']
             g.ndata['label'] = graph.ndata['label']

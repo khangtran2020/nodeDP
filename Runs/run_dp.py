@@ -3,15 +3,20 @@ import torch
 
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_dp, eval_fn, performace_eval
-from Utils.utils import save_res
+from Utils.utils import get_name, save_res
 
 
-def run(args, dataloaders, model, optimizer, name, device, graph, logger):
-    print(f'Data has {args.num_feat} features and {args.num_class} classes')
-    tr_loader, val_loader, te_loader = dataloaders
+def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
+    _, tr_loader = tr_info
+    va_loader = va_info
+    _, te_loader = te_info
     model_name = '{}.pt'.format(name)
     model.to(device)
+
     # DEfining criterion
+    criter = torch.nn.CrossEntropyLoss(reduction='none')
+    criter.to(device)
+
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
@@ -32,11 +37,9 @@ def run(args, dataloaders, model, optimizer, name, device, graph, logger):
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        train_loss, train_out, train_targets = train_dp(dataloader=tr_loader, model=model, criterion=criterion,
-                                                        optimizer=optimizer, device=device, scheduler=None, g=graph,
-                                                        clip_grad=args.clip, clip_node=args.clip_node, ns=args.ns,
-                                                        trim_rule=args.trim_rule)
-        val_loss, val_outputs, val_targets = eval_fn(data_loader=val_loader, model=model, criterion=criterion,
+        train_loss, train_out, train_targets = train_dp(loader=tr_loader, model=model, criter=criter,
+                                                        optimizer=optimizer, device=device, clip=args.clip, ns=args.ns)
+        val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                                      device=device)
         test_loss, test_outputs, test_targets = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
                                                         device=device)
@@ -57,7 +60,8 @@ def run(args, dataloaders, model, optimizer, name, device, graph, logger):
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
         es(epoch=epoch, epoch_score=val_acc, model=model, model_path=args.save_path + model_name)
-        # torch.save(model.state_dict(), args.save_path + model_name)
+        # if es.early_stop:
+        #     break
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, test_outputs, test_targets = eval_fn(te_loader, model, criterion, device)

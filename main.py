@@ -3,18 +3,16 @@ import warnings
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-import dgl
-import numpy as np
 import torch
 import logging
 from config import parse_args
-from tqdm import tqdm
 from Data.read import read_data, init_loader
 from Utils.utils import seed_everything, get_name, timeit
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
+from Runs.run_nodedp import run as run_nodedp
 from Runs.run_dp import run as run_dp
-from Trim.base import AppearDict
+
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(name)s | %(message)s')
@@ -23,23 +21,33 @@ logger.setLevel(logging.INFO)
 
 
 def run(args, current_time, device):
-    if args.debug:
-        fold = 0
-        with timeit(logger, 'init-data'):
-            train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
-            tr_loader, val_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
-                                                           num_fold=folds, fold=fold)
 
-        model = init_model(args=args)
-        optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
-        name = get_name(args=args, current_date=current_time, fold=fold)
-        # run
-        if args.mode == 'clean':
-            run_clean(args=args, dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer,
-                      name=name, device=device, logger=logger)
-        elif args.mode == 'dp':
-            run_dp(args=args, dataloaders=(tr_loader, val_loader, te_loader), model=model, optimizer=optimizer,
-                   name=name, device=device, graph=train_g, logger=logger)
+    fold = 0
+    with timeit(logger, 'init-data'):
+        train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
+        tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
+                                                       num_fold=folds, fold=fold)
+
+    model = init_model(args=args)
+    optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
+    name = get_name(args=args, current_date=current_time, fold=fold)
+
+    tr_info = (train_g, tr_loader)
+    va_info = va_loader
+    te_info = (test_g, te_loader)
+
+    run_dict = {
+        'clean': run_clean,
+        'nodedp': run_nodedp,
+        'dp': run_dp
+    }
+    run_mode = run_dict[args.mode]
+
+    # args, tr_info, va_info, te_info, model, optimizer, name, device
+    run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
+             optimizer=optimizer, name=name, device=device)
+
+
 
 
 if __name__ == "__main__":
