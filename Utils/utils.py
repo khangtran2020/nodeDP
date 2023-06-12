@@ -31,7 +31,7 @@ def get_name(args, current_date, fold=0):
     dp_str = f'{args.trim_rule}_{args.clip_node}_{args.clip}_{args.ns}_'
     if args.mode == 'clean':
         res_str = dataset_str + model_str + date_str
-    elif args.mode == 'dp':
+    elif args.mode in ['dp', 'nodedp']:
         res_str = dataset_str + model_str + dp_str + date_str
     return res_str
 

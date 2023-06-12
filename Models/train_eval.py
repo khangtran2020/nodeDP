@@ -205,7 +205,7 @@ def update_dp(model, optimizer, objective, batch, clip, ns):
     for tensor_name, tensor in model.named_parameters():
         if tensor.grad is not None:
             saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns*clip))
-            tensor.grad = saved_var[tensor_name] / num_data
+            tensor.grad = saved_var[tensor_name] # / num_data
 
     optimizer.step()
     return labels, predictions.argmax(1), running_loss
