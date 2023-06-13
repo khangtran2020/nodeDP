@@ -19,7 +19,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, min_lr=1e-3, factor=0.9)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, min_lr=1e-3, factor=0.9, patience=30)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
