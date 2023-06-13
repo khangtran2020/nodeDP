@@ -8,6 +8,7 @@ __pycache__/
 results
 # C extensions
 *.so
+dataset
 
 # Distribution / packaging
 .Python

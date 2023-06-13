@@ -1,8 +1,10 @@
 import dgl
+import os
 import torch
 from Utils.utils import get_index_by_value, get_index_bynot_value
 from Trim.trimming_rule import random_trimming, adhoc_trimming_rank, impact_aware_trimming
 from dgl.dataloading import to_block
+from joblib import Parallel, delayed
 
 
 class Node(object):
@@ -159,32 +161,37 @@ class AppearDict(object):
         temp = list(zip(keys, vals))
         return sorted(temp, key=lambda x: x[1], reverse=True)
 
+
+
     def build_node_dict(self, roots, subgraphs):
         results = {}
-        for i, node in enumerate(roots):
-            blocks = subgraphs[node]
-            num_layer = len(blocks) + 1
-            for j, block in enumerate(blocks):
-                ans_rank = j + 1
-                child_rank = j
-                src_node = block.srcdata[dgl.NID]
-                dst_node = block.dstdata[dgl.NID]
-                src_edge, dst_edge = block.edges()
-                src_node_new = torch.index_select(src_node, 0, src_edge)
-                dst_node_new = torch.index_select(dst_node, 0, dst_edge)
-                for n in dst_node.tolist():
-                    if n not in results.keys():
-                        results[n] = Node(node_id=n, num_layer=num_layer)
-                    indices = get_index_by_value(a=dst_node_new, val=n)
-                    child = torch.index_select(src_node_new, 0, indices).unique().tolist()
-                    results[n].add_sub_graph(root=node, rank=ans_rank, ans=None, child=child)
-                for n in src_node.tolist():
-                    if n not in results.keys():
-                        results[n] = Node(node_id=n, num_layer=num_layer)
-                    indices = get_index_by_value(a=src_node_new, val=n)
-                    ancestor = torch.index_select(dst_node_new, 0, indices).unique().tolist()
-                    results[n].add_sub_graph(root=node, rank=child_rank, ans=ancestor, child=None)
+        args = [(node, subgraphs[node], results) for node in roots]
+        Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(self.build_node_dict_)(arg) for arg in args)
         return results
+
+    def build_node_dict_(self, arg):
+        node, blocks, results = arg
+        num_layer = len(blocks) + 1
+        for j, block in enumerate(blocks):
+            ans_rank = j + 1
+            child_rank = j
+            src_node = block.srcdata[dgl.NID]
+            dst_node = block.dstdata[dgl.NID]
+            src_edge, dst_edge = block.edges()
+            src_node_new = torch.index_select(src_node, 0, src_edge)
+            dst_node_new = torch.index_select(dst_node, 0, dst_edge)
+            for n in dst_node.tolist():
+                if n not in results.keys():
+                    results[n] = Node(node_id=n, num_layer=num_layer)
+                indices = get_index_by_value(a=dst_node_new, val=n)
+                child = torch.index_select(src_node_new, 0, indices).unique().tolist()
+                results[n].add_sub_graph(root=node, rank=ans_rank, ans=None, child=child)
+            for n in src_node.tolist():
+                if n not in results.keys():
+                    results[n] = Node(node_id=n, num_layer=num_layer)
+                indices = get_index_by_value(a=src_node_new, val=n)
+                ancestor = torch.index_select(dst_node_new, 0, indices).unique().tolist()
+                results[n].add_sub_graph(root=node, rank=child_rank, ans=ancestor, child=None)
 
     def getkeys(self):
         return self.node_dict.keys()
@@ -355,6 +362,7 @@ class AppearDict(object):
             g = dgl.graph((src_node_new, dst_node_new), num_nodes=len(graph.nodes()))
             g.ndata['feat'] = graph.ndata['feat']
             g.ndata['label'] = graph.ndata['label']
+            # g = dgl.add_self_loop(g, fill_data='mean')
             blk = to_block(g=g, dst_nodes=dst_n, include_dst_in_src=True)
             dst_n = blk.srcdata[dgl.NID]
             new_blocks.insert(0, blk)

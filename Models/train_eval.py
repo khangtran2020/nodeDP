@@ -90,10 +90,8 @@ def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, n
         labels = blocks[-1].dstdata['label']
         predictions = model(blocks, inputs)
         loss = objective(predictions, labels)
-        loss_batch += loss.item()
         loss.backward()
-        grad = get_norm_grad(model=model)
-        average_norm += grad
+        loss_batch += loss.item()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad, norm_type=2)
         for p in model.named_parameters():
             temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
@@ -102,7 +100,7 @@ def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, n
         train_outputs.extend(pred)
     for p in model.named_parameters():
         p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(device)
-        p[1].grad = p[1].grad / bz
+        p[1].grad = p[1].grad
     optimizer.step()
     # print(f"Average l_2 norm gradient before {average_norm}")
     return train_targets, train_outputs, loss_batch/bz
@@ -121,15 +119,17 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     train_targets = []
     train_outputs = []
     train_loss = 0
+    num_data = 0.0
     for bi, d in enumerate(dataloader):
         target, pred, loss = update_clean(model=model, optimizer=optimizer, objective=criterion, batch=d)
         if scheduler is not None:
             scheduler.step()
         pred = pred.cpu().detach().numpy()
+        num_data += pred.shape[0]
         train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
         train_outputs.extend(pred)
         train_loss += loss.item()
-    return train_loss, train_outputs, train_targets
+    return train_loss/num_data, train_outputs, train_targets
 
 def train_nodedp(dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns, trim_rule):
     model.to(device)

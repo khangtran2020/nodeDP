@@ -20,12 +20,12 @@ class GraphSAGE(nn.Module):
     def forward(self, blocks, x):
         h = x
         for i in range(0, self.n_layers-1):
-            # print(blocks[i].srcdata[dgl.NID].size(), blocks[i].dstdata[dgl.NID].size())
-            h = self.layers[i](blocks[i], h)
+            h_dst = h[:blocks[0].num_dst_nodes()]
+            h = self.layers[i](blocks[i], (h, h_dst))
             h = self.activation(h)
             h = self.dropout(h)
-
-        h = self.last_activation(self.layers[-1](blocks[-1], h))
+        h_dst = h[:blocks[-1].num_dst_nodes()]
+        h = self.last_activation(self.layers[-1](blocks[-1], (h, h_dst)))
         return h
 
 class GAT(nn.Module):

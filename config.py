@@ -32,7 +32,7 @@ def add_model_group(group):
     group.add_argument("--dropout", type=float, default=0.2)
     group.add_argument("--patience", type=int, default=20)
     group.add_argument("--num_head", type=int, default=8)
-    group.add_argument("--aggregator_type", type=str, default='gcn')
+    group.add_argument("--aggregator_type", type=str, default='mean')
     group.add_argument("--epochs", type=int, default=100, help='training step')
 
 

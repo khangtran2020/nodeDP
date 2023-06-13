@@ -19,6 +19,8 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, min_lr=1e-3, factor=0.9)
+
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
 
@@ -40,6 +42,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
                                                             optimizer=optimizer, device=device, scheduler=None, g=graph,
                                                             clip_grad=args.clip, clip_node=args.clip_node, ns=args.ns,
                                                             trim_rule=args.trim_rule)
+        # scheduler.step()
         val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                                      device=device)
         test_loss, test_outputs, test_targets = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
@@ -49,7 +52,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
         test_acc = performace_eval(args, test_targets, test_outputs)
         val_acc = performace_eval(args, val_targets, val_outputs)
 
-        # scheduler.step(acc_score)
+        scheduler.step(val_loss)
 
         tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=val_loss, Va_ACC=val_acc, Te_ACC = test_acc)
 

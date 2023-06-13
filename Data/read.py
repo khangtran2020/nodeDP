@@ -5,25 +5,35 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from Data.dataloader import NodeDataLoader
-
+from ogb.nodeproppred import DglNodePropPredDataset
 
 def read_data(args, data_name, ratio):
     if data_name == 'cora':
         data = dgl.data.CoraGraphDataset()
+        args.num_class = data.num_classes
+        graph = data[0]
     elif data_name == 'citeseer':
         data = dgl.data.CiteseerGraphDataset()
+        args.num_class = data.num_classes
+        graph = data[0]
     elif data_name == 'pubmed':
         data = dgl.data.PubmedGraphDataset()
-    args.num_feat = data[0].ndata['feat'].shape[1]
-    args.num_class = data.num_classes
-    g_train, g_test, folds = graph_split(data=data, ratio=ratio, folds=args.folds)
+        args.num_class = data.num_classes
+        graph = data[0]
+    elif data_name == 'ogbn-arxiv':
+        data = DglNodePropPredDataset('ogbn-arxiv')
+        graph, node_labels = data[0]
+        graph = dgl.add_reverse_edges(graph)
+        graph.ndata['label'] = node_labels[:, 0]
+        args.num_class = (node_labels.max() + 1).item()
+    args.num_feat = graph.ndata['feat'].shape[1]
+    g_train, g_test, folds = graph_split(graph=graph, ratio=ratio, folds=args.folds)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_test, folds
 
 
-def graph_split(data, ratio, folds):
-    g = data[0]
-    g = dgl.remove_self_loop(g)
+def graph_split(graph, ratio, folds):
+    g = dgl.remove_self_loop(graph)
     node_id = g.nodes().numpy()
     node_label = g.ndata['label'].numpy()
     id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=ratio, stratify=node_label)
