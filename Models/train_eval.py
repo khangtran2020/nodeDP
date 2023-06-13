@@ -100,7 +100,7 @@ def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, n
         train_outputs.extend(pred)
     for p in model.named_parameters():
         p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(device)
-        p[1].grad = p[1].grad
+        p[1].grad = p[1].grad / bz
     optimizer.step()
     # print(f"Average l_2 norm gradient before {average_norm}")
     return train_targets, train_outputs, loss_batch/bz
