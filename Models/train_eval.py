@@ -71,8 +71,10 @@ def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, n
                                  k=clip_node, model=model, graph=g)
     else:
         appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule, k=clip_node)
-    # appear_dict.print_nodes()
+    # print("Root BEFORE Trimming:")
+    # appear_dict.print_root(dst_node)
     appear_dict.trim()
+    # print("Root after Trimming:")
     # appear_dict.print_root(dst_node)
     temp_par = {}
     loss_batch = 0

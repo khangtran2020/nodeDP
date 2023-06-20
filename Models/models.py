@@ -13,7 +13,7 @@ class GraphSAGE(nn.Module):
         self.layers.append(dglnn.SAGEConv(n_hidden, n_classes, 'mean'))
         self.dropout = nn.Dropout(dropout)
         self.n_layers = n_layers
-        self.activation = torch.nn.ReLU()
+        self.activation = torch.nn.SELU()
         self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
         print(f"Using activation for last layer {self.last_activation}")
 

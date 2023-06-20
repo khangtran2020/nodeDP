@@ -70,7 +70,7 @@ class NodeDataLoader(object):
         self.device = device
         self.drop_last = drop_last
         self.sampling_rate = sampling_rate
-        self.seeds = torch.from_numpy(self.sample_seeds())
+        self.seeds = g.nodes()
 
     def __iter__(self):
         g = self.g
@@ -81,11 +81,6 @@ class NodeDataLoader(object):
             sub_graph = sampler.sample(g=g, seed_nodes=seed)
             encoded_seeds = seed.numpy()
             yield encoded_seeds, sub_graph
-
-    def sample_seeds(self) -> List:
-        g = self.g
-        list_of_nodes = torch.index_select(g.nodes(), 0, g.ndata['train_mask'].nonzero().squeeze()).numpy()
-        return list_of_nodes.astype(int)
 
     def __len__(self):
         return self.n_batch

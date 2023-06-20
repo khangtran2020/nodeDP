@@ -18,6 +18,7 @@ def add_data_group(group):
     group.add_argument('--dataset', type=str, default='cora', help="name of dataset")
     group.add_argument('--n_neighbor', type=int, default=4, help="# of neighbor each layer")
     group.add_argument('--ratio', type=float, default=0.2, help="train/test split ratio")
+    group.add_argument('--min_counts', type=int, default=10000, help="count to filter the target label")
     group.add_argument('--folds', type=int, default=5, help='number of folds for cross-validation')
 
 
@@ -32,7 +33,7 @@ def add_model_group(group):
     group.add_argument("--dropout", type=float, default=0.2)
     group.add_argument("--patience", type=int, default=20)
     group.add_argument("--num_head", type=int, default=8)
-    group.add_argument("--aggregator_type", type=str, default='mean')
+    group.add_argument("--aggregator_type", type=str, default='sum')
     group.add_argument("--epochs", type=int, default=100, help='training step')
 
 

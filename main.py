@@ -24,9 +24,9 @@ def run(args, current_time, device):
 
     fold = 0
     with timeit(logger, 'init-data'):
-        train_g, test_g, folds = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
+        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
         tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
-                                                       num_fold=folds, fold=fold)
+                                                       val_g=val_g)
 
     model = init_model(args=args)
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
