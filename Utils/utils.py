@@ -5,6 +5,10 @@ import torch
 import time
 import pickle
 from contextlib import contextmanager
+from rich import print as rprint
+from rich.pretty import pretty_repr
+
+# from rich.tree import
 
 
 @contextmanager
@@ -13,7 +17,8 @@ def timeit(logger, task):
     t0 = time.time()
     yield
     t1 = time.time()
-    logger.info('Completed task %s - %.3f sec.', task, t1-t0)
+    logger.info('Completed task %s - %.3f sec.', task, t1 - t0)
+
 
 def seed_everything(seed):
     random.seed(seed)
@@ -35,6 +40,7 @@ def get_name(args, current_date, fold=0):
         res_str = dataset_str + model_str + dp_str + date_str
     return res_str
 
+
 def save_res(name, args, dct):
     save_name = args.res_path + name
     with open('{}.pkl'.format(save_name), 'wb') as f:
@@ -44,5 +50,17 @@ def save_res(name, args, dct):
 def get_index_by_value(a, val):
     return (a == val).nonzero(as_tuple=True)[0]
 
+
 def get_index_bynot_value(a, val):
     return (a != val).nonzero(as_tuple=True)[0]
+
+
+def print_args(args):
+    arg_dict = {}
+    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'n_neighbor', 'model_type', 'lr', 'n_layers', 'epochs',
+            'clip', 'clip_node', 'trim_rule', 'ns']
+    for key in keys:
+        arg_dict[key] = getattr(args, key)
+
+    rprint("Running experiments with hyper-parameters as follows: \n", pretty_repr(arg_dict))
+    # print(getattr(args, )

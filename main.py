@@ -12,6 +12,7 @@ from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 from Runs.run_dp import run as run_dp
+from Utils.utils import print_args
 
 
 warnings.filterwarnings("ignore")
@@ -53,6 +54,7 @@ def run(args, current_time, device):
 if __name__ == "__main__":
     current_time = datetime.datetime.now()
     args = parse_args()
+    print_args(args=args)
     seed_everything(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     run(args=args, current_time=current_time, device=device)

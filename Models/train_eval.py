@@ -4,6 +4,7 @@ import torch
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score
 from Trim.base import AppearDict
 from copy import deepcopy
+from tqdm import tqdm
 
 
 class EarlyStopping:
@@ -84,7 +85,7 @@ def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, n
     average_norm = 0.0
     for p in model.named_parameters():
         temp_par[p[0]] = torch.zeros_like(p[1])
-    for i, root in enumerate(dst_node.tolist()):
+    for root in dst_node.tolist():
         for p in model.named_parameters():
             p[1].grad = torch.zeros_like(p[1])
         blocks = appear_dict.build_blocks(root=root, graph=g)

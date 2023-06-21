@@ -92,7 +92,7 @@ def filter_class_by_count(graph, min_count):
     counts = target.unique(return_counts=True)[1] > min_count
     index = get_index_by_value(a=counts, val=True)
     label_dict = dict(zip(index.tolist(), range(len(index))))
-    print("Label Dict:", label_dict)
+    # print("Label Dict:", label_dict)
     mask = target.apply_(lambda x: x in index.tolist())
     graph.ndata['label'].apply_(lambda x: label_dict[x] if x in label_dict.keys() else -1)
     graph.ndata['train_mask'] = graph.ndata['train_mask'] & mask
@@ -106,10 +106,10 @@ def init_loader(args, device, train_g, test_g, val_g):
     val_nodes = val_g.nodes()
     test_nodes = test_g.nodes()
 
-    print('Nodes:', train_g.nodes().size(), val_g.nodes().size(), test_g.nodes().size())
-    print('Edges:', train_g.edges()[0].size(), val_g.edges()[0].size(), test_g.edges()[0].size())
-    print('Num label:', args.num_class)
-    print('Test label dist:', test_g.ndata['label'].unique(return_counts=True))
+    # print('Nodes:', train_g.nodes().size(), val_g.nodes().size(), test_g.nodes().size())
+    # print('Edges:', train_g.edges()[0].size(), val_g.edges()[0].size(), test_g.edges()[0].size())
+    # print('Num label:', args.num_class)
+    # print('Test label dist:', test_g.ndata['label'].unique(return_counts=True))
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
     if args.mode == 'nodedp':

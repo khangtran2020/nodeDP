@@ -1,6 +1,5 @@
 import dgl
 import torch
-
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_nodedp, eval_fn, performace_eval
 from Utils.utils import save_res
@@ -36,7 +35,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green', bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
     for epoch in tk0:
         train_loss, train_out, train_targets = train_nodedp(dataloader=tr_loader, model=model, criterion=criterion,
                                                             optimizer=optimizer, device=device, scheduler=None, g=graph,
