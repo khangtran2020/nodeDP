@@ -39,6 +39,7 @@ def read_data(args, data_name, ratio):
         list_of_label = filter_class_by_count(graph=graph, min_count = 10000)
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
+    graph = dgl.remove_self_loop(graph)
     g_train, g_val, g_test = graph_split(graph=graph)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test

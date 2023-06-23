@@ -15,6 +15,10 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     model_name = '{}.pt'.format(name)
     model.to(device)
     # DEfining criterion
+
+    criter = torch.nn.CrossEntropyLoss(reduction='none')
+    criter.to(device)
+
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
@@ -35,11 +39,13 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     }
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green', bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
+    tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green',
+               bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
     for epoch in tk0:
-        train_loss, train_out, train_targets = train_nodedp(dataloader=tr_loader, model=model, criterion=criterion,
-                                                            optimizer=optimizer, device=device, scheduler=None, g=graph,
-                                                            clip_grad=args.clip, clip_node=args.clip_node, ns=args.ns,
+        train_loss, train_out, train_targets = train_nodedp(args=args, dataloader=tr_loader, model=model,
+                                                            criterion=criter, optimizer=optimizer, device=device,
+                                                            scheduler=None, g=graph, clip_grad=args.clip,
+                                                            clip_node=args.clip_node, ns=args.ns,
                                                             trim_rule=args.trim_rule)
         # scheduler.step()
         val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
@@ -53,7 +59,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
 
         scheduler.step(val_loss)
 
-        tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=val_loss, Va_ACC=val_acc, Te_ACC = test_acc)
+        tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=val_loss, Va_ACC=val_acc, Te_ACC=test_acc)
 
         history['train_history_loss'].append(train_loss)
         history['train_history_acc'].append(train_acc)

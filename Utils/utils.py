@@ -13,11 +13,11 @@ from rich.pretty import pretty_repr
 
 @contextmanager
 def timeit(logger, task):
-    logger.info('Started task %s ...', task)
+    logger.info(f'Started task {task} ...')
     t0 = time.time()
     yield
     t1 = time.time()
-    logger.info('Completed task %s - %.3f sec.', task, t1 - t0)
+    logger.info(f'Completed task {task} - {(t1 - t0):.3f} sec.')
 
 
 def seed_everything(seed):
@@ -64,3 +64,6 @@ def print_args(args):
 
     rprint("Running experiments with hyper-parameters as follows: \n", pretty_repr(arg_dict))
     # print(getattr(args, )
+
+def print_dict(dict_, name):
+    rprint(f"Dictionary of {name}: \n", pretty_repr(dict_))

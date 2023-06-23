@@ -1,10 +1,13 @@
-import dgl
+import sys
 import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score
 from Trim.base import AppearDict
 from copy import deepcopy
-from tqdm import tqdm
+from loguru import logger
+from Utils.utils import timeit
+
+logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 
 class EarlyStopping:
@@ -63,50 +66,47 @@ def update_clean(model, optimizer, objective, batch):
     optimizer.step()
     return labels, predictions.argmax(1), loss
 
-def update_nodedp(model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, device):
-    noise_std = clip_grad * clip_node * ns
+
+def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, device):
     optimizer.zero_grad()
     dst_node, subgraphs = batch
+    dst_node = list(dst_node)
     if trim_rule == 'impact':
         appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
-                                 k=clip_node, model=model, graph=g)
+                                 k=clip_node, model=model, graph=g, num_layer=args.n_layers, debug=True)
     else:
-        appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule, k=clip_node)
-    # print("Root BEFORE Trimming:")
-    # appear_dict.print_root(dst_node)
+        appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
+                                 k=clip_node, num_layer=args.n_layers, debug=True)
     appear_dict.trim()
-    # print("Root after Trimming:")
-    # appear_dict.print_root(dst_node)
-    temp_par = {}
-    loss_batch = 0
-    train_targets = []
-    train_outputs = []
-    bz = len(dst_node)
-    average_norm = 0.0
-    for p in model.named_parameters():
-        temp_par[p[0]] = torch.zeros_like(p[1])
-    for root in dst_node.tolist():
-        for p in model.named_parameters():
-            p[1].grad = torch.zeros_like(p[1])
-        blocks = appear_dict.build_blocks(root=root, graph=g)
-        inputs = blocks[0].srcdata['feat']
-        labels = blocks[-1].dstdata['label']
-        predictions = model(blocks, inputs)
-        loss = objective(predictions, labels)
-        loss.backward()
-        loss_batch += loss.item()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad, norm_type=2)
-        for p in model.named_parameters():
-            temp_par[p[0]] = temp_par[p[0]] + deepcopy(p[1].grad)
-        pred = predictions.cpu().detach().argmax(1).numpy()
-        train_targets.extend(labels.cpu().detach().numpy().astype(int).tolist())
-        train_outputs.extend(pred)
-    for p in model.named_parameters():
-        p[1].grad = deepcopy(temp_par[p[0]]) + torch.normal(mean=0, std=noise_std, size=temp_par[p[0]].size()).to(device)
-        p[1].grad = p[1].grad / bz
+    blocks = appear_dict.build_blocks(graph=g)
+    inputs = blocks[0].srcdata["feat"]
+    labels = blocks[-1].dstdata["label"]
+    predictions = model(blocks, inputs)
+    losses = objective(predictions, labels)
+    running_loss = torch.mean(losses).item()
+    num_data = predictions.size(dim=0)
+
+    saved_var = dict()
+    for tensor_name, tensor in model.named_parameters():
+        saved_var[tensor_name] = torch.zeros_like(tensor)
+
+    for pos, j in enumerate(losses):
+        j.backward(retain_graph=True)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
+        for tensor_name, tensor in model.named_parameters():
+            if tensor.grad is not None:
+                new_grad = tensor.grad
+                saved_var[tensor_name].add_(new_grad)
+        model.zero_grad()
+
+    for tensor_name, tensor in model.named_parameters():
+        if tensor.grad is not None:
+            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip_grad * clip_node))
+            tensor.grad = saved_var[tensor_name] / num_data
+
     optimizer.step()
-    # print(f"Average l_2 norm gradient before {average_norm}")
-    return train_targets, train_outputs, loss_batch/bz
+    return labels, predictions.argmax(1), running_loss
+
 
 def eval_clean(model, objective, batch):
     input_nodes, output_nodes, mfgs = batch
@@ -115,6 +115,7 @@ def eval_clean(model, objective, batch):
     predictions = model(mfgs, inputs)
     loss = objective(predictions, labels)
     return labels, predictions.argmax(1), loss
+
 
 def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
     model.to(device)
@@ -132,20 +133,31 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
         train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
         train_outputs.extend(pred)
         train_loss += loss.item()
-    return train_loss/num_data, train_outputs, train_targets
+    return train_loss / num_data, train_outputs, train_targets
 
-def train_nodedp(dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns, trim_rule):
+
+def train_nodedp(args, dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns,
+                 trim_rule):
     model.to(device)
     g.to(device)
     model.train()
+    train_targets = []
+    train_outputs = []
+    train_loss = 0
     batch = next(iter(dataloader))
-    target, pred, loss = update_nodedp(model=model, optimizer=optimizer, objective=criterion, batch=batch, g=g,
-                                       clip_grad=clip_grad, clip_node=clip_node, ns=ns, trim_rule=trim_rule,
-                                       device=device)
+    with timeit(logger, task="update-node-dp"):
+        target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
+                                           batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
+                                           trim_rule=trim_rule, device=device)
+    pred = pred.cpu().detach().numpy()
+    train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
+    train_outputs.extend(pred)
+    train_loss += loss
     if scheduler is not None:
         scheduler.step()
 
-    return loss, target, pred
+    return train_loss, train_targets, train_outputs
+
 
 def eval_fn(data_loader, model, criterion, device):
     model.to(device)
@@ -158,18 +170,20 @@ def eval_fn(data_loader, model, criterion, device):
         for bi, d in enumerate(data_loader):
             target, pred, loss = eval_clean(model=model, objective=criterion, batch=d)
             num_pt = pred.size(dim=0)
-            loss_eval += loss.item()*num_pt
+            loss_eval += loss.item() * num_pt
             num_point += num_pt
             outputs = pred.cpu().detach().numpy()
             fin_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
             fin_outputs.extend(outputs)
-    return loss_eval/num_point, fin_outputs, fin_targets
+    return loss_eval / num_point, fin_outputs, fin_targets
+
 
 def get_norm_grad(model):
     total_l2_norm = 0
     for p in model.named_parameters():
-        total_l2_norm += p[1].grad.detach().norm(p=2)**2
+        total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
     return np.sqrt(total_l2_norm)
+
 
 def performace_eval(args, y_true, y_pred):
     if args.performance_metric == 'acc':
@@ -180,6 +194,7 @@ def performace_eval(args, y_true, y_pred):
         return roc_auc_score(y_true=y_true, y_score=y_pred)
     elif args.performance_metric == 'pre':
         return precision_score(y_true=y_true, y_pred=y_pred)
+
 
 def update_dp(model, optimizer, objective, batch, clip, ns):
     optimizer.zero_grad()
@@ -207,11 +222,12 @@ def update_dp(model, optimizer, objective, batch, clip, ns):
 
     for tensor_name, tensor in model.named_parameters():
         if tensor.grad is not None:
-            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns*clip))
-            tensor.grad = saved_var[tensor_name] # / num_data
+            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip))
+            tensor.grad = saved_var[tensor_name]  # / num_data
 
     optimizer.step()
     return labels, predictions.argmax(1), running_loss
+
 
 def train_dp(loader, model, criter, optimizer, device, clip, ns):
     model.to(device)
