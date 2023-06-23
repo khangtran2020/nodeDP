@@ -73,10 +73,10 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
     dst_node = list(dst_node)
     if trim_rule == 'impact':
         appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
-                                 k=clip_node, model=model, graph=g, num_layer=args.n_layers, debug=True)
+                                 k=clip_node, model=model, graph=g, num_layer=args.n_layers, debug=args.debug)
     else:
         appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
-                                 k=clip_node, num_layer=args.n_layers, debug=True)
+                                 k=clip_node, num_layer=args.n_layers, debug=args.debug)
     appear_dict.trim()
     blocks = appear_dict.build_blocks(graph=g)
     inputs = blocks[0].srcdata["feat"]
