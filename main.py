@@ -23,7 +23,7 @@ def run(args, current_time, device):
 
     fold = 0
     with timeit(logger, 'init-data'):
-        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, ratio=args.ratio)
+        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset)
         tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g, val_g=val_g)
 
     model = init_model(args=args)

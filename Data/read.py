@@ -14,7 +14,7 @@ from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import get_index_by_value
 from torch_geometric.transforms import Compose, ToSparseTensor, RandomNodeSplit
 
-def read_data(args, data_name, ratio):
+def read_data(args, data_name):
     if data_name == 'cora':
         data = dgl.data.CoraGraphDataset()
         graph = data[0]
@@ -45,8 +45,8 @@ def read_data(args, data_name, ratio):
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
             transform=Compose([
-                RandomNodeSplit(num_val=0.1, num_test=0.15),
-                FilterClassByCount(min_count=1000, remove_unlabeled=True)
+                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
             ])
         )
         data = load_data(root='dataset/')[0]
@@ -66,7 +66,10 @@ def read_data(args, data_name, ratio):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    g_train, g_val, g_test = graph_split(graph=graph)
+    if data_name != 'facebook':
+        g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    else:
+        g_train, g_val, g_test = graph_split(graph=graph, drop=False)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test
 
@@ -89,7 +92,7 @@ def node_split(graph, val_size, test_size):
         graph.ndata['test_mask'] = torch.from_numpy(train_mask)
 
 
-def graph_split(graph):
+def graph_split(graph, drop=True):
 
     train_id = torch.index_select(graph.nodes(), 0, graph.ndata['train_mask'].nonzero().squeeze()).numpy()
     val_id = torch.index_select(graph.nodes(), 0, graph.ndata['val_mask'].nonzero().squeeze()).numpy()
@@ -99,9 +102,10 @@ def graph_split(graph):
     test_g = graph.subgraph(torch.LongTensor(test_id))
     val_g = graph.subgraph(torch.LongTensor(val_id))
 
-    train_g = drop_isolated_node(train_g)
-    val_g = drop_isolated_node(val_g)
-    test_g = drop_isolated_node(test_g)
+    if drop == True:
+        train_g = drop_isolated_node(train_g)
+        val_g = drop_isolated_node(val_g)
+        test_g = drop_isolated_node(test_g)
 
     return train_g, val_g, test_g
 
@@ -133,10 +137,10 @@ def init_loader(args, device, train_g, test_g, val_g):
     val_nodes = val_g.nodes()
     test_nodes = test_g.nodes()
 
-    # print('Nodes:', train_g.nodes().size(), val_g.nodes().size(), test_g.nodes().size())
-    # print('Edges:', train_g.edges()[0].size(), val_g.edges()[0].size(), test_g.edges()[0].size())
-    # print('Num label:', args.num_class)
-    # print('Test label dist:', test_g.ndata['label'].unique(return_counts=True))
+    print('Nodes:', train_g.nodes().size(), val_g.nodes().size(), test_g.nodes().size())
+    print('Edges:', train_g.edges()[0].size(), val_g.edges()[0].size(), test_g.edges()[0].size())
+    print('Num label:', args.num_class)
+    print('Test label dist:', test_g.ndata['label'].unique(return_counts=True))
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
     if args.mode == 'nodedp':

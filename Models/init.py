@@ -7,7 +7,7 @@ def init_model(args):
     model = None
     if args.model_type == 'sage':
         model = GraphSAGE(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
-                          n_layers=args.n_layers, dropout=args.dropout)
+                          n_layers=args.n_layers, dropout=args.dropout, aggregator_type=args.aggregator_type)
     elif args.model_type == 'gat':
         model = GAT(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class, n_layers=args.n_layers,
                     num_head=args.num_head, dropout=args.drop_out)

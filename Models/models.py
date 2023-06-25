@@ -4,7 +4,7 @@ import torch.nn
 from torch import nn
 
 class GraphSAGE(nn.Module):
-    def __init__(self, in_feats, n_hidden, n_classes, n_layers, dropout=0.2):
+    def __init__(self, in_feats, n_hidden, n_classes, n_layers, dropout=0.2, aggregator_type='gcn'):
         super().__init__()
         self.layers = nn.ModuleList()
         self.layers.append(dglnn.SAGEConv(in_feats, n_hidden, 'mean'))
@@ -13,17 +13,21 @@ class GraphSAGE(nn.Module):
         self.layers.append(dglnn.SAGEConv(n_hidden, n_classes, 'mean'))
         self.dropout = nn.Dropout(dropout)
         self.n_layers = n_layers
-        self.activation = torch.nn.SELU()
+        self.batch_norm = torch.nn.BatchNorm1d(n_hidden)
+        self.activation = torch.nn.ReLU()
         self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
         print(f"Using activation for last layer {self.last_activation}")
 
     def forward(self, blocks, x):
         h = x
         for i in range(0, self.n_layers-1):
-            h_dst = h[:blocks[0].num_dst_nodes()]
+            h_dst = h[:blocks[i].num_dst_nodes()]
             h = self.layers[i](blocks[i], (h, h_dst))
-            h = self.activation(h)
+            # h = self.batch_norm(h)
             h = self.dropout(h)
+            h = self.activation(h)
+            norm = h.norm(p=2, dim=1, keepdim = True)
+            h = h.div(norm + 1e-12)
         h_dst = h[:blocks[-1].num_dst_nodes()]
         h = self.last_activation(self.layers[-1](blocks[-1], (h, h_dst)))
         return h
