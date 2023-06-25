@@ -1,13 +1,18 @@
+import sys
 import dgl
 import torch
 import numpy as np
 
+from functools import partial
+from Data.facebook import Facebook
+from Data.helper import FilterClassByCount
 from copy import deepcopy
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from Data.dataloader import NodeDataLoader
 from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import get_index_by_value
+from torch_geometric.transforms import Compose, ToSparseTensor, RandomNodeSplit
 
 def read_data(args, data_name, ratio):
     if data_name == 'cora':
@@ -37,6 +42,27 @@ def read_data(args, data_name, ratio):
         graph = data[0]
         node_split(graph=graph, val_size=0.1, test_size=0.15)
         list_of_label = filter_class_by_count(graph=graph, min_count = 10000)
+    elif data_name == 'facebook':
+        load_data = partial(Facebook, name='UIllinois20', target='year',
+            transform=Compose([
+                RandomNodeSplit(num_val=0.1, num_test=0.15),
+                FilterClassByCount(min_count=1000, remove_unlabeled=True)
+            ])
+        )
+        data = load_data(root='dataset/')[0]
+        # print("Facebook data:")
+        # print(data)
+        # print('Data edge index:', data.edge_index[0], data.edge_index[1])
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        graph.ndata['train_mask'] = data.train_mask
+        graph.ndata['val_mask'] = data.val_mask
+        graph.ndata['test_mask'] = data.test_mask
+        list_of_label = filter_class_by_count(graph=graph, min_count=1000)
+        # sys.exit()
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)

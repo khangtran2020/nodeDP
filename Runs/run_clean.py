@@ -57,8 +57,8 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
         history['test_history_loss'].append(test_loss)
         history['test_history_acc'].append(test_acc)
         es(epoch=epoch, epoch_score=val_acc, model=model, model_path=args.save_path + model_name)
-        if es.early_stop:
-            break
+        # if es.early_stop:
+        #     break
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, test_outputs, test_targets = eval_fn(te_loader, model, criterion, device)
