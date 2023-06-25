@@ -2,8 +2,9 @@ import sys
 import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score
-from Trim.base import AppearDict
+from Trim.base import AppearDict as AD
 from copy import deepcopy
+from Trim.impact_trimming import AppearDict as ADimpact
 from loguru import logger
 from Utils.utils import timeit
 
@@ -71,14 +72,20 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
-    if trim_rule == 'impact':
-        appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
-                                 k=clip_node, model=model, graph=g, num_layer=args.n_layers, debug=args.debug)
-    else:
-        appear_dict = AppearDict(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
-                                 k=clip_node, num_layer=args.n_layers, debug=args.debug)
-    appear_dict.trim()
-    blocks = appear_dict.build_blocks(graph=g)
+    with torch.no_grad():
+        if trim_rule == 'impact':
+            appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
+                                   num_layer=args.n_layers, debug=args.debug)
+        else:
+            appear_dict = AD(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
+                             k=clip_node, num_layer=args.n_layers, debug=args.debug)
+        if trim_rule == 'impact':
+            with timeit(logger, 'impact-trimming'):
+                if appear_dict.need_to_trim: appear_dict.trim()
+                blocks = appear_dict.joint_blocks()
+        else:
+            appear_dict.trim()
+            blocks = appear_dict.build_blocks(graph=g)
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
     predictions = model(blocks, inputs)
