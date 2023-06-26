@@ -77,7 +77,7 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
             appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
                                    num_layer=args.n_layers, debug=args.debug)
         else:
-            appear_dict = AD(roots=dst_node, subgraphs=subgraphs, trimming_rule=trim_rule,
+            appear_dict = AD(roots=dst_node, subgraphs=subgraphs, rule=trim_rule,
                              k=clip_node, num_layer=args.n_layers, debug=args.debug)
         if trim_rule == 'impact':
             with timeit(logger, 'impact-trimming'):

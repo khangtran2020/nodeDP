@@ -49,8 +49,7 @@ class Node(object):
 
 class AppearDict(object):
 
-    def __init__(self, roots, subgraphs, id=0, model=None, graph=None, trimming_rule=None, k=2, num_layer=2,
-                 debug=False):
+    def __init__(self, roots, subgraphs, id=0, model=None, graph=None, rule=None, k=2, num_layer=2, debug=False):
         self.roots = roots
         self.id = id
         self.subgraphs = subgraphs
@@ -62,12 +61,12 @@ class AppearDict(object):
             }
         self.node_dict, self.root_dict = self.build_node_dict(roots, subgraphs)
         self.num_appear = self.get_num_tree()
-        self.trimming_rule = trimming_rule
-        if trimming_rule == 'random':
+        self.trimming_rule = rule
+        if rule == 'random':
             self.trimming_func = random_trimming
-        elif trimming_rule == 'adhoc':
+        elif rule == 'adhoc':
             self.trimming_func = adhoc_trimming_rank
-        elif trimming_rule == 'impact':
+        elif rule == 'impact':
             self.trimming_func = impact_aware_trimming
         self.k = k
         self.model = model
@@ -78,8 +77,8 @@ class AppearDict(object):
             self.deleted_node = {}
             for root in roots:
                 self.deleted_node[root] = []
-            self.copy = AppearDict(roots=roots, subgraphs=subgraphs, id=1, model=model, graph=graph,
-                                   trimming_rule=trimming_rule, k=k, num_layer=num_layer, debug=False)
+            self.copy = AppearDict(roots=roots, subgraphs=subgraphs, id=1, model=model, graph=graph, rule=rule, k=k,
+                                   num_layer=num_layer, debug=False)
 
     def get_num_tree(self):
         ls = []
