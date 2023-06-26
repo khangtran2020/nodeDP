@@ -11,9 +11,7 @@ from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 from Runs.run_dp import run as run_dp
-from Utils.utils import print_args, print_dict
-from Data.dataloader import ComputeSubgraphSampler
-from Trim.base import AppearDict
+from Utils.utils import print_args
 from loguru import logger
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
@@ -34,15 +32,6 @@ def run(args, current_time, device):
     va_info = va_loader
     te_info = (test_g, te_loader)
 
-    # sampler = ComputeSubgraphSampler(num_neighbors=[4, 4], device='cpu')
-    # sub_graph = sampler.sample(g=train_g, seed_nodes=[2425, 7155])
-    # appeardict = AppearDict(roots=[2425, 7155], subgraphs=sub_graph)
-    # # list_ = appeardict.get_num_tree()
-    # # root_dict = appeardict.build_root_dict(root=2425)
-    # # print_dict(dict_=root_dict, name=f'Root 2425')
-    # # appeardict.print_nodes()
-    # exit()
-
     run_dict = {
         'clean': run_clean,
         'nodedp': run_nodedp,
@@ -50,7 +39,6 @@ def run(args, current_time, device):
     }
     run_mode = run_dict[args.mode]
 
-    # args, tr_info, va_info, te_info, model, optimizer, name, device
     run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
              optimizer=optimizer, name=name, device=device)
 
@@ -61,6 +49,7 @@ if __name__ == "__main__":
     current_time = datetime.datetime.now()
     args = parse_args()
     print_args(args=args)
+    args.debug = True if args.debug == 1 else False
     seed_everything(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     run(args=args, current_time=current_time, device=device)

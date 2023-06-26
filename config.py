@@ -9,7 +9,7 @@ def add_general_group(group):
     group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp']")
     group.add_argument("--submode", type=str, default='fair', help="")
     group.add_argument("--num_worker", type=int, default=0, help="")
-    group.add_argument("--debug", type=bool, default=True)
+    group.add_argument("--debug", type=int, default=True)
     group.add_argument("--performance_metric", type=str, default='acc', help="Metrics of performance")
 
 
