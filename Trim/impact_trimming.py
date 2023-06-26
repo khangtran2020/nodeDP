@@ -146,16 +146,6 @@ class AppearDict(object):
     def getkeys(self):
         return self.node_dict.keys()
 
-    # def get_list_trimming_root(self, node_id):
-    #     if self.trimming_rule == 'random':
-    #         return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
-    #                                   current_node=node_id, appear_dict=None, model=None, graph=None)
-    #     elif self.trimming_rule == 'adhoc':
-    #         return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
-    #                                   current_node=node_id, appear_dict=self, model=None, graph=None)
-    #     elif self.trimming_rule == 'impact':
-    #         return self.trimming_func(roots=self.node_dict[node_id].roots, k=self.node_dict[node_id].num_tree - self.k,
-    #                                   current_node=node_id, appear_dict=self, model=self.model, graph=self.graph)
 
     def trim(self):
         for node, val in self.node_to_trim.items():
@@ -163,71 +153,6 @@ class AppearDict(object):
         if self.debug:
             node_dict, root_dict = self.build_node_dict(self.roots, self.subgraphs)
             self.check_nodes(node_dict)
-
-    # def remove_node_from_root_at_rank(self, node_id, root, rank, queue):
-    #     if node_id == root:
-    #         logger.error(f"Queue error: node {node_id} is root of root {root}")
-    #         return (-1, queue)
-    #     self.root_dict[root]['# trimmed nodes'] += 1
-    #     # update root dict
-    #     if rank == 0:
-    #         try:
-    #             ans = self.root_dict[root][f'rank_{rank}'][node_id]['ans']
-    #             del self.root_dict[root][f'rank_{rank}'][node_id]
-    #         except Exception as e:
-    #             logger.error(e)
-    #             self.handle_error(root=root, node=node_id, rank=rank)
-    #
-    #         for n in ans:
-    #             if node_id not in self.root_dict[root][f'rank_{rank + 1}'][n]['child']:
-    #                 logger.error(f"Root Dict: Error at del child {node_id} of node {n}, in root {root}, at rank {rank}")
-    #                 return (-1, queue)
-    #             self.root_dict[root]['# trimmed edges'] += 1
-    #             self.root_dict[root][f'rank_{rank + 1}'][n]['child'].remove(node_id)
-    #     else:
-    #         # update root dict
-    #         try:
-    #             ans = self.root_dict[root][f'rank_{rank}'][node_id]['ans']
-    #             child = self.root_dict[root][f'rank_{rank}'][node_id]['child']
-    #             del self.root_dict[root][f'rank_{rank}'][node_id]
-    #         except Exception as e:
-    #             logger.error(e)
-    #             print(f'appear dict id {self.id}', pretty_repr(self.root_dict[root][f'rank_{rank}']))
-    #             self.handle_error(root=root, node=node_id, rank=rank)
-    #
-    #         # del ans/child
-    #         for n in ans:
-    #             if node_id not in self.root_dict[root][f'rank_{rank + 1}'][n]['child']:
-    #                 logger.error(f"Root Dict: Error at del child {node_id} of node {n}, in root {root}, at rank {rank}")
-    #                 return (-1, queue)
-    #             self.root_dict[root]['# trimmed edges'] += 1
-    #             self.root_dict[root][f'rank_{rank + 1}'][n]['child'].remove(node_id)
-    #         for n in child:
-    #             if node_id not in self.root_dict[root][f'rank_{rank - 1}'][n]['ans']:
-    #                 logger.error(f"Root Dict: Error at del ans {node_id} of node {n}, in root {root}, at rank {rank}")
-    #                 return (-1, queue)
-    #             self.root_dict[root]['# trimmed edges'] += 1
-    #             self.root_dict[root][f'rank_{rank - 1}'][n]['ans'].remove(node_id)
-    #             if (len(self.root_dict[root][f'rank_{rank - 1}'][n]['ans']) > 0) and (n != root):
-    #                 queue.append((n, rank - 1))
-    #
-    #     # update node dict
-    #     if self.node_dict[node_id].root_dict[root]['num_appear'] > 1:
-    #         self.node_dict[node_id].root_dict[root]['num_appear'] -= 1
-    #         if rank not in self.node_dict[node_id].root_dict[root]['rank']:
-    #             logger.error(f"Node Dict: Error at del rank {rank} of node {node_id}, in root {root}")
-    #             return (-1, queue)
-    #         self.node_dict[node_id].root_dict[root]['rank'].remove(rank)
-    #     else:
-    #         self.node_dict[node_id].num_tree -= 1
-    #         self.node_dict[node_id].root_dict[root]['num_appear'] -= 1
-    #         if root not in self.node_dict[node_id].roots:
-    #             logger.error(f"Node Dict: Error at del root {root} of node {node_id}")
-    #             return (-1, queue)
-    #         self.node_dict[node_id].roots.remove(root)
-    #         del self.node_dict[node_id].root_dict[root]
-    #
-    #     return (1, queue)
 
     def build_blocks(self, graph):
         new_blocks = []
