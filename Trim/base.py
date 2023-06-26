@@ -13,10 +13,6 @@ from copy import deepcopy
 # logger.remove()
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
-
-# logger.add('results/logs/node.log',  backtrace=True, diagnose=True)
-
-# @jit
 def get_edge_ls(list_):
     src_edge = []
     dst_edge = []
@@ -206,10 +202,10 @@ class AppearDict(object):
             highest_appeared_node, val = node_appear[0]
             # i += 1
         # for root in trimmed_root_ls:
-            # rprint(f"Root {root}: "
-            #        f"# node org {self.root_dict[root]['# nodes org']}, # edge org {self.root_dict[root]['# edges org']}, "
-            #        f"% of node removed {self.root_dict[root]['# trimmed nodes']/self.root_dict[root]['# nodes org']:.4f}, "
-            #        f"% of edge removed {self.root_dict[root]['# trimmed edges']/self.root_dict[root]['# edges org']:.4f}")
+        # rprint(f"Root {root}: "
+        #        f"# node org {self.root_dict[root]['# nodes org']}, # edge org {self.root_dict[root]['# edges org']}, "
+        #        f"% of node removed {self.root_dict[root]['# trimmed nodes']/self.root_dict[root]['# nodes org']:.4f}, "
+        #        f"% of edge removed {self.root_dict[root]['# trimmed edges']/self.root_dict[root]['# edges org']:.4f}")
         if self.debug:
             self.check_nodes()
 
@@ -253,7 +249,6 @@ class AppearDict(object):
                 root_dict = self.build_root_dict(root=root)
                 rprint(f'Dict of root {root}: \n{pretty_repr(root_dict)}')
             sys.exit("ERROR: you stupid mother fucker!")
-
 
     def trim_node(self, node_id, root_ls):
         list_of_root = self.get_list_trimming_root(node_id=node_id)
@@ -358,7 +353,7 @@ class AppearDict(object):
                 for item in self.root_dict[root][f'rank_{i}'].items():
                     val = np.array(item[1]['ans']).astype(int)
                     temp = val - item[0]
-                    src_edge = np.concatenate((src_edge,val - temp), axis=0)
+                    src_edge = np.concatenate((src_edge, val - temp), axis=0)
                     dst_edge = np.concatenate((dst_edge, temp + item[0]), axis=0)
 
             src_edge = torch.Tensor(src_edge).int()

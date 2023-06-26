@@ -52,8 +52,8 @@ class AppearDict(object):
         self.model = model
         self.node_to_trim = self.find_node_to_trim()
         # if self.id == 0:
-            # for node, num_appear in self.node_to_trim.items():
-            #     rprint(f"Node {node} need to be trimmed since it appears {num_appear}")
+        # for node, num_appear in self.node_to_trim.items():
+        #     rprint(f"Node {node} need to be trimmed since it appears {num_appear}")
         if len(self.node_to_trim) > 0:
             self.need_to_trim = True
             original_block = self.joint_blocks()
@@ -146,7 +146,6 @@ class AppearDict(object):
     def getkeys(self):
         return self.node_dict.keys()
 
-
     def trim(self):
         for node, val in self.node_to_trim.items():
             self.trim_node(node, val, appear_dict=self)
@@ -226,7 +225,6 @@ class AppearDict(object):
             logger.info(f'Everything is great in this step')
         else:
             sys.exit('ERROR: You stupid ass bitch')
-
 
     def handle_error(self, root, node, rank):
         logger.info(f'=============== ERROR node {node} at rank {rank} in root {root} ===============')
@@ -324,7 +322,7 @@ def trim_node(node_id, num_appear, org_pred, k, appear_dict: AppearDict):
         inputs = new_blocks[0].srcdata['feat']
         predictions = appear_dict.model(new_blocks, inputs)
         val = torch.norm(predictions - org_pred[root_index, :], p=1) / (
-                    torch.norm(predictions, p=1) + torch.norm(org_pred[root_index, :], p=1))
+                torch.norm(predictions, p=1) + torch.norm(org_pred[root_index, :], p=1))
         block_dict[root] = {
             'block': new_blocks,
             'val': val.item()
