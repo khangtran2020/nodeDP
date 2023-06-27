@@ -26,7 +26,7 @@ def run(args, current_time, device):
 
     model = init_model(args=args)
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
-    name = get_name(args=args, current_date=current_time, fold=fold)
+    name = get_name(args=args, current_date=current_time)
 
     tr_info = (train_g, tr_loader)
     va_info = va_loader
