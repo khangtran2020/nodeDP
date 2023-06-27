@@ -68,7 +68,7 @@ def update_clean(model, optimizer, objective, batch):
     return labels, predictions.argmax(1), loss
 
 
-def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, device):
+def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, history):
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
@@ -81,10 +81,19 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
                              k=clip_node, num_layer=args.n_layers, debug=args.debug)
         if trim_rule == 'impact':
             with timeit(logger, 'impact-trimming'):
-                if appear_dict.need_to_trim: appear_dict.trim()
+                if appear_dict.need_to_trim:
+                    info = appear_dict.trim()
+                    history['% subgraph'].append(info['% subgraph'])
+                    history['% node avg'].append(info['% node avg'])
+                    history['% edge avg'].append(info['% edge avg'])
+                    history['avg rank'].append(info['avg rank'])
                 blocks = appear_dict.joint_blocks()
         else:
-            appear_dict.trim()
+            info = appear_dict.trim()
+            history['% subgraph'].append(info['% subgraph'])
+            history['% node avg'].append(info['% node avg'])
+            history['% edge avg'].append(info['% edge avg'])
+            history['avg rank'].append(info['avg rank'])
             blocks = appear_dict.build_blocks(graph=g)
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
@@ -144,7 +153,7 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
 
 
 def train_nodedp(args, dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns,
-                 trim_rule):
+                 trim_rule, history):
     model.to(device)
     g.to(device)
     model.train()
@@ -155,7 +164,7 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
     with timeit(logger, task="update-node-dp"):
         target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
                                            batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
-                                           trim_rule=trim_rule, device=device)
+                                           trim_rule=trim_rule, history=history)
     pred = pred.cpu().detach().numpy()
     train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
     train_outputs.extend(pred)

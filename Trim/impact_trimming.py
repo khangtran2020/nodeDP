@@ -51,19 +51,18 @@ class AppearDict(object):
         self.num_layer = num_layer
         self.model = model
         self.node_to_trim = self.find_node_to_trim()
-        # if self.id == 0:
-        # for node, num_appear in self.node_to_trim.items():
-        #     rprint(f"Node {node} need to be trimmed since it appears {num_appear}")
         if len(self.node_to_trim) > 0:
             self.need_to_trim = True
             original_block = self.joint_blocks()
             orginal_pred = self.get_prediction(blocks=original_block)
+            self.trim_info = {
+                '# subgraphs': len(roots),
+                '# subgraphs trimmed': 0,
+                'trimmed subgraphs': []
+            }
             self.trim_node = partial(trim_node, org_pred=orginal_pred, k=self.k)
             self.debug = debug
             if self.debug:
-                self.deleted_node = {}
-                for root in roots:
-                    self.deleted_node[root] = []
                 self.copy = AppearDict(roots=roots, subgraphs=subgraphs, id=1, model=model, graph=graph, k=k,
                                        num_layer=num_layer, debug=False)
         else:
@@ -82,6 +81,7 @@ class AppearDict(object):
         for root in roots:
             root_dict = {
                 'nodes': [],
+                '# nodes org': 0,
                 '# edges org': 0
             }
             blocks = subgraphs[root]
@@ -92,18 +92,16 @@ class AppearDict(object):
                 dst_node = block.dstdata[dgl.NID]
                 src_edge, dst_edge = block.edges()
                 for j, n in enumerate(dst_node.tolist()):
-                    if n not in results.keys():
-                        root_dict['nodes'].append(n)
-                        results[n] = Node(node_id=n)
+                    if n not in results.keys(): results[n] = Node(node_id=n)
+                    if n not in root_dict['nodes']: root_dict['nodes'].append(n)
                     indices = get_index_by_value(a=dst_edge, val=j)
                     child_idx = torch.index_select(src_edge, 0, indices).unique()
                     child = torch.index_select(src_node, 0, child_idx).tolist()
                     results[n].add_sub_graph(root=root, rank=ans_rank)
                     root_dict['# edges org'] += len(child)
                 for j, n in enumerate(src_node.tolist()):
-                    if n not in results.keys():
-                        root_dict['nodes'].append(n)
-                        results[n] = Node(node_id=n)
+                    if n not in results.keys(): results[n] = Node(node_id=n)
+                    if n not in root_dict['nodes']: root_dict['nodes'].append(n)
                     indices = get_index_by_value(a=src_edge, val=j)
                     ans_idx = torch.index_select(dst_edge, 0, indices).unique()
                     ancestor = torch.index_select(dst_node, 0, ans_idx).tolist()
@@ -148,10 +146,30 @@ class AppearDict(object):
 
     def trim(self):
         for node, val in self.node_to_trim.items():
-            self.trim_node(node, val, appear_dict=self)
+            self.trim_node(node, appear_dict=self)
+
+        self.trim_info['% subgraph'] = self.trim_info['# subgraphs trimmed'] / self.trim_info['# subgraphs']
+        self.trim_info['% node avg'] = []
+        self.trim_info['% edge avg'] = []
+        self.trim_info['avg rank'] = []
+        for root in self.trim_info['trimmed subgraphs']:
+            self.trim_info[root]['% node'] = self.trim_info[root]['# nodes trimmed'] / \
+                                             self.root_dict[root]['# nodes org']
+            self.trim_info['% node avg'].append(self.trim_info[root]['% node'])
+            self.trim_info[root]['% edge'] = self.trim_info[root]['# edges trimmed'] / \
+                                             self.root_dict[root]['# edges org']
+            self.trim_info['% edge avg'].append(self.trim_info[root]['% edge'])
+            self.trim_info[root]['average rank trimmed'] = sum(self.trim_info[root]['rank trimmed']) / \
+                                                           len(self.trim_info[root]['rank trimmed'])
+            self.trim_info['avg rank'].append(self.trim_info[root]['average rank trimmed'])
+        self.trim_info['% node avg'] = sum(self.trim_info['% node avg']) / len(self.trim_info['% node avg'])
+        self.trim_info['% edge avg'] = sum(self.trim_info['% edge avg']) / len(self.trim_info['% edge avg'])
+        self.trim_info['avg rank'] = sum(self.trim_info['avg rank']) / len(self.trim_info['avg rank'])
+
         if self.debug:
             node_dict, root_dict = self.build_node_dict(self.roots, self.subgraphs)
             self.check_nodes(node_dict)
+        return self.trim_info
 
     def build_blocks(self, graph):
         new_blocks = []
@@ -243,7 +261,7 @@ class AppearDict(object):
         sys.exit("ERROR")
 
 
-def trim_node(node_id, num_appear, org_pred, k, appear_dict: AppearDict):
+def trim_node(node_id, org_pred, k, appear_dict: AppearDict):
     node_dict = appear_dict.node_dict[node_id]
     roots = deepcopy(node_dict.roots)
     # logger.info(f"Trimming ndoe {node_id} with roots {roots}")
@@ -252,10 +270,26 @@ def trim_node(node_id, num_appear, org_pred, k, appear_dict: AppearDict):
         k = k - 1
     block_dict = {}
     for root in roots:
+        if root not in appear_dict.trim_info.keys():
+            appear_dict.trim_info['# subgraphs trimmed'] += 1
+            appear_dict.trim_info['trimmed subgraphs'].append(root)
+            appear_dict.trim_info[root] = {
+                '# nodes org': 0,
+                '# edges org': 0,
+                '# nodes trimmed': 0,
+                '# edges trimmed': 0,
+                'trimmed nodes': [],
+                'rank trimmed': []
+            }
+
+        if node_id not in appear_dict.trim_info[root]['trimmed nodes']:
+            appear_dict.trim_info[root]['trimmed nodes'].append(node_id)
+            appear_dict.trim_info[root]['# nodes trimmed'] += 1
         root_index = appear_dict.roots_index[root]
         blocks = deepcopy(appear_dict.subgraphs[root])
         ranks = node_dict.root_dict[root]['rank']
         for rank in ranks:
+            appear_dict.trim_info[root]['rank trimmed'].append(rank)
             if rank == 0:
                 block = blocks[rank]
                 src_node = block.srcdata[dgl.NID]
@@ -263,10 +297,12 @@ def trim_node(node_id, num_appear, org_pred, k, appear_dict: AppearDict):
                 src_edge, dst_edge = block.edges()
                 src_edge = torch.index_select(src_node, 0, src_edge)
                 dst_edge = torch.index_select(dst_node, 0, dst_edge)
-                # print(f"Node {node_id} at root {root} and rank {rank} - Before:", src_edge, dst_edge)
+                num_edge_before = len(src_edge)
                 indices = get_index_bynot_value(a=src_edge, val=node_id)
                 src_edge = torch.index_select(src_edge, 0, indices)
                 dst_edge = torch.index_select(dst_edge, 0, indices)
+                num_edge_after = len(src_edge)
+                appear_dict.trim_info[root]['# edges trimmed'] += num_edge_before - num_edge_after
                 # print(f"Node {node_id} at root {root} and rank {rank} - After:", src_edge, dst_edge)
                 g = dgl.graph((src_edge, dst_edge))
                 blk = to_block(g, dst_nodes=dst_node, include_dst_in_src=False)
@@ -278,10 +314,12 @@ def trim_node(node_id, num_appear, org_pred, k, appear_dict: AppearDict):
                 src_edge, dst_edge = block.edges()
                 src_edge = torch.index_select(src_node, 0, src_edge)
                 dst_edge = torch.index_select(dst_node, 0, dst_edge)
-                # print(f"Node {node_id} at root {root} and rank {rank} - Before:", src_edge, dst_edge)
+                num_edge_before = len(src_edge)
                 indices = get_index_bynot_value(a=src_edge, val=node_id)
                 src_edge = torch.index_select(src_edge, 0, indices)
                 dst_edge = torch.index_select(dst_edge, 0, indices)
+                num_edge_after = len(src_edge)
+                appear_dict.trim_info[root]['# edges trimmed'] += num_edge_before - num_edge_after
                 # print(f"Node {node_id} at root {root} and rank {rank} - After:", src_edge, dst_edge)
                 g = dgl.graph((src_edge, dst_edge))
                 blocks[rank] = to_block(g, dst_nodes=dst_node, include_dst_in_src=False)
@@ -291,10 +329,13 @@ def trim_node(node_id, num_appear, org_pred, k, appear_dict: AppearDict):
                 src_edge, dst_edge = block.edges()
                 src_edge = torch.index_select(src_node, 0, src_edge)
                 dst_edge = torch.index_select(dst_node, 0, dst_edge)
+                num_edge_before = len(src_edge)
                 # print(f"Node {node_id} at root {root} and rank {rank-1} - Before:", src_edge, dst_edge)
                 indices = get_index_bynot_value(a=dst_edge, val=node_id)
                 src_edge = torch.index_select(src_edge, 0, indices)
                 dst_edge = torch.index_select(dst_edge, 0, indices)
+                num_edge_after = len(src_edge)
+                appear_dict.trim_info[root]['# edges trimmed'] += num_edge_before - num_edge_after
                 # print(f"Node {node_id} at root {root} and rank {rank-1} - After:", src_edge, dst_edge)
                 g = dgl.graph((src_edge, dst_edge))
                 blocks[rank - 1] = to_block(g, dst_nodes=dst_node, include_dst_in_src=False)

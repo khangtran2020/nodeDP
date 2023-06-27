@@ -13,6 +13,7 @@ from copy import deepcopy
 # logger.remove()
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
+
 def get_edge_ls(list_):
     src_edge = []
     dst_edge = []
@@ -49,36 +50,29 @@ class Node(object):
 
 class AppearDict(object):
 
-    def __init__(self, roots, subgraphs, id=0, model=None, graph=None, rule=None, k=2, num_layer=2, debug=False):
+    def __init__(self, roots, subgraphs, id=0, graph=None, rule=None, k=2, num_layer=2, debug=False):
         self.roots = roots
         self.id = id
         self.subgraphs = subgraphs
-        if debug:
-            self.trim_info = {
-                'num_node_org': 0,
-                'num_edge_org': 0,
-                'num_subgraph': len(roots),
-            }
+        self.trim_info = {
+            '# subgraphs': len(roots),
+            '# subgraphs trimmed': 0,
+            'trimmed subgraphs': []
+        }
         self.node_dict, self.root_dict = self.build_node_dict(roots, subgraphs)
         self.num_appear = self.get_num_tree()
         self.trimming_rule = rule
         if rule == 'random':
             self.trimming_func = random_trimming
-        elif rule == 'adhoc':
+        else:
             self.trimming_func = adhoc_trimming_rank
-        elif rule == 'impact':
-            self.trimming_func = impact_aware_trimming
         self.k = k
-        self.model = model
         self.graph = graph
         self.num_layer = num_layer
         self.debug = debug
         if self.debug:
-            self.deleted_node = {}
-            for root in roots:
-                self.deleted_node[root] = []
-            self.copy = AppearDict(roots=roots, subgraphs=subgraphs, id=1, model=model, graph=graph, rule=rule, k=k,
-                                   num_layer=num_layer, debug=False)
+            self.copy = AppearDict(roots=roots, subgraphs=subgraphs, id=1, graph=graph, rule=rule,
+                                   k=k, num_layer=num_layer, debug=False)
 
     def get_num_tree(self):
         ls = []
@@ -92,23 +86,20 @@ class AppearDict(object):
         for root in roots:
             root_dict = {
                 '# nodes org': 0,
-                '# edges org': 0,
+                '# edges org': 0
             }
             blocks = subgraphs[root]
             for i, block in enumerate(blocks):
                 ans_rank = i + 1
                 child_rank = i
-                if f'rank_{child_rank}' not in root_dict.keys():
-                    root_dict[f'rank_{child_rank}'] = {}
-                if f'rank_{ans_rank}' not in root_dict.keys():
-                    root_dict[f'rank_{ans_rank}'] = {}
+                if f'rank_{child_rank}' not in root_dict.keys(): root_dict[f'rank_{child_rank}'] = {}
+                if f'rank_{ans_rank}' not in root_dict.keys(): root_dict[f'rank_{ans_rank}'] = {}
                 src_node = block.srcdata[dgl.NID]
                 dst_node = block.dstdata[dgl.NID]
                 src_edge, dst_edge = block.edges()
                 for j, n in enumerate(dst_node.tolist()):
 
-                    if n not in results.keys():
-                        results[n] = Node(node_id=n)
+                    if n not in results.keys(): results[n] = Node(node_id=n)
 
                     if n not in root_dict[f'rank_{ans_rank}'].keys():
                         root_dict[f'rank_{ans_rank}'][n] = {
@@ -124,10 +115,10 @@ class AppearDict(object):
                     results[n].add_sub_graph(root=root, rank=ans_rank)
                     root_dict[f'rank_{ans_rank}'][n]['child'] += child
                     root_dict['# edges org'] += len(child)
+
                 for j, n in enumerate(src_node.tolist()):
 
-                    if n not in results.keys():
-                        results[n] = Node(node_id=n)
+                    if n not in results.keys(): results[n] = Node(node_id=n)
 
                     if n not in root_dict[f'rank_{child_rank}'].keys():
                         root_dict[f'rank_{child_rank}'][n] = {
@@ -141,7 +132,9 @@ class AppearDict(object):
                     results[n].add_sub_graph(root=root, rank=child_rank)
                     root_dict[f'rank_{child_rank}'][n]['ans'] += ancestor
                     root_dict['# edges org'] += len(ancestor)
+
             root_dict_[root] = root_dict
+
         return results, root_dict_
 
     def build_root_dict(self, root):
@@ -188,9 +181,7 @@ class AppearDict(object):
                                       current_node=node_id, appear_dict=self, model=self.model, graph=self.graph)
 
     def trim(self):
-        # i = 0
         node_appear = self.get_num_tree()
-        # rprint(node_appear)
         highest_appeared_node, val = node_appear[0]
         trimmed_root_ls = []
         while val > self.k:
@@ -207,6 +198,25 @@ class AppearDict(object):
         #        f"% of edge removed {self.root_dict[root]['# trimmed edges']/self.root_dict[root]['# edges org']:.4f}")
         if self.debug:
             self.check_nodes()
+
+        self.trim_info['% subgraph'] = self.trim_info['# subgraphs trimmed'] / self.trim_info['# subgraphs']
+        self.trim_info['% node avg'] = []
+        self.trim_info['% edge avg'] = []
+        self.trim_info['avg rank'] = []
+        for root in self.trim_info['trimmed subgraphs']:
+            self.trim_info[root]['% node'] = self.trim_info[root]['# nodes trimmed'] / \
+                                             self.root_dict[root]['# nodes org']
+            self.trim_info['% node avg'].append(self.trim_info[root]['% node'])
+            self.trim_info[root]['% edge'] = self.trim_info[root]['# edges trimmed'] / \
+                                             self.root_dict[root]['# edges org']
+            self.trim_info['% edge avg'].append(self.trim_info[root]['% edge'])
+            self.trim_info[root]['average rank trimmed'] = sum(self.trim_info[root]['rank trimmed']) / \
+                                                           len(self.trim_info[root]['rank trimmed'])
+            self.trim_info['avg rank'].append(self.trim_info[root]['average rank trimmed'])
+        self.trim_info['% node avg'] = sum(self.trim_info['% node avg']) / len(self.trim_info['% node avg'])
+        self.trim_info['% edge avg'] = sum(self.trim_info['% edge avg']) / len(self.trim_info['% edge avg'])
+        self.trim_info['avg rank'] = sum(self.trim_info['avg rank']) / len(self.trim_info['avg rank'])
+        return self.trim_info
 
     def check_nodes_init(self):
         appear_dict = {}
@@ -253,17 +263,25 @@ class AppearDict(object):
         list_of_root = self.get_list_trimming_root(node_id=node_id)
         for root in list_of_root:
             if root not in root_ls: root_ls.append(root)
-            if '# trimmed nodes' not in self.root_dict[root].keys(): self.root_dict[root]['# trimmed nodes'] = 0
-            if '# trimmed edges' not in self.root_dict[root].keys(): self.root_dict[root]['# trimmed edges'] = 0
             ranks = self.node_dict[node_id].root_dict[root]['rank']
+
+            if root not in self.trim_info.keys():
+                self.trim_info['# subgraphs trimmed'] += 1
+                self.trim_info['trimmed subgraphs'].append(root)
+                self.trim_info[root] = {
+                    '# nodes org': 0,
+                    '# edges org': 0,
+                    '# nodes trimmed': 0,
+                    '# edges trimmed': 0,
+                    'trimmed nodes': [],
+                    'rank trimmed': []
+                }
+
             queue = []
             for r in ranks: queue.append((node_id, r))
             while (len(queue) > 0):
                 n, r = queue[0]
-                # logger.info(f'\tTriming node {n} at root {root} rank {r}:')
                 queue.pop(0)
-                if self.debug == True:
-                    self.deleted_node[root].append((n, r))
                 if r == 0:
                     res, queue = self.remove_node_from_root_at_rank(node_id=n, root=root, rank=r, queue=queue)
                 elif (r < self.num_layer) and (r > 0):
@@ -273,14 +291,18 @@ class AppearDict(object):
                     return
                 if res == -1:
                     self.handle_error(root=root, node=n, rank=r)
-                # logger.info(f'\tTrimmed node {n} at root {root} rank {r} with results {res}!')
         return 1
 
     def remove_node_from_root_at_rank(self, node_id, root, rank, queue):
         if node_id == root:
             logger.error(f"Queue error: node {node_id} is root of root {root}")
             return (-1, queue)
-        self.root_dict[root]['# trimmed nodes'] += 1
+
+        if node_id not in self.trim_info[root]['trimmed nodes']:
+            self.trim_info[root]['trimmed nodes'].append(node_id)
+            self.trim_info[root]['# nodes trimmed'] += 1
+        self.trim_info[root]['rank trimmed'].append(rank)
+
         # update root dict
         if rank == 0:
             try:
@@ -294,7 +316,7 @@ class AppearDict(object):
                 if node_id not in self.root_dict[root][f'rank_{rank + 1}'][n]['child']:
                     logger.error(f"Root Dict: Error at del child {node_id} of node {n}, in root {root}, at rank {rank}")
                     return (-1, queue)
-                self.root_dict[root]['# trimmed edges'] += 1
+                self.trim_info[root]['# edges trimmed'] += 1
                 self.root_dict[root][f'rank_{rank + 1}'][n]['child'].remove(node_id)
         else:
             # update root dict
@@ -312,13 +334,13 @@ class AppearDict(object):
                 if node_id not in self.root_dict[root][f'rank_{rank + 1}'][n]['child']:
                     logger.error(f"Root Dict: Error at del child {node_id} of node {n}, in root {root}, at rank {rank}")
                     return (-1, queue)
-                self.root_dict[root]['# trimmed edges'] += 1
+                self.trim_info[root]['# edges trimmed'] += 1
                 self.root_dict[root][f'rank_{rank + 1}'][n]['child'].remove(node_id)
             for n in child:
                 if node_id not in self.root_dict[root][f'rank_{rank - 1}'][n]['ans']:
                     logger.error(f"Root Dict: Error at del ans {node_id} of node {n}, in root {root}, at rank {rank}")
                     return (-1, queue)
-                self.root_dict[root]['# trimmed edges'] += 1
+                self.trim_info[root]['# edges trimmed'] += 1
                 self.root_dict[root][f'rank_{rank - 1}'][n]['ans'].remove(node_id)
                 if (len(self.root_dict[root][f'rank_{rank - 1}'][n]['ans']) > 0) and (n != root):
                     queue.append((n, rank - 1))

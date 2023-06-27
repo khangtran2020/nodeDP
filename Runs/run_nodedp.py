@@ -1,5 +1,6 @@
-import dgl
 import torch
+from rich import print as rprint
+from rich.pretty import pretty_repr
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_nodedp, eval_fn, performace_eval
 from Utils.utils import save_res
@@ -35,6 +36,10 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
         'val_history_acc': [],
         'test_history_loss': [],
         'test_history_acc': [],
+        '% subgraph': [],
+        '% node avg': [],
+        '% edge avg': [],
+        'avg rank': [],
         'best_test': 0
     }
 
@@ -46,7 +51,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
                                                             criterion=criter, optimizer=optimizer, device=device,
                                                             scheduler=None, g=graph, clip_grad=args.clip,
                                                             clip_node=args.clip_node, ns=args.ns,
-                                                            trim_rule=args.trim_rule)
+                                                            trim_rule=args.trim_rule, history=history)
         # scheduler.step()
         val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                                      device=device)
@@ -74,4 +79,6 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     test_loss, test_outputs, test_targets = eval_fn(te_loader, model, criterion, device)
     test_acc = performace_eval(args, test_targets, test_outputs)
     history['best_test'] = test_acc
+    if args.debug:
+        rprint(pretty_repr(history))
     save_res(name=name, args=args, dct=history)
