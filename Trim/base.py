@@ -213,9 +213,9 @@ class AppearDict(object):
             self.trim_info[root]['average rank trimmed'] = sum(self.trim_info[root]['rank trimmed']) / \
                                                            len(self.trim_info[root]['rank trimmed'])
             self.trim_info['avg rank'].append(self.trim_info[root]['average rank trimmed'])
-        self.trim_info['% node avg'] = sum(self.trim_info['% node avg']) / len(self.trim_info['% node avg'])
-        self.trim_info['% edge avg'] = sum(self.trim_info['% edge avg']) / len(self.trim_info['% edge avg'])
-        self.trim_info['avg rank'] = sum(self.trim_info['avg rank']) / len(self.trim_info['avg rank'])
+        self.trim_info['% node avg'] = sum(self.trim_info['% node avg']) / (len(self.trim_info['% node avg']) + 1e-12)
+        self.trim_info['% edge avg'] = sum(self.trim_info['% edge avg']) / (len(self.trim_info['% edge avg']) + 1e-12)
+        self.trim_info['avg rank'] = sum(self.trim_info['avg rank']) / (len(self.trim_info['avg rank']) + 1e-12)
         return self.trim_info
 
     def check_nodes_init(self):
