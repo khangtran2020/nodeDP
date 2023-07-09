@@ -95,7 +95,7 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
             total = 0
             for root in info['trimmed_subgraphs']:
                 total += info[root]['num_node_trimmed']/info[root]['num_node_org']
-            history['% node avg'].append(total/info['num_subgraphs_trimmed'])
+            history['% node avg'].append(total/(info['num_subgraphs_trimmed']+1e-12))
             blocks = appear_dict.joint_blocks()
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
