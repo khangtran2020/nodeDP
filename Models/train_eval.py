@@ -90,7 +90,12 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
                     history['avg rank'].append(info['avg rank'])
                 blocks = appear_dict.joint_blocks()
         else:
-            appear_dict.trim()
+            info = appear_dict.trim()
+            history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
+            total = 0
+            for root in info['trimmed_subgraphs']:
+                total += info[root]['num_node_trimmed']/info[root]['num_node_org']
+            history['% node avg'].append(total/info['num_subgraphs_trimmed'])
             blocks = appear_dict.joint_blocks()
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]

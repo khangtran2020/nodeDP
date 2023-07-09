@@ -35,6 +35,11 @@ class AppearDict(object):
         self.root_dict = {}
         self.build_dict()
         self.rm_substr = np.vectorize(remove_substring_from_string)
+        self.trim_info = {
+            'num_subgraphs': len(roots),
+            'num_subgraphs_trimmed': 0,
+            'trimmed_subgraphs': []
+        }
         # rprint(f"Orginal roots: {self.roots}")
         if len(self.subgraph.keys()) > self.batch_size:
             logger.error("ROOT as string problem")
@@ -60,11 +65,6 @@ class AppearDict(object):
         self.num_node_batch = len(np.where(self.node_appear > 0)[0].tolist())
         self.node_to_trim = np.where(self.node_appear > self.clip_node)[0].tolist()
         rprint(f"% of node to trim: {len(self.node_to_trim)/self.num_node_batch*100:.2f}")
-        # if self.debug:
-        #     rprint("========== DETAILS =========\n")
-        #     for node in self.node_to_trim:
-        #         rprint(f"Node {node} ORIGINALLY appears {self.node_appear[node]} at root {self.node_roots[node]}")
-        #     rprint("\n========== DETAILS =========")
 
     def trim(self):
         if self.debug:
@@ -89,6 +89,13 @@ class AppearDict(object):
                 root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
 
             for root in root_to_trim:
+                if int(root) not in self.trim_info['trimmed_subgraphs']:
+                    self.trim_info['trimmed_subgraphs'].append(int(root))
+                    self.trim_info['num_subgraphs_trimmed'] += 1
+                    self.trim_info[int(root)] = {
+                        'num_node_org': len(self.root_dict[int(root)]),
+                        'num_node_trimmed': 0
+                    }
                 blocks = deepcopy(self.subgraph[int(root)])
                 dst_n = torch.Tensor([int(root)]).int()
                 # rprint(f"Current dst_n: {dst_n}")
@@ -137,6 +144,7 @@ class AppearDict(object):
                 nodes_new = set(nodes_new.tolist())
                 nodes_old = set(self.root_dict[int(root)])
                 node_removed = list(nodes_old.symmetric_difference(nodes_new))
+                self.trim_info[int(root)]['num_node_trimmed'] += len(node_removed)
                 # rprint(f"At root {root}\nNode removed: {node_removed}")
                 if len(node_removed) > 0:
                     self.root_dict[int(root)] = list(nodes_new)
@@ -155,6 +163,7 @@ class AppearDict(object):
                 sys.exit()
             self.check_node()
         logger.info(f"\n\nDONE TRIMMING FOR STEP {self.step}")
+        return self.trim_info
 
     def check_node(self):
 
