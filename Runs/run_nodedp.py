@@ -51,7 +51,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
                                                             criterion=criter, optimizer=optimizer, device=device,
                                                             scheduler=None, g=graph, clip_grad=args.clip,
                                                             clip_node=args.clip_node, ns=args.ns,
-                                                            trim_rule=args.trim_rule, history=history)
+                                                            trim_rule=args.trim_rule, history=history, step=epoch)
         # scheduler.step()
         val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                                      device=device)

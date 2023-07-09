@@ -2,8 +2,7 @@ import sys
 import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score
-from Trim.base import AppearDict as AD
-from copy import deepcopy
+from Trim.appeardict import AppearDict as AD
 from Trim.impact_trimming import AppearDict as ADimpact
 from loguru import logger
 from Utils.utils import timeit
@@ -68,7 +67,7 @@ def update_clean(model, optimizer, objective, batch):
     return labels, predictions.argmax(1), loss
 
 
-def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, history):
+def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, history, step):
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
@@ -77,8 +76,10 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
             appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
                                    num_layer=args.n_layers, debug=args.debug)
         else:
-            appear_dict = AD(roots=dst_node, subgraphs=subgraphs, rule=trim_rule,
-                             k=clip_node, num_layer=args.n_layers, debug=args.debug)
+            # AppearDict(roots=roots, subgraph=subgraph, graph=train_g, clip_node=args.clip_node, debug=True,
+            #                                             step=i, rule='random', num_layer=args.n_layers)
+            appear_dict = AD(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                             num_layer=args.n_layers, debug=args.debug, step=step)
         if trim_rule == 'impact':
             with timeit(logger, 'impact-trimming'):
                 if appear_dict.need_to_trim:
@@ -89,12 +90,8 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
                     history['avg rank'].append(info['avg rank'])
                 blocks = appear_dict.joint_blocks()
         else:
-            info = appear_dict.trim()
-            history['% subgraph'].append(info['% subgraph'])
-            history['% node avg'].append(info['% node avg'])
-            history['% edge avg'].append(info['% edge avg'])
-            history['avg rank'].append(info['avg rank'])
-            blocks = appear_dict.build_blocks(graph=g)
+            appear_dict.trim()
+            blocks = appear_dict.joint_blocks()
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
     predictions = model(blocks, inputs)
@@ -153,7 +150,7 @@ def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
 
 
 def train_nodedp(args, dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns,
-                 trim_rule, history):
+                 trim_rule, history, step):
     model.to(device)
     g.to(device)
     model.train()
@@ -164,7 +161,7 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
     with timeit(logger, task="update-node-dp"):
         target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
                                            batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
-                                           trim_rule=trim_rule, history=history)
+                                           trim_rule=trim_rule, history=history, step=step)
     pred = pred.cpu().detach().numpy()
     train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
     train_outputs.extend(pred)

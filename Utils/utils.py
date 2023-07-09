@@ -48,6 +48,8 @@ def save_res(name, args, dct):
 def get_index_by_value(a, val):
     return (a == val).nonzero(as_tuple=True)[0]
 
+def get_index_by_list(arr, test_arr):
+     return torch.isin(arr, test_arr).nonzero(as_tuple=True)[0]
 
 def get_index_bynot_value(a, val):
     return (a != val).nonzero(as_tuple=True)[0]
@@ -55,8 +57,8 @@ def get_index_bynot_value(a, val):
 
 def print_args(args):
     arg_dict = {}
-    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'n_neighbor', 'model_type', 'lr', 'n_layers', 'epochs',
-            'clip', 'clip_node', 'trim_rule', 'ns', 'debug']
+    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type', 'lr', 'n_layers',
+            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug']
     for key in keys:
         arg_dict[key] = getattr(args, key)
 
