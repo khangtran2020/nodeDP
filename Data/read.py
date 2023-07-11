@@ -97,7 +97,7 @@ def graph_split(graph, drop=True):
     train_id = torch.index_select(graph.nodes(), 0, graph.ndata['train_mask'].nonzero().squeeze()).numpy()
     val_id = torch.index_select(graph.nodes(), 0, graph.ndata['val_mask'].nonzero().squeeze()).numpy()
     test_id = torch.index_select(graph.nodes(), 0, graph.ndata['test_mask'].nonzero().squeeze()).numpy()
-
+    print(f"ORIGINAL GRAPH HAS: {graph.nodes().size()} nodes and {graph.edges()[0].size()} edges")
     train_g = graph.subgraph(torch.LongTensor(train_id))
     test_g = graph.subgraph(torch.LongTensor(test_id))
     val_g = graph.subgraph(torch.LongTensor(val_id))
