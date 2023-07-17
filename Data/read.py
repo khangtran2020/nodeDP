@@ -5,6 +5,7 @@ import numpy as np
 
 from functools import partial
 from Data.facebook import Facebook
+from Data.amazon import Amazon
 from Data.helper import FilterClassByCount
 from copy import deepcopy
 from sklearn.model_selection import train_test_split
@@ -63,13 +64,31 @@ def read_data(args, data_name):
         graph.ndata['test_mask'] = data.test_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=1000)
         # sys.exit()
+    elif data_name == 'amazon':
+        load_data = partial(Amazon,
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                            ])
+                            )
+        data = load_data(root='dataset/')[0]
+        # print("Facebook data:")
+        # print(data)
+        # print('Data edge index:', data.edge_index[0], data.edge_index[1])
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        graph.ndata['train_mask'] = data.train_mask
+        graph.ndata['val_mask'] = data.val_mask
+        graph.ndata['test_mask'] = data.test_mask
+        list_of_label = filter_class_by_count(graph=graph, min_count=6000)
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    if data_name != 'facebook':
-        g_train, g_val, g_test = graph_split(graph=graph, drop=True)
-    else:
-        g_train, g_val, g_test = graph_split(graph=graph, drop=False)
+    g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    if args.submode == 'density':
+        g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test
 
@@ -120,6 +139,7 @@ def drop_isolated_node(graph):
 
 def filter_class_by_count(graph, min_count):
     target = deepcopy(graph.ndata['label'])
+    print(target.unique(return_counts=True)[1])
     counts = target.unique(return_counts=True)[1] > min_count
     index = get_index_by_value(a=counts, val=True)
     label_dict = dict(zip(index.tolist(), range(len(index))))
@@ -180,3 +200,23 @@ def fold_assign(g, folds, current_fold):
     g.ndata['train_mask'] = torch.BoolTensor(tr_mask)
     g.ndata['val_mask'] = torch.BoolTensor(va_mask)
     return
+
+def reduce_desity(g, dens_reduction):
+    # num_edge = g.edges()[0].size(dim=0)
+    # num_node = g.nodes().size(dim=0)
+    src_edge, dst_edge = g.edges()
+    num_edge = src_edge.size(dim=0)
+    num_node = g.nodes().size(dim=0)
+    dens = num_edge / num_node
+    dens = dens * (1 - dens_reduction)
+    num_edge_new = int(dens * num_node)
+    indices = np.arange(num_edge)
+    chosen_index = torch.from_numpy(np.random.choice(a=indices, size=num_edge_new, replace=False)).int()
+    src_edge_new = torch.index_select(input=src_edge, dim=0, index=chosen_index)
+    dst_edge_new = torch.index_select(input=dst_edge, dim=0, index=chosen_index)
+    new_g = dgl.graph((src_edge_new, dst_edge_new), num_nodes=num_node)
+    new_g.ndata['feat'] = g.ndata['feat'].clone()
+    new_g.ndata['label'] = g.ndata['label'].clone()
+    new_g = drop_isolated_node(graph=new_g)
+    print(f"Old # edges: {num_edge}, New # edges: {new_g.edges()[0].size(dim=0)}")
+    return new_g

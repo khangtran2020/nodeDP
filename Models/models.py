@@ -33,7 +33,7 @@ class GraphSAGE(nn.Module):
                 h_dst = h[:blocks[i].num_dst_nodes()]
                 h = self.layers[i](blocks[i], (h, h_dst))
                 # h = self.batch_norm(h)
-                h = self.dropout(h)
+                # h = self.dropout(h)
                 h = self.activation(h)
             h_dst = h[:blocks[-1].num_dst_nodes()]
             h = self.last_activation(self.layers[-1](blocks[-1], (h, h_dst)))
