@@ -34,8 +34,17 @@ def get_name(args, current_date):
     date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
     model_str = f'{args.mode}_{args.epochs}_hops_{args.n_layers}_'
     dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
-    if args.mode == 'clean': res_str = dataset_str + model_str + date_str
-    else: res_str = dataset_str + model_str + dp_str + date_str
+    desity_str = f'density_{args.density}_'
+    if args.mode == 'clean':
+        if args.submode != 'density':
+            res_str = dataset_str + model_str + date_str
+        else:
+            res_str = dataset_str + model_str + desity_str + date_str
+    else:
+        if args.submode != 'density':
+            res_str = dataset_str + model_str + dp_str + date_str
+        else:
+            res_str = dataset_str + model_str + dp_str + desity_str + date_str
     return res_str
 
 
