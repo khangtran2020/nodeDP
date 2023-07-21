@@ -57,8 +57,8 @@ class AppearDict(object):
             key = root.item()
             blocks = self.subgraph[key]
             for block in blocks:
-                src_node = block.srcdata[dgl.NID]
-                dst_node = block.dstdata[dgl.NID]
+                src_node = block.srcdata[dgl.NID].int()
+                dst_node = block.dstdata[dgl.NID].int()
                 nodes = torch.cat((nodes, src_node,dst_node), dim=0).unique().int()
             index = nodes.tolist()
             self.node_appear[index] += 1
