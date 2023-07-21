@@ -72,7 +72,6 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
-    # print(f"Model device: {model.device()}")
     with torch.no_grad():
         if trim_rule == 'impact':
             appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
@@ -99,7 +98,6 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
             blocks = appear_dict.joint_blocks()
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
-    print(f"Data device: {inputs.device}")
     predictions = model(blocks, inputs)
     losses = objective(predictions, labels)
     running_loss = torch.mean(losses).item()
@@ -107,7 +105,6 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
 
     saved_var = dict()
     for tensor_name, tensor in model.named_parameters():
-        print(f"model device: {tensor.device}")
         saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
     for pos, j in enumerate(losses):
@@ -121,7 +118,7 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
 
     for tensor_name, tensor in model.named_parameters():
         if tensor.grad is not None:
-            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip_grad * clip_node))
+            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip_grad * clip_node).to(device))
             tensor.grad = saved_var[tensor_name] / num_data
 
     optimizer.step()
