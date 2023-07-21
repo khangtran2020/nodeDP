@@ -19,7 +19,7 @@ def remove_substring_from_string(a, b):
 
 class AppearDict(object):
 
-    def __init__(self, roots, subgraph, graph, clip_node, rule, num_layer, debug, step):
+    def __init__(self, roots, subgraph, graph, clip_node, rule, num_layer, debug, step, device):
         self.debug = debug
         self.num_layer = num_layer
         self.roots = roots
@@ -28,6 +28,7 @@ class AppearDict(object):
         self.graph = graph
         self.clip_node = clip_node
         self.step = step
+        self.device = device
         self.rule = rule
         self.num_node = self.graph.nodes().size(dim=0)
         self.node_appear = np.zeros(self.num_node).astype(int)
@@ -51,7 +52,7 @@ class AppearDict(object):
 
         for i, root in enumerate(self.roots):
 
-            nodes = torch.Tensor([])
+            nodes = torch.Tensor([]).to(self.device)
             blocks = self.subgraph[root.item()]
             for block in blocks:
                 src_node = block.srcdata[dgl.NID]

@@ -36,7 +36,7 @@ def run(args, current_time, device):
             roots = roots.to(device)
             # subgraph = subgraph.to(device)
             appear_dict = AppearDict(roots=roots, subgraph=subgraph, graph=train_g, clip_node=args.clip_node, debug=True,
-                                     step=i, rule='random', num_layer=args.n_layers)
+                                     step=i, rule='random', num_layer=args.n_layers, device=device)
             rprint(f' # Node to trim: {len(appear_dict.node_to_trim)}')
             rprint(f'Node appearance:\n {appear_dict.node_appear[appear_dict.node_to_trim]}, '
                    f'with max {np.max(appear_dict.node_appear[appear_dict.node_to_trim])}, '
