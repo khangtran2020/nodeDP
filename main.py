@@ -14,7 +14,7 @@ from loguru import logger
 from Trim.appeardict import AppearDict
 from rich import print as rprint
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 import numpy as np
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
