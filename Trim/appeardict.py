@@ -134,7 +134,7 @@ class AppearDict(object):
                     dst_n = block.srcdata[dgl.NID].int()
                     new_blocks.insert(0, block)
 
-                nodes_new = torch.Tensor([])
+                nodes_new = torch.Tensor([]).to(self.device)
                 for block in new_blocks:
                     src_node = block.srcdata[dgl.NID]
                     dst_node = block.dstdata[dgl.NID]
