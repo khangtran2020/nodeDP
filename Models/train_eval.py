@@ -2,8 +2,7 @@ import sys
 import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score, precision_score
-from Trim.appeardict import AppearDict as AD
-from Trim.impact_trimming import AppearDict as ADimpact
+from Trim.appeardict import AppearDict
 from loguru import logger
 from Utils.utils import timeit
 
@@ -74,11 +73,11 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
     dst_node = list(dst_node)
     with torch.no_grad():
         if trim_rule == 'impact':
-            appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
-                                   num_layer=args.n_layers, debug=args.debug)
+            appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                             num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=model)
         else:
-            appear_dict = AD(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
-                             num_layer=args.n_layers, debug=args.debug, step=step, device=device)
+            appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                             num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=None)
         if trim_rule == 'impact':
             with timeit(logger, 'impact-trimming'):
                 if appear_dict.need_to_trim:
