@@ -91,7 +91,12 @@ class AppearDict(object):
                 ranks = sorted(ranks, key=lambda x: x[1])
                 root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
             else:
-                with timeit(logger=logger, task=f'getting-impact-rank-node-{idx}'):
+                if self.debug:
+                    with timeit(logger=logger, task=f'getting-impact-rank-node-{idx}'):
+                        ranks = [(root, self.get_grad_in_root(root=int(root), node=idx)) for root in roots_str]
+                        ranks = sorted(ranks, key=lambda x: x[1])
+                        root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
+                else:
                     ranks = [(root, self.get_grad_in_root(root=int(root), node=idx)) for root in roots_str]
                     ranks = sorted(ranks, key=lambda x: x[1])
                     root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
