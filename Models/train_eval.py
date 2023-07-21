@@ -105,7 +105,7 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
 
     saved_var = dict()
     for tensor_name, tensor in model.named_parameters():
-        saved_var[tensor_name] = torch.zeros_like(tensor)
+        saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
     for pos, j in enumerate(losses):
         j.backward(retain_graph=True)
