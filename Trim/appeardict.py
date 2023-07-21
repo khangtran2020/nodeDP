@@ -79,7 +79,7 @@ class AppearDict(object):
             # rprint(f'\n\nTrimming node {idx}, appeard {self.node_appear[idx]} times with roots {self.node_roots[idx]}')
             # get list root
             roots_str = np.array(self.node_roots[idx].split('|'))
-            rprint(f"# root need to be trimmed of node {idx} org: {len(roots_str) - self.clip_node}")
+            # rprint(f"# root need to be trimmed of node {idx} org: {len(roots_str) - self.clip_node}")
             if f'{idx}' in roots_str:
                 roots_str = np.delete(roots_str, axis=0, obj=np.where(roots_str == f'{idx}')[0].tolist())
             if self.rule == 'random':
