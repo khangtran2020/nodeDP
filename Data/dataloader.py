@@ -79,7 +79,7 @@ class NodeDataLoader(object):
         dl = DL(self.seeds, batch_size=bz, shuffle=self.shuffle, drop_last=self.drop_last)
         for seed in dl:
             sub_graph = sampler.sample(g=g, seed_nodes=seed)
-            encoded_seeds = seed.numpy()
+            encoded_seeds = seed
             yield encoded_seeds, sub_graph
 
     def __len__(self):
