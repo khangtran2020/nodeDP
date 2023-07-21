@@ -27,20 +27,22 @@ def run(args, current_time, device):
         train_g, val_g, test_g = read_data(args=args, data_name=args.dataset)
         tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                       val_g=val_g)
-    # for i in range(200):
-    #     with timeit(logger, 'build-node-dict'):
-    #         roots, subgraph = next(iter(tr_loader))
-    #         appear_dict = AppearDict(roots=roots, subgraph=subgraph, graph=train_g, clip_node=args.clip_node, debug=True,
-    #                                  step=i, rule='random', num_layer=args.n_layers)
-    #         rprint(f' # Node to trim: {len(appear_dict.node_to_trim)}')
-    #         rprint(f'Node appearance:\n {appear_dict.node_appear[appear_dict.node_to_trim]}, '
-    #                f'with max {np.max(appear_dict.node_appear[appear_dict.node_to_trim])}, '
-    #                f'and mean {np.mean(appear_dict.node_appear[appear_dict.node_to_trim])}')
-    #         rprint(f'Node roots:\n {appear_dict.node_roots[appear_dict.node_to_trim]}')
-    #
-    #     with timeit(logger, 'trimming-process'):
-    #         appear_dict.trim()
-    # sys.exit()
+    for i in range(200):
+        with timeit(logger, 'build-node-dict'):
+            roots, subgraph = next(iter(tr_loader))
+            roots = roots.to(device)
+            subgraph = subgraph.to(device)
+            appear_dict = AppearDict(roots=roots, subgraph=subgraph, graph=train_g, clip_node=args.clip_node, debug=True,
+                                     step=i, rule='random', num_layer=args.n_layers)
+            rprint(f' # Node to trim: {len(appear_dict.node_to_trim)}')
+            rprint(f'Node appearance:\n {appear_dict.node_appear[appear_dict.node_to_trim]}, '
+                   f'with max {np.max(appear_dict.node_appear[appear_dict.node_to_trim])}, '
+                   f'and mean {np.mean(appear_dict.node_appear[appear_dict.node_to_trim])}')
+            rprint(f'Node roots:\n {appear_dict.node_roots[appear_dict.node_to_trim]}')
+
+        with timeit(logger, 'trimming-process'):
+            appear_dict.trim()
+    sys.exit()
 
     model = init_model(args=args)
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
