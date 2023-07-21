@@ -206,8 +206,8 @@ class AppearDict(object):
                 src_node = block.srcdata[dgl.NID]
                 dst_node = block.dstdata[dgl.NID]
                 src_ed, dst_ed = block.edges()
-                src_edge = torch.cat((src_edge, torch.index_select(src_node, 0, src_ed)), dim=0)
-                dst_edge = torch.cat((dst_edge, torch.index_select(dst_node, 0, dst_ed)), dim=0)
+                src_edge = torch.cat((src_edge, torch.index_select(src_node, 0, src_ed).int()), dim=0)
+                dst_edge = torch.cat((dst_edge, torch.index_select(dst_node, 0, dst_ed).int()), dim=0)
             src_edge = src_edge.int()
             dst_edge = dst_edge.int()
             g = dgl.graph((src_edge, dst_edge), num_nodes=self.num_node)
