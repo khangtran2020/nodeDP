@@ -172,16 +172,16 @@ class AppearDict(object):
         nodes_appear = np.zeros(self.num_node).astype(int)
         nodes_root = np.array(["" for i in range(self.num_node)], dtype='object')
         for i, root in enumerate(self.roots):
-
+            key = root.item()
             nodes = torch.Tensor([])
-            blocks = self.subgraph[root]
+            blocks = self.subgraph[key]
             for block in blocks:
                 src_node = block.srcdata[dgl.NID]
                 dst_node = block.dstdata[dgl.NID]
                 nodes = torch.cat((nodes, src_node,dst_node), dim=0).unique().int()
             index = nodes.tolist()
             nodes_appear[index] += 1
-            nodes_root[index] += f'{root}|'
+            nodes_root[index] += f'{key}|'
 
         node_to_trim = np.where(nodes_appear > self.clip_node)[0].tolist()
         if np.max(nodes_appear) > self.clip_node:
