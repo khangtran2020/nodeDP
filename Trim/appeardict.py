@@ -173,7 +173,7 @@ class AppearDict(object):
         nodes_root = np.array(["" for i in range(self.num_node)], dtype='object')
         for i, root in enumerate(self.roots):
             key = root.item()
-            nodes = torch.Tensor([])
+            nodes = torch.Tensor([]).to(self.device)
             blocks = self.subgraph[key]
             for block in blocks:
                 src_node = block.srcdata[dgl.NID]
