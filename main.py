@@ -34,7 +34,7 @@ def run(args, current_time, device):
         with timeit(logger, 'build-node-dict'):
             roots, subgraph = next(iter(tr_loader))
             roots = roots.to(device)
-            subgraph = subgraph.to(device)
+            # subgraph = subgraph.to(device)
             appear_dict = AppearDict(roots=roots, subgraph=subgraph, graph=train_g, clip_node=args.clip_node, debug=True,
                                      step=i, rule='random', num_layer=args.n_layers)
             rprint(f' # Node to trim: {len(appear_dict.node_to_trim)}')
