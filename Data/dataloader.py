@@ -10,7 +10,7 @@ from dgl.dataloading import transforms, DataLoader
 
 
 class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
-    def __init__(self, num_neighbors, device='cpu'):
+    def __init__(self, num_neighbors, device):
         super().__init__(len(num_neighbors))
         self.num_layers = len(num_neighbors)
         self.fanouts = num_neighbors
