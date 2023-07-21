@@ -26,7 +26,7 @@ def run(args, current_time, device):
     with timeit(logger, 'init-data'):
         train_g, val_g, test_g = read_data(args=args, data_name=args.dataset)
         train_g = train_g.to(device)
-        rprint(f"Node feature device: {train_g.ndate['feat'].device}, Node label device: {train_g.ndate['feat'].device}, "
+        rprint(f"Node feature device: {train_g.ndata['feat'].device}, Node label device: {train_g.ndata['feat'].device}, "
                f"Src edges device: {train_g.edges()[0].device}, Dst edges device: {train_g.edges()[1].device}")
         tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                       val_g=val_g)
