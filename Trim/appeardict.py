@@ -29,6 +29,8 @@ class AppearDict(object):
         self.clip_node = clip_node
         self.step = step
         self.rule = rule
+        rprint(f"Roots: {roots}, "
+               f"Sub-graphs: {subgraph}")
         self.num_node = self.graph.nodes().size(dim=0)
         self.node_appear = np.zeros(self.num_node).astype(int)
         self.node_roots = np.array(["" for i in range(self.num_node)], dtype='object')
