@@ -53,15 +53,16 @@ class AppearDict(object):
         for i, root in enumerate(self.roots):
 
             nodes = torch.Tensor([]).to(self.device)
-            blocks = self.subgraph[root.item()]
+            key = root.item()
+            blocks = self.subgraph[key]
             for block in blocks:
                 src_node = block.srcdata[dgl.NID]
                 dst_node = block.dstdata[dgl.NID]
                 nodes = torch.cat((nodes, src_node,dst_node), dim=0).unique().int()
             index = nodes.tolist()
             self.node_appear[index] += 1
-            self.node_roots[index] += f'{root}|'
-            self.root_dict[root] = index
+            self.node_roots[index] += f'{key}|'
+            self.root_dict[key] = index
         self.node_roots = np.char.strip(self.node_roots.astype(str), '|')
         self.num_node_batch = len(np.where(self.node_appear > 0)[0].tolist())
         self.node_to_trim = np.where(self.node_appear > self.clip_node)[0].tolist()
