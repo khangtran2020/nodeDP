@@ -75,4 +75,6 @@ if __name__ == "__main__":
     args.debug = True if args.debug == 1 else False
     seed_everything(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if args.device == 'cpu':
+        device = torch.device('cpu')
     run(args=args, current_time=current_time, device=device)
