@@ -67,7 +67,8 @@ def update_clean(model, optimizer, objective, batch):
     return labels, predictions.argmax(1), loss
 
 
-def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_node, ns, trim_rule, history, step):
+def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
+                  clip_node, ns, trim_rule, history, step, device):
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
@@ -76,10 +77,8 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad, clip_n
             appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
                                    num_layer=args.n_layers, debug=args.debug)
         else:
-            # AppearDict(roots=roots, subgraph=subgraph, graph=train_g, clip_node=args.clip_node, debug=True,
-            #                                             step=i, rule='random', num_layer=args.n_layers)
             appear_dict = AD(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
-                             num_layer=args.n_layers, debug=args.debug, step=step)
+                             num_layer=args.n_layers, debug=args.debug, step=step, device=device)
         if trim_rule == 'impact':
             with timeit(logger, 'impact-trimming'):
                 if appear_dict.need_to_trim:
@@ -166,7 +165,7 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
     with timeit(logger, task="update-node-dp"):
         target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
                                            batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
-                                           trim_rule=trim_rule, history=history, step=step)
+                                           trim_rule=trim_rule, history=history, step=step, device=device)
     pred = pred.cpu().detach().numpy()
     train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
     train_outputs.extend(pred)
