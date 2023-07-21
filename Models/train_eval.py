@@ -96,7 +96,6 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
     predictions = model(blocks, inputs)
-    print(f"Size of label: {labels.size()}, Size of prediction {predictions.size()}")
     losses = objective(predictions, labels)
     running_loss = torch.mean(losses).item()
     num_data = predictions.size(dim=0)
