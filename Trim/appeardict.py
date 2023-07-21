@@ -3,7 +3,7 @@ import sys
 import torch
 import numpy as np
 from rich import print as rprint
-from Utils.utils import get_index_bynot_value, get_index_by_list
+from Utils.utils import get_index_bynot_value, get_index_by_list, get_index_by_value
 from dgl.dataloading import to_block
 from loguru import logger
 from copy import deepcopy
@@ -19,7 +19,7 @@ def remove_substring_from_string(a, b):
 
 class AppearDict(object):
 
-    def __init__(self, roots, subgraph, graph, clip_node, rule, num_layer, debug, step, device):
+    def __init__(self, roots, subgraph, graph, clip_node, rule, num_layer, debug, step, device, model):
         self.debug = debug
         self.num_layer = num_layer
         self.roots = roots
@@ -30,6 +30,7 @@ class AppearDict(object):
         self.step = step
         self.device = device
         self.rule = rule
+        self.model = model
         self.num_node = self.graph.nodes().size(dim=0)
         self.node_appear = np.zeros(self.num_node).astype(int)
         self.node_roots = np.array(["" for i in range(self.num_node)], dtype='object')
@@ -84,9 +85,13 @@ class AppearDict(object):
                 roots_str = np.delete(roots_str, axis=0, obj=np.where(roots_str == f'{idx}')[0].tolist())
             if self.rule == 'random':
                 root_to_trim = np.random.choice(a=roots_str, size=self.node_appear[idx] - self.clip_node, replace=False)
-            else:
+            elif self.rule == 'adhoc':
                 # rprint(f"Root of node {idx} at selecting: {roots_str}")
                 ranks = [(root, self.get_rank_of_node_in_root(node_id=idx, root=int(root))) for root in roots_str]
+                ranks = sorted(ranks, key=lambda x: x[1])
+                root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
+            else:
+                ranks = [(root, self.get_grad_in_root(root=int(root), node=idx)) for root in roots_str]
                 ranks = sorted(ranks, key=lambda x: x[1])
                 root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
 
@@ -217,6 +222,34 @@ class AppearDict(object):
             dst_n = blk.srcdata[dgl.NID]
             new_blocks.insert(0, blk)
         return new_blocks
+
+    def build_block(self, root):
+        new_blocks = []
+        dst_n = torch.Tensor([root]).int()
+        for i in reversed(range(self.num_layer)):
+            block = self.subgraph[root][i]
+            src_node = block.srcdata[dgl.NID]
+            dst_node = block.dstdata[dgl.NID]
+            src_ed, dst_ed = block.edges()
+            src_edge = torch.index_select(src_node, 0, src_ed).int()
+            dst_edge = torch.index_select(dst_node, 0, dst_ed).int()
+            g = dgl.graph((src_edge, dst_edge), num_nodes=self.num_node)
+            g.ndata['feat'] = self.graph.ndata['feat'].clone()
+            g.ndata['label'] = self.graph.ndata['label'].clone()
+            blk = to_block(g=g, dst_nodes=dst_n, include_dst_in_src=True)
+            dst_n = blk.srcdata[dgl.NID]
+            new_blocks.insert(0, blk)
+        return new_blocks
+
+    def get_grad_in_root(self, root, node):
+        blocks = self.build_block(root=root)
+        nodes = blocks[0].srcdata[dgl.NID]
+        index = get_index_by_value(a=nodes, val=node)
+        inputs = torch.autograd.Variable(blocks[0].srcdata["feat"], requires_grad=True)
+        predictions = self.model(blocks, inputs)
+        predictions.sum().backward()
+        return inputs.grad[index].norm(p=2)
+
 
     def get_rank_of_node_in_root(self, node_id, root):
         blocks = self.subgraph[root]
