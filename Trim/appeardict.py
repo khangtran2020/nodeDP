@@ -201,7 +201,8 @@ class AppearDict(object):
             src_edge = torch.Tensor([])
             dst_edge = torch.Tensor([])
             for root in self.roots:
-                block = self.subgraph[root][i]
+                key = root.item()
+                block = self.subgraph[key][i]
                 src_node = block.srcdata[dgl.NID]
                 dst_node = block.dstdata[dgl.NID]
                 src_ed, dst_ed = block.edges()
