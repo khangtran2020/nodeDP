@@ -54,14 +54,14 @@ class GAT(nn.Module):
             self.layers.append(dglnn.GATConv(in_feats, n_hidden, num_heads=num_head, allow_zero_in_degree=True))
             for i in range(0, n_layers - 2):
                 self.layers.append(dglnn.GATConv(n_hidden, n_hidden, num_heads=num_head, allow_zero_in_degree=True))
-            self.layers.append(dglnn.GATConv(n_hidden, n_classes, num_heads=num_head, allow_zero_in_degree=True))
+            self.layers.append(dglnn.GATConv(n_hidden, n_classes, num_heads=1, allow_zero_in_degree=True))
             self.dropout = nn.Dropout(dropout)
             self.batch_norm = torch.nn.BatchNorm1d(n_hidden)
             self.activation = torch.nn.SELU()
             self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
             print(f"Using activation for last layer {self.last_activation}")
         else:
-            self.layer = dglnn.GATConv(in_feats, n_classes, num_heads=num_head, allow_zero_in_degree=True)
+            self.layer = dglnn.GATConv(in_feats, n_classes, num_heads=1, allow_zero_in_degree=True)
             self.dropout = nn.Dropout(dropout)
             self.batch_norm = torch.nn.BatchNorm1d(n_hidden)
             self.activation = torch.nn.SELU()
