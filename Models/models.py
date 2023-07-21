@@ -52,9 +52,9 @@ class GAT(nn.Module):
         if n_layers > 1:
             self.layers = nn.ModuleList()
             self.layers.append(dglnn.GATConv(in_feats, n_hidden, num_heads=num_head, allow_zero_in_degree=True))
-            for i in range(0, n_layers - 2):
+            for i in range(0, n_layers - 1):
                 self.layers.append(dglnn.GATConv(n_hidden, n_hidden, num_heads=num_head, allow_zero_in_degree=True))
-            self.layers.append(dglnn.GATConv(n_hidden, n_classes, num_heads=1, allow_zero_in_degree=True))
+            self.classification_layer = torch.nn.Linear(in_features=n_hidden, out_features=n_classes)
             self.dropout = nn.Dropout(dropout)
             self.batch_norm = torch.nn.BatchNorm1d(n_hidden)
             self.activation = torch.nn.SELU()
@@ -71,17 +71,19 @@ class GAT(nn.Module):
     def forward(self, blocks, x):
         if self.n_layers > 1:
             h = x
-            for i in range(0, self.n_layers - 1):
+            for i in range(0, self.n_layers):
                 h_dst = h[:blocks[i].num_dst_nodes()]
                 h = self.layers[i](blocks[i], (h, h_dst))
                 h = self.activation(h)
-            h_dst = h[:blocks[-1].num_dst_nodes()]
-            h = self.last_activation(self.layers[-1](blocks[-1], (h, h_dst)))
+            h = h.mean(dim=(1, 2))
+            h = self.last_activation(self.classification_layer(h))
             return h
         else:
             h = x
             h_dst = h[:blocks[0].num_dst_nodes()]
-            h = self.last_activation(self.layer(blocks[0], (h, h_dst)))
+            h = self.activation(self.layer(blocks[0], (h, h_dst)))
+            h = h.mean(dim=(1, 2))
+            h = self.last_activation(self.classification_layer(h))
             return h
 
 class GIN(nn.Module):
