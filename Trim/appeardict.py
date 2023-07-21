@@ -198,8 +198,8 @@ class AppearDict(object):
         new_blocks = []
         dst_n = torch.Tensor(self.roots).int()
         for i in reversed(range(self.num_layer)):
-            src_edge = torch.Tensor([])
-            dst_edge = torch.Tensor([])
+            src_edge = torch.Tensor([]).to(self.device)
+            dst_edge = torch.Tensor([]).to(self.device)
             for root in self.roots:
                 key = root.item()
                 block = self.subgraph[key][i]
