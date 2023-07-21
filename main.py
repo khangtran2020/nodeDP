@@ -77,4 +77,5 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if args.device == 'cpu':
         device = torch.device('cpu')
+    rprint(f"DEVICE USING: {device}")
     run(args=args, current_time=current_time, device=device)
