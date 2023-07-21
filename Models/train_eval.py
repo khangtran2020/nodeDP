@@ -72,6 +72,7 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
+    print(f"Model device: {model.device()}")
     with torch.no_grad():
         if trim_rule == 'impact':
             appear_dict = ADimpact(roots=dst_node, subgraphs=subgraphs, k=clip_node, model=model, graph=g,
