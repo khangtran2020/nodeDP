@@ -1,11 +1,7 @@
 import datetime
 import warnings
 import sys
-import os
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import torch
-import numpy as np
 from config import parse_args
 from Data.read import read_data, init_loader
 from Utils.utils import seed_everything, get_name, timeit
@@ -17,6 +13,9 @@ from Utils.utils import print_args
 from loguru import logger
 from Trim.appeardict import AppearDict
 from rich import print as rprint
+import os
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+import numpy as np
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
