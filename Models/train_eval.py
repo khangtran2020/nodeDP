@@ -78,23 +78,13 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
         else:
             appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
                              num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=None)
-        if trim_rule == 'impact':
-            with timeit(logger, 'impact-trimming'):
-                if appear_dict.need_to_trim:
-                    info = appear_dict.trim()
-                    history['% subgraph'].append(info['% subgraph'])
-                    history['% node avg'].append(info['% node avg'])
-                    history['% edge avg'].append(info['% edge avg'])
-                    history['avg rank'].append(info['avg rank'])
-                blocks = appear_dict.joint_blocks()
-        else:
-            info = appear_dict.trim()
-            history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
-            total = 0
-            for root in info['trimmed_subgraphs']:
-                total += info[root]['num_node_trimmed']/info[root]['num_node_org']
-            history['% node avg'].append(total/(info['num_subgraphs_trimmed']+1e-12))
-            blocks = appear_dict.joint_blocks()
+        info = appear_dict.trim()
+        history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
+        total = 0
+        for root in info['trimmed_subgraphs']:
+            total += info[root]['num_node_trimmed'] / info[root]['num_node_org']
+        history['% node avg'].append(total / (info['num_subgraphs_trimmed'] + 1e-12))
+        blocks = appear_dict.joint_blocks()
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
     predictions = model(blocks, inputs)
