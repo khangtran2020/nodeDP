@@ -3,7 +3,7 @@ import sys
 import torch
 import numpy as np
 from rich import print as rprint
-from Utils.utils import get_index_bynot_value, get_index_by_list, get_index_by_value
+from Utils.utils import get_index_bynot_value, get_index_by_list, get_index_by_value, timeit
 from dgl.dataloading import to_block
 from loguru import logger
 from copy import deepcopy
@@ -91,9 +91,10 @@ class AppearDict(object):
                 ranks = sorted(ranks, key=lambda x: x[1])
                 root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
             else:
-                ranks = [(root, self.get_grad_in_root(root=int(root), node=idx)) for root in roots_str]
-                ranks = sorted(ranks, key=lambda x: x[1])
-                root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
+                with timeit(logger=logger, task='getting-impact-rank'):
+                    ranks = [(root, self.get_grad_in_root(root=int(root), node=idx)) for root in roots_str]
+                    ranks = sorted(ranks, key=lambda x: x[1])
+                    root_to_trim = [x[0] for x in ranks[:int(self.node_appear[idx] - self.clip_node)]]
 
             for root in root_to_trim:
                 if int(root) not in self.trim_info['trimmed_subgraphs']:
