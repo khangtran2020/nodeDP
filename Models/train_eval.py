@@ -71,13 +71,9 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
     optimizer.zero_grad()
     dst_node, subgraphs = batch
     dst_node = list(dst_node)
-    with torch.no_grad():
-        if trim_rule == 'impact':
-            appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
-                             num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=model)
-        else:
-            appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
-                             num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=None)
+    if trim_rule == 'impact':
+        appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                                 num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=model)
         info = appear_dict.trim()
         history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
         total = 0
@@ -85,6 +81,18 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
             total += info[root]['num_node_trimmed'] / info[root]['num_node_org']
         history['% node avg'].append(total / (info['num_subgraphs_trimmed'] + 1e-12))
         blocks = appear_dict.joint_blocks()
+    else:
+        with torch.no_grad():
+            appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                             num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=None)
+            info = appear_dict.trim()
+            history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
+            total = 0
+            for root in info['trimmed_subgraphs']:
+                total += info[root]['num_node_trimmed'] / info[root]['num_node_org']
+            history['% node avg'].append(total / (info['num_subgraphs_trimmed'] + 1e-12))
+            blocks = appear_dict.joint_blocks()
+    model.zero_grad()
     inputs = blocks[0].srcdata["feat"]
     labels = blocks[-1].dstdata["label"]
     predictions = model(blocks, inputs)
