@@ -27,6 +27,7 @@ RUN adduser --disabled-password --gecos '' ktran \
     && adduser ktran sudo \
     && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
 RUN chown ktran:ktran ./
+RUN chown ktran:ktran ./opt/conda/pkgs/urls.txt
 USER ktran
 
 COPY ./ ./
