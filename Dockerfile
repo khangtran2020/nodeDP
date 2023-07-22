@@ -18,6 +18,10 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_6
         find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
         /opt/conda/bin/conda clean -afy
 
+COPY ./env.yml /tmp/env_test.yml
+RUN conda update conda \
+    && conda env create --name torch -f /tmp/env_test.yml
+
 # set path to conda
 ENV PATH /opt/conda/bin:$PATH
 
