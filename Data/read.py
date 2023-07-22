@@ -6,7 +6,6 @@ import numpy as np
 from functools import partial
 from Data.facebook import Facebook
 from Data.amazon import Amazon
-from Data.helper import FilterClassByCount
 from copy import deepcopy
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
