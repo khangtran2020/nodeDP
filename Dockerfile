@@ -1,15 +1,9 @@
 # Use nvidia/cuda image
 FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
 
-RUN adduser --disabled-password --gecos '' ktran \
-    && adduser ktran sudo \
-    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
-
-USER ktran
-
 # set bash as current shell
-#RUN chsh -s /bin/bash
-#SHELL ["/bin/bash", "-c"]
+RUN chsh -s /bin/bash
+SHELL ["/bin/bash", "-c"]
 
 # install anaconda
 RUN apt-get update
@@ -30,3 +24,9 @@ ENV PATH /opt/conda/bin:$PATH
 WORKDIR /workspace/projects
 COPY ./ ./
 RUN bash ./shell/init.sh
+
+RUN adduser --disabled-password --gecos '' ktran \
+    && adduser ktran sudo \
+    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
+
+USER ktran
