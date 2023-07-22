@@ -1,8 +1,9 @@
 # Use nvidia/cuda image
 FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
 
-RUN groupadd -g 999 ktran && \
-    useradd -r -u 999 -g ktran ktran
+RUN adduser --disabled-password --gecos '' ktran \
+    && adduser ktran sudo \
+    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
 USER ktran
 
