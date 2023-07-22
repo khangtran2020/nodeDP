@@ -8,8 +8,8 @@ RUN adduser --disabled-password --gecos '' ktran \
 USER ktran
 
 # set bash as current shell
-RUN chsh -s /bin/bash
-SHELL ["/bin/bash", "-c"]
+#RUN chsh -s /bin/bash
+#SHELL ["/bin/bash", "-c"]
 
 # install anaconda
 RUN apt-get update
