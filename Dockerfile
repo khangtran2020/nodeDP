@@ -33,13 +33,6 @@ ENV CONDA_DEFAULT_ENV $torch
 
 WORKDIR /workspace/projects
 COPY ./ ./
-RUN bash ./shell/init.sh
-
-RUN adduser --disabled-password --gecos '' newuser \
-    && adduser newuser sudo \
-    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
-RUN chown newuser:newuser ./
-USER newuser
 
 
 
