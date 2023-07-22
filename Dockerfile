@@ -26,7 +26,7 @@ RUN conda update conda \
     && conda env create --name torch -f /tmp/env_test.yml
 
 
-RUN echo "conda activate pet" >> ~/.bashrc
+RUN echo "conda activate torch" >> ~/.bashrc
 ENV PATH /opt/conda/envs/pet/bin:$PATH
 ENV CONDA_DEFAULT_ENV $torch
 
