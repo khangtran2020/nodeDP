@@ -22,19 +22,21 @@ COPY ./env.yml /tmp/env_test.yml
 RUN conda update conda \
     && conda env create --name torch -f /tmp/env_test.yml
 
-# set path to conda
-ENV PATH /opt/conda/bin:$PATH
+
+RUN echo "conda activate pet" >> ~/.bashrc
+ENV PATH /opt/conda/envs/pet/bin:$PATH
+ENV CONDA_DEFAULT_ENV $torch
 
 
 WORKDIR /workspace/projects
-#RUN adduser --disabled-password --gecos '' ktran \
-#    && adduser ktran sudo \
-#    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
-#RUN chown ktran:ktran ./
-#RUN chown ktran:ktran ./opt/conda/pkgs/urls.txt
-#USER ktran
-
 COPY ./ ./
 RUN bash ./shell/init.sh
+
+RUN adduser --disabled-password --gecos '' ktran \
+    && adduser ktran sudo \
+    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
+RUN chown ktran:ktran ./
+USER ktran
+
 
 
