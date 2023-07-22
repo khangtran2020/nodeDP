@@ -32,11 +32,11 @@ WORKDIR /workspace/projects
 COPY ./ ./
 RUN bash ./shell/init.sh
 
-RUN adduser --disabled-password --gecos '' ktran \
-    && adduser ktran sudo \
+RUN adduser --disabled-password --gecos '' newuser \
+    && adduser newuser sudo \
     && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
-RUN chown ktran:ktran ./
-USER ktran
+RUN chown newuser:newuser ./
+USER newuser
 
 
 
