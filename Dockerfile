@@ -21,12 +21,14 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_6
 # set path to conda
 ENV PATH /opt/conda/bin:$PATH
 
-WORKDIR /workspace/projects
-COPY ./ ./
-RUN bash ./shell/init.sh
-
 RUN adduser --disabled-password --gecos '' ktran \
     && adduser ktran sudo \
     && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
 USER ktran
+
+WORKDIR /workspace/projects
+COPY ./ ./
+RUN bash ./shell/init.sh
+RUN chown ktran ./
+
