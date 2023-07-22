@@ -26,7 +26,7 @@ WORKDIR /workspace/projects
 RUN adduser --disabled-password --gecos '' ktran \
     && adduser ktran sudo \
     && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
-RUN chown ktran ./
+RUN chown ktran:ktran ./
 USER ktran
 
 COPY ./ ./
