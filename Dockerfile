@@ -1,7 +1,10 @@
 # Use nvidia/cuda image
 FROM nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
 
-USER QCRI\ktran
+RUN groupadd -g 999 ktran && \
+    useradd -r -u 999 -g ktran ktran
+
+USER ktran
 
 # set bash as current shell
 RUN chsh -s /bin/bash
