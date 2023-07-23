@@ -35,12 +35,7 @@ RUN chown newuser ./
 
 COPY ./ ./
 
-RUN chown -R newuser ./
-
-RUN mkdir results
-RUN mkdir results/dict
-RUN mkdir results/models
-RUN mkdir results/logs
+RUN chown -R newuser:newuser ./
 
 USER newuser
 RUN conda init bash
