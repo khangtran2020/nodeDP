@@ -5,6 +5,7 @@ channels:
   - conda-forge
   - dglteam
   - defaults
+  - nvidia
 dependencies:
   - blas=1.0=mkl
   - bottleneck=1.3.5=py37h67323c0_0
