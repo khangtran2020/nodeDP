@@ -21,9 +21,9 @@ RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_6
 # set path to conda
 ENV PATH /opt/conda/bin:$PATH
 
-COPY ./env.yml /tmp/env_test.yml
+COPY ./torch.yml /tmp/torch.yml
 RUN conda update conda \
-    && conda env create --name torch -f /tmp/env_test.yml
+    && conda env create --name torch -f /tmp/torch.yml
 
 
 RUN echo "conda activate torch" >> ~/.bashrc
