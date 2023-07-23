@@ -30,9 +30,19 @@ RUN echo "conda activate torch" >> ~/.bashrc
 ENV PATH /opt/conda/envs/pet/bin:$PATH
 ENV CONDA_DEFAULT_ENV $torch
 
+RUN adduser --disabled-password --gecos '' newuser \
+    && adduser newuser sudo \
+    && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
 
 WORKDIR /workspace/projects
+RUN chown newuser ./
+
 COPY ./ ./
+
+RUN mkdir results
+RUN mkdir results/dict
+RUN mkdir results/models
+RUN mkdir results/logs
 
 
 
