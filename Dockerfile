@@ -41,11 +41,11 @@ RUN mkdir results/models
 RUN mkdir results/logs
 
 USER newuser
-RUN chown -R newuser ./
 RUN conda init bash
 RUN echo "conda activate torch" >> ~/.bashrc
 ENV PATH /opt/conda/envs/pet/bin:$PATH
 ENV CONDA_DEFAULT_ENV $torch
 
+RUN chown -R newuser ./
 
 
