@@ -23,7 +23,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 COPY ./torch.yml /tmp/torch.yml
 RUN conda update conda \
-    && conda env create --name torch python=3.7
+    && conda env create --name torch -f /tmp/torch.yml
 
 
 RUN echo "conda activate torch" >> ~/.bashrc
