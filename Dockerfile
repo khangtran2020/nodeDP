@@ -44,5 +44,6 @@ RUN mkdir results/dict
 RUN mkdir results/models
 RUN mkdir results/logs
 
+USER newuser
 
 

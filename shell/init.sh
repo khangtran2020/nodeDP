@@ -3,7 +3,8 @@ mkdir results/dict
 mkdir results/models
 mkdir results/logs
 
-conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch -c nvidia -y
-conda install -c dglteam/label/cu113 dgl -y
-conda install pyg -c pyg -y
-conda install pandas numpy scipy tqdm matplotlib seaborn -y
+pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install  dgl -f https://data.dgl.ai/wheels/cu113/repo.html
+pip install  dglgo -f https://data.dgl.ai/wheels-test/repo.html
+pip install torch_geometric
+pip install loguru numpy scipy rich tqdm matplotlib
