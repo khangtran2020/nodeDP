@@ -27,6 +27,7 @@ RUN conda update conda \
 
 
 RUN echo "conda activate torch" >> ~/.bashrc
+RUN echo "bash shell/init.sh" >> ~/.bashrc
 ENV PATH /opt/conda/envs/pet/bin:$PATH
 ENV CONDA_DEFAULT_ENV $torch
 
