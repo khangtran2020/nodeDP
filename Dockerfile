@@ -26,10 +26,6 @@ RUN conda update conda \
     && conda env create --name torch -f /tmp/torch.yml
 
 
-RUN echo "conda activate torch" >> ~/.bashrc
-ENV PATH /opt/conda/envs/pet/bin:$PATH
-ENV CONDA_DEFAULT_ENV $torch
-
 RUN adduser --disabled-password --gecos '' newuser \
     && adduser newuser sudo \
     && echo '%sudo ALL=(ALL:ALL) ALL' >> /etc/sudoers
@@ -43,5 +39,12 @@ RUN mkdir results
 RUN mkdir results/dict
 RUN mkdir results/models
 RUN mkdir results/logs
+
+USER newuser
+RUN conda init bash
+RUN echo "conda activate torch" >> ~/.bashrc
+ENV PATH /opt/conda/envs/pet/bin:$PATH
+ENV CONDA_DEFAULT_ENV $torch
+
 
 
