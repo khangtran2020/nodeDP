@@ -35,6 +35,8 @@ RUN chown newuser ./
 
 COPY ./ ./
 
+RUN chown -R newuser ./
+
 RUN mkdir results
 RUN mkdir results/dict
 RUN mkdir results/models
@@ -46,6 +48,6 @@ RUN echo "conda activate torch" >> ~/.bashrc
 ENV PATH /opt/conda/envs/pet/bin:$PATH
 ENV CONDA_DEFAULT_ENV $torch
 
-RUN chown -R newuser ./
+
 
 
