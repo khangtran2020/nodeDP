@@ -72,7 +72,7 @@ class AppearDict(object):
     def trim(self):
         if self.debug:
             root_node = deepcopy(self.node_roots)
-        logger.info(f"BEGIN TRIMMING FOR STEP {self.step}\n\n")
+        # logger.info(f"BEGIN TRIMMING FOR STEP {self.step}\n\n")
         idx = np.argmax(self.node_appear)
         # rprint("Type of idx:", type(idx))
         val = self.node_appear[idx]
@@ -169,7 +169,7 @@ class AppearDict(object):
                 # rprint(f"New roots: {list(self.subgraph.keys())}")
                 sys.exit()
             self.check_node()
-        logger.info(f"\n\nDONE TRIMMING FOR STEP {self.step}")
+        # logger.info(f"\n\nDONE TRIMMING FOR STEP {self.step}")
         return self.trim_info
 
     def check_node(self):
