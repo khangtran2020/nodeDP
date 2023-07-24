@@ -25,13 +25,13 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     criterion.to(device)
 
     if args.performance_metric == 'acc':
-        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class)
+        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
     elif args.performance_metric == 'pre':
-        metrics = torchmetrics.classification.Precision(task="multiclass", num_classes=args.num_class)
+        metrics = torchmetrics.classification.Precision(task="multiclass", num_classes=args.num_class).to(device)
     elif args.performance_metric == 'f1':
-        metrics = torchmetrics.classification.F1Score(task="multiclass", num_classes=args.num_class)
+        metrics = torchmetrics.classification.F1Score(task="multiclass", num_classes=args.num_class).to(device)
     elif args.performance_metric == 'auc':
-        metrics = torchmetrics.classification.AUROC(task="multiclass", num_classes=args.num_class)
+        metrics = torchmetrics.classification.AUROC(task="multiclass", num_classes=args.num_class).to(device)
     else:
         metrics = None
 
@@ -59,25 +59,24 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green',
                bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
     for epoch in tk0:
-        train_loss, train_out, train_targets = train_nodedp(args=args, dataloader=tr_loader, model=model,
+        tr_loss, tr_acc = train_nodedp(args=args, dataloader=tr_loader, model=model,
                                                             criterion=criter, optimizer=optimizer, device=device,
                                                             scheduler=None, g=graph, clip_grad=args.clip,
                                                             clip_node=args.clip_node, ns=args.ns,
-                                                            trim_rule=args.trim_rule, history=history, step=epoch)
+                                                            trim_rule=args.trim_rule, history=history, step=epoch,
+                                                            metric=metrics)
         # scheduler.step()
         va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                   metric=metrics, device=device)
         te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
                                   metric=metrics, device=device)
 
-        train_acc = metrics(train_out, train_targets)
-
         # scheduler.step(va_loss)
 
-        tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=va_loss, Va_ACC=va_acc, Te_ACC=te_acc)
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc, Va_Loss=va_loss, Va_ACC=va_acc, Te_ACC=te_acc)
 
-        history['train_history_loss'].append(train_loss)
-        history['train_history_acc'].append(train_acc)
+        history['train_history_loss'].append(tr_loss)
+        history['train_history_acc'].append(tr_acc)
         history['val_history_loss'].append(va_loss)
         history['val_history_acc'].append(va_acc)
         history['test_history_loss'].append(te_loss)

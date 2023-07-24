@@ -1,5 +1,6 @@
 import dgl
 import torch
+import torchmetrics
 
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_fn, eval_fn, performace_eval
@@ -18,6 +19,17 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
+    if args.performance_metric == 'acc':
+        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
+    elif args.performance_metric == 'pre':
+        metrics = torchmetrics.classification.Precision(task="multiclass", num_classes=args.num_class).to(device)
+    elif args.performance_metric == 'f1':
+        metrics = torchmetrics.classification.F1Score(task="multiclass", num_classes=args.num_class).to(device)
+    elif args.performance_metric == 'auc':
+        metrics = torchmetrics.classification.AUROC(task="multiclass", num_classes=args.num_class).to(device)
+    else:
+        metrics = None
+
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
 
@@ -35,28 +47,24 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs)
     for epoch in tk0:
-        train_loss, train_out, train_targets = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
-                                                        optimizer=optimizer, device=device, scheduler=None)
-        val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
-                                                     device=device)
-        test_loss, test_outputs, test_targets = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
-                                                        device=device)
-
-        train_acc = performace_eval(args, train_targets, train_out)
-        test_acc = performace_eval(args, test_targets, test_outputs)
-        val_acc = performace_eval(args, val_targets, val_outputs)
+        tr_loss, tr_acc = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
+                                   optimizer=optimizer, device=device, scheduler=None, metric=metrics)
+        va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
+                                  device=device, metric=metrics)
+        te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
+                                  device=device, metric=metrics)
 
         # scheduler.step(acc_score)
 
-        tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=val_loss, Va_ACC=val_acc, Te_ACC = test_acc)
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc, Va_Loss=va_loss, Va_ACC=va_acc, Te_ACC=te_acc)
 
-        history['train_history_loss'].append(train_loss)
-        history['train_history_acc'].append(train_acc)
-        history['val_history_loss'].append(val_loss)
-        history['val_history_acc'].append(val_acc)
-        history['test_history_loss'].append(test_loss)
-        history['test_history_acc'].append(test_acc)
-        es(epoch=epoch, epoch_score=val_acc, model=model, model_path=args.save_path + model_name)
+        history['train_history_loss'].append(tr_loss)
+        history['train_history_acc'].append(tr_acc)
+        history['val_history_loss'].append(va_loss)
+        history['val_history_acc'].append(va_acc)
+        history['test_history_loss'].append(te_loss)
+        history['test_history_acc'].append(te_acc)
+        es(epoch=epoch, epoch_score=va_acc, model=model, model_path=args.save_path + model_name)
         # if es.early_stop:
         #     break
 

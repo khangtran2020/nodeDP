@@ -64,7 +64,7 @@ def update_clean(model, optimizer, objective, batch):
     loss = objective(predictions, labels)
     loss.backward()
     optimizer.step()
-    return labels, predictions.argmax(1), loss
+    return labels, predictions, loss
 
 
 def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
@@ -120,7 +120,7 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
             tensor.grad = saved_var[tensor_name] / num_data
 
     optimizer.step()
-    return labels, predictions.argmax(1), running_loss
+    return labels, predictions, running_loss
 
 
 def eval_clean(model, objective, batch):
@@ -132,27 +132,25 @@ def eval_clean(model, objective, batch):
     return labels, predictions.argmax(1), loss
 
 
-def train_fn(dataloader, model, criterion, optimizer, device, scheduler):
+def train_fn(dataloader, model, criterion, optimizer, device, metric, scheduler):
     model.to(device)
     model.train()
-    train_targets = []
-    train_outputs = []
     train_loss = 0
     num_data = 0.0
     for bi, d in enumerate(dataloader):
         target, pred, loss = update_clean(model=model, optimizer=optimizer, objective=criterion, batch=d)
         if scheduler is not None:
             scheduler.step()
-        pred = pred.cpu().detach().numpy()
-        num_data += pred.shape[0]
-        train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
-        train_outputs.extend(pred)
+        metric.update(pred, target)
+        num_data += pred.size(dim=0)
         train_loss += loss.item()
-    return train_loss / num_data, train_outputs, train_targets
+    performance = metric.compute()
+    metric.reset()
+    return train_loss / num_data, performance
 
 
 def train_nodedp(args, dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns,
-                 trim_rule, history, step):
+                 trim_rule, history, step, metric):
     model.to(device)
     g.to(device)
     model.train()
@@ -162,14 +160,14 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
         target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
                                            batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
                                            trim_rule=trim_rule, history=history, step=step, device=device)
-    # pred = pred.cpu().detach().numpy()
-    # train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
-    # train_outputs.extend(pred)
     train_loss += loss
     if scheduler is not None:
         scheduler.step()
 
-    return train_loss, target, pred
+    performace = metric(pred, target)
+    metric.reset()
+
+    return train_loss, performace
 
 
 def eval_fn(data_loader, model, criterion, metric, device):
