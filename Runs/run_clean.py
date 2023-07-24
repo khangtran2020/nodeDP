@@ -56,20 +56,19 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
 
         # scheduler.step(acc_score)
 
-        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc, Va_Loss=va_loss, Va_ACC=va_acc, Te_ACC=te_acc)
+        tk0.set_postfix(Loss=tr_loss.item(), ACC=tr_acc.item(), Va_Loss=va_loss.item(), Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
-        history['train_history_loss'].append(tr_loss)
-        history['train_history_acc'].append(tr_acc)
-        history['val_history_loss'].append(va_loss)
-        history['val_history_acc'].append(va_acc)
-        history['test_history_loss'].append(te_loss)
-        history['test_history_acc'].append(te_acc)
-        es(epoch=epoch, epoch_score=va_acc, model=model, model_path=args.save_path + model_name)
+        history['train_history_loss'].append(tr_loss.item())
+        history['train_history_acc'].append(tr_acc.item())
+        history['val_history_loss'].append(va_loss.item())
+        history['val_history_acc'].append(va_acc.item())
+        history['test_history_loss'].append(te_loss.item())
+        history['test_history_acc'].append(te_acc.item())
+        es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
         # if es.early_stop:
         #     break
 
     model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_fn(te_loader, model, criterion, device)
-    test_acc = performace_eval(args, test_targets, test_outputs)
-    history['best_test'] = test_acc
+    test_loss, te_acc = eval_fn(te_loader, model, criterion, device)
+    history['best_test'] = te_acc.item()
     save_res(name=name, args=args, dct=history)
