@@ -1,4 +1,5 @@
 import torch
+import torchmetrics
 from rich import print as rprint
 from rich.pretty import pretty_repr
 from tqdm import tqdm
@@ -23,7 +24,18 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, min_lr=1e-3, factor=0.9, patience=30)
+    if args.performance_metric == 'acc':
+        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class)
+    elif args.performance_metric == 'pre':
+        metrics = torchmetrics.classification.Precision(task="multiclass", num_classes=args.num_class)
+    elif args.performance_metric == 'f1':
+        metrics = torchmetrics.classification.F1Score(task="multiclass", num_classes=args.num_class)
+    elif args.performance_metric == 'auc':
+        metrics = torchmetrics.classification.AUROC(task="multiclass", num_classes=args.num_class)
+    else:
+        metrics = None
+
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, min_lr=1e-3, factor=0.9, patience=30)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
@@ -53,32 +65,29 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
                                                             clip_node=args.clip_node, ns=args.ns,
                                                             trim_rule=args.trim_rule, history=history, step=epoch)
         # scheduler.step()
-        val_loss, val_outputs, val_targets = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
-                                                     device=device)
-        test_loss, test_outputs, test_targets = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
-                                                        device=device)
+        va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
+                                  metric=metrics, device=device)
+        te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
+                                  metric=metrics, device=device)
 
-        train_acc = performace_eval(args, train_targets, train_out)
-        test_acc = performace_eval(args, test_targets, test_outputs)
-        val_acc = performace_eval(args, val_targets, val_outputs)
+        train_acc = metrics(train_out, train_targets)
 
-        scheduler.step(val_loss)
+        # scheduler.step(va_loss)
 
-        tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=val_loss, Va_ACC=val_acc, Te_ACC=test_acc)
+        tk0.set_postfix(Loss=train_loss, ACC=train_acc, Va_Loss=va_loss, Va_ACC=va_acc, Te_ACC=te_acc)
 
         history['train_history_loss'].append(train_loss)
         history['train_history_acc'].append(train_acc)
-        history['val_history_loss'].append(val_loss)
-        history['val_history_acc'].append(val_acc)
-        history['test_history_loss'].append(test_loss)
-        history['test_history_acc'].append(test_acc)
-        es(epoch=epoch, epoch_score=val_acc, model=model, model_path=args.save_path + model_name)
+        history['val_history_loss'].append(va_loss)
+        history['val_history_acc'].append(va_acc)
+        history['test_history_loss'].append(te_loss)
+        history['test_history_acc'].append(te_acc)
+        es(epoch=epoch, epoch_score=va_acc, model=model, model_path=args.save_path + model_name)
         # torch.save(model.state_dict(), args.save_path + model_name)
 
     model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, test_outputs, test_targets = eval_fn(te_loader, model, criterion, device)
-    test_acc = performace_eval(args, test_targets, test_outputs)
-    history['best_test'] = test_acc
+    test_loss, te_acc = eval_fn(te_loader, model, criterion, metric=metrics, device=device)
+    history['best_test'] = te_acc
     if args.debug:
         rprint(pretty_repr(history))
     save_res(name=name, args=args, dct=history)

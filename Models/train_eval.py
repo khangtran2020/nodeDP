@@ -156,28 +156,24 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
     model.to(device)
     g.to(device)
     model.train()
-    train_targets = []
-    train_outputs = []
     train_loss = 0
     batch = next(iter(dataloader))
     with timeit(logger, task="update-node-dp"):
         target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
                                            batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
                                            trim_rule=trim_rule, history=history, step=step, device=device)
-    pred = pred.cpu().detach().numpy()
-    train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
-    train_outputs.extend(pred)
+    # pred = pred.cpu().detach().numpy()
+    # train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
+    # train_outputs.extend(pred)
     train_loss += loss
     if scheduler is not None:
         scheduler.step()
 
-    return train_loss, train_targets, train_outputs
+    return train_loss, target, pred
 
 
-def eval_fn(data_loader, model, criterion, device):
+def eval_fn(data_loader, model, criterion, metric, device):
     model.to(device)
-    fin_targets = []
-    fin_outputs = []
     loss_eval = 0
     model.eval()
     num_point = 0
@@ -187,10 +183,10 @@ def eval_fn(data_loader, model, criterion, device):
             num_pt = pred.size(dim=0)
             loss_eval += loss.item() * num_pt
             num_point += num_pt
-            outputs = pred.cpu().detach().numpy()
-            fin_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
-            fin_outputs.extend(outputs)
-    return loss_eval / num_point, fin_outputs, fin_targets
+            metric.update(pred, target)
+        performance = metric.compute()
+        metric.reset()
+    return loss_eval / num_point, performance
 
 
 def get_norm_grad(model):
