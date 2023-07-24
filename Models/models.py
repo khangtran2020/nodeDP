@@ -75,7 +75,6 @@ class GAT(nn.Module):
                 h_dst = h[:blocks[i].num_dst_nodes()]
                 h = self.layers[i](blocks[i], (h, h_dst))
                 h = self.activation(h)
-            print("Size of embedding in forward befor classification:", h.size())
             h = h.mean(dim=tuple([i for i in range(1, self.n_layers+1)]))
             h = self.last_activation(self.classification_layer(h))
             return h
