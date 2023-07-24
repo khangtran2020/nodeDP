@@ -73,13 +73,13 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
 
         # scheduler.step(va_loss)
 
-        tk0.set_postfix(Loss=tr_loss.item(), ACC=tr_acc.item(), Va_Loss=va_loss.item(), Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
-        history['train_history_loss'].append(tr_loss.item())
+        history['train_history_loss'].append(tr_loss)
         history['train_history_acc'].append(tr_acc.item())
-        history['val_history_loss'].append(va_loss.item())
+        history['val_history_loss'].append(va_loss)
         history['val_history_acc'].append(va_acc.item())
-        history['test_history_loss'].append(te_loss.item())
+        history['test_history_loss'].append(te_loss)
         history['test_history_acc'].append(te_acc.item())
         es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
         # torch.save(model.state_dict(), args.save_path + model_name)
