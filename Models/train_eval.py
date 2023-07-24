@@ -60,6 +60,7 @@ def update_clean(model, optimizer, objective, batch):
     inputs = mfgs[0].srcdata["feat"]
     labels = mfgs[-1].dstdata["label"]
     predictions = model(mfgs, inputs)
+    print(f"Size of predictions: {predictions.size()}, Size of labels: {labels.size()}")
     loss = objective(predictions, labels)
     loss.backward()
     optimizer.step()
