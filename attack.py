@@ -5,7 +5,8 @@ from Data.read import *
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
-from Attacks.NMI import run_NMI
+from Attacks.node_attack import run_NMI
+from Attacks.link_attack import run_LinkTeller
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
@@ -15,6 +16,8 @@ warnings.filterwarnings("ignore")
 def run(args, current_time, device):
     if args.attack_mode == 'node':
         run_NMI(args=args, current_time=current_time, device=device)
+    else:
+        run_LinkTeller(args=args, current_time=current_time, device=device)
 
 
 

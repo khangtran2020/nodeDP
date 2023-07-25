@@ -7,17 +7,16 @@ import torch
 import dgl
 
 class Attacker:
-    def __init__(self, dataset, model, n_samples, influence):
-        self.dataset = dataset
+
+    def __init__(self, graph, model, n_samples, influence):
         self.model = model
-        self.graph = self.dataset[0]
+        self.graph = graph
         self.graph = dgl.add_self_loop(self.graph)
         self.n_node = self.graph.ndata['feat'].shape[0]
         self.adj = self.graph.adj(scipy_fmt='csr')
         self.features = self.graph.ndata['feat']
         self.n_samples = n_samples
         self.influence = influence
-        np.random.seed(1608)
         # print(self.adj.shape, self.adj.indices, self.adj.indptr)
 
     def get_gradient_eps(self, u, v):
@@ -105,17 +104,6 @@ class Attacker:
             }
         }, folder_name + filename)
         print(f'attack results saved to: {filename}')
-
-    def construct_private_edge_set(self):
-        indices = self.dataset.priv_edge_adj.indices
-        indptr = self.dataset.priv_edge_adj.indptr
-        n_nodes = len(self.dataset.priv_nodes)
-        indice_all = range(n_nodes)
-        print('#indice =', len(indice_all), len(self.dataset.priv_nodes))
-        nodes = np.random.choice(indice_all, self.n_samples, replace=False)  # choose from low degree nodes
-        self.test_nodes = [self.dataset.priv_nodes[i] for i in nodes]
-        self.exist_edges, self.nonexist_edges = self._get_edge_sets_among_nodes(indices=indices, indptr=indptr,
-                                                                                     nodes=self.test_nodes)
 
     def construct_edge_sets_from_random_subgraph(self):
         indices = self.adj.indices

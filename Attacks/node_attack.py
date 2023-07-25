@@ -41,7 +41,7 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
 
 
 def run_NMI(args, current_time, device):
-    with timeit(logger=logger, task='init-clean-model'):
+    with timeit(logger=logger, task='init-target-model'):
         if args.retrain_tar:
             history = init_history_attack()
             train_g, val_g, test_g, graph = read_data(args=args, data_name=args.dataset, history=history)
