@@ -66,6 +66,7 @@ def add_data_attack_group(group):
     group.add_argument('--dataset', type=str, default='cora', help="name of dataset")
     group.add_argument('--n_neighbor', type=int, default=4, help="# of neighbor each layer")
     group.add_argument('--ratio', type=float, default=0.5, help="train/test split ratio")
+    group.add_argument('--density', type=float, default=0.2, help="density reduction")
     group.add_argument('--min_counts', type=int, default=10000, help="count to filter the target label")
 
 def add_model_attack_group(group):

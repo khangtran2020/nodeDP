@@ -8,47 +8,141 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 
 
-def run(args, tr_loader, shadow_model, tar_model, optimizer, name, device, history):
+def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, name, device):
     model_name = '{}_shadow.pt'.format(name)
 
     shadow_model.to(device)
-    tar_model.to(device)
 
     # DEfining criterion
-    criterion = torch.nn.MSELoss()
+    criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
 
-    metrics = torchmetrics.regression.SymmetricMeanAbsolutePercentageError().to(device)
+    metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
 
     # THE ENGINE LOOP
-    tk0 = tqdm(range(args.epochs), total=args.epochs)
+    tk0 = tqdm(range(epochs), total=epochs)
     for epoch in tk0:
-        tr_loss, tr_acc = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
-                                   optimizer=optimizer, device=device, scheduler=None, metric=metrics)
-        va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
-                                  device=device, metric=metrics)
-        te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
-                                  device=device, metric=metrics)
+        tr_loss, tr_acc = update_step(model=shadow_model, device=device, loader=tr_loader, metrics=metrics,
+                                      criterion=criterion, optimizer=optimizer)
+        va_loss, va_acc = eval_step(model=shadow_model, device=device, loader=va_loader, metrics=metrics,
+                                    criterion=criterion)
 
-        # scheduler.step(acc_score)
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item())
+
+        es(epoch=epoch, epoch_score=va_acc.item(), model=shadow_model, model_path=args.save_path + model_name)
+
+    return shadow_model
+
+
+def update_step(model, device, loader, metrics, criterion, optimizer):
+    model.to(device)
+    model.train()
+    train_loss = 0
+    num_data = 0.0
+    for bi, d in enumerate(loader):
+        optimizer.zero_grad()
+        input_nodes, output_nodes, mfgs = d
+        inputs = mfgs[0].srcdata["feat"]
+        labels = mfgs[-1].dstdata["label"]
+        predictions = model(mfgs, inputs)
+        loss = criterion(predictions, labels)
+        loss.backward()
+        optimizer.step()
+        metrics.update(predictions.argmax(dim=1), labels.argmax(dim=1))
+        num_data += predictions.size(dim=0)
+        train_loss += loss.item()
+    performance = metrics.compute()
+    metrics.reset()
+    return train_loss / num_data, performance
+
+
+def eval_step(model, device, loader, metrics, criterion):
+    model.to(device)
+    model.eval()
+    loss = 0
+    num_data = 0.0
+    with torch.no_grad():
+        for bi, d in enumerate(loader):
+            input_nodes, output_nodes, mfgs = d
+            inputs = mfgs[0].srcdata["feat"]
+            labels = mfgs[-1].dstdata["label"]
+            predictions = model(mfgs, inputs)
+            loss = criterion(predictions, labels)
+            metrics.update(predictions.argmax(dim=1), labels.argmax(dim=1))
+            num_data += predictions.size(dim=0)
+            loss += loss.item()
+        performance = metrics.compute()
+        metrics.reset()
+    return loss / num_data, performance
+
+
+def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, optimizer, name, device):
+    model_name = '{}_attack.pt'.format(name)
+
+    attack_model.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss()
+    criterion.to(device)
+
+    metrics = torchmetrics.classification.BinaryAUROC().to(device)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # THE ENGINE LOOP
+    tk0 = tqdm(range(epochs), total=epochs)
+    for epoch in tk0:
+        tr_loss, tr_acc = update_attack_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
+                                             criterion=criterion, optimizer=optimizer)
+        va_loss, va_acc = eval_attack_step(model=attack_model, device=device, loader=va_loader, metrics=metrics,
+                                           criterion=criterion)
+        te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
+                                           criterion=criterion)
 
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
-        history['train_history_loss'].append(tr_loss)
-        history['train_history_acc'].append(tr_acc.item())
-        history['val_history_loss'].append(va_loss)
-        history['val_history_acc'].append(va_acc.item())
-        history['test_history_loss'].append(te_loss)
-        history['test_history_acc'].append(te_acc.item())
-        es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
-        # if es.early_stop:
-        #     break
+        es(epoch=epoch, epoch_score=va_acc.item(), model=attack_model, model_path=args.save_path + model_name)
 
-    model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, te_acc = eval_fn(te_loader, model, criterion, device)
-    history['best_test'] = te_acc.item()
-    save_res(name=name, args=args, dct=history)
-    return model, history
+    return attack_model
+
+
+def update_attack_step(model, device, loader, metrics, criterion, optimizer):
+    model.to(device)
+    model.train()
+    train_loss = 0
+    num_data = 0.0
+    for bi, d in enumerate(loader):
+        optimizer.zero_grad()
+        features, target = d
+        predictions = model(features)
+        loss = criterion(predictions, target)
+        loss.backward()
+        optimizer.step()
+        metrics.update(predictions, target)
+        num_data += predictions.size(dim=0)
+        train_loss += loss.item()
+    performance = metrics.compute()
+    metrics.reset()
+    return train_loss / num_data, performance
+
+
+def eval_attack_step(model, device, loader, metrics, criterion):
+    model.to(device)
+    model.eval()
+    loss = 0
+    num_data = 0.0
+    with torch.no_grad():
+        for bi, d in enumerate(loader):
+            features, target = d
+            predictions = model(features)
+            loss = criterion(predictions, target)
+            metrics.update(predictions.argmax(dim=1), target)
+            num_data += predictions.size(dim=0)
+            loss += loss.item()
+        performance = metrics.compute()
+        metrics.reset()
+    return loss / num_data, performance

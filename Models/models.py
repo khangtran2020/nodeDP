@@ -86,22 +86,27 @@ class GAT(nn.Module):
             h = self.last_activation(self.classification_layer(h))
             return h
 
-class GIN(nn.Module):
-    def __init__(self, in_feats, n_hidden, n_classes, n_layers, aggregator_type='sum', dropout=0.2):
-        super().__init__()
-        self.layers = nn.ModuleList()
-        self.layers.append(dglnn.GINConv(nn.Linear(in_feats, n_hidden), aggregator_type=aggregator_type))
-        for i in range(0, n_layers - 1):
-            self.layers.append(dglnn.GINConv(nn.Linear(n_hidden, n_hidden), aggregator_type=aggregator_type))
-        self.layers.append(nn.Linear(n_hidden, n_classes))
-        self.dropout = nn.Dropout(dropout)
 
-    def forward(self, blocks, x):
-        h = x
-        for i in range(0, self.n_layers):
-            h = self.layers[i](blocks[i], h)
-            h = self.activation(h)
-            h = self.dropout(h)
+class NN(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_layer, dropout=None):
+        super(NN, self).__init__()
+        self.n_hid = n_layer - 2
+        self.in_layer = nn.Linear(in_features=input_dim, out_features=hidden_dim)
+        nn.init.kaiming_uniform_(self.in_layer.weight, nonlinearity="relu")
+        self.hid_layer = []
+        for i in range(self.n_hid):
+            layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+            nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
+            self.hid_layer.append(layer)
+        self.out_layer = nn.Linear(in_features=hidden_dim, out_features=output_dim)
+        self.dropout = nn.Dropout(dropout) if dropout is not None else None
 
-        h = self.layers[-1](h)
+
+    def forward(self, x):
+        h = torch.nn.functional.relu(self.in_layer(x))
+        for i in range(self.n_hid):
+            h = self.dropout(h) if self.dropout is not None else h
+            h = torch.nn.functional.relu(self.hid_layer[i](h))
+
+        h = torch.nn.functional.sigmoid(self.out_layer(h))
         return h

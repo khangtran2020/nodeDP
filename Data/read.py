@@ -256,15 +256,44 @@ def read_data_attack(args, data_name, history):
 
 def init_shadow_loader(args, device, graph):
 
-    train_nid = get_index_by_value(a=graph.ndata['shadow_train_mask'], val=1)
-    test_nid = get_index_by_value(a=graph.ndata['shadow_test_mask'], val=1)
+    tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1)
+    va_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1)
+    te_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1)
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
-    train_loader = dgl.dataloading.DataLoader(graph, train_nid, sampler, device=device,
+    tr_loader = dgl.dataloading.DataLoader(graph, tr_nid, sampler, device=device,
                                               batch_size=args.batch_size, shuffle=True, drop_last=True,
                                               num_workers=args.num_worker)
 
-    test_loader = dgl.dataloading.DataLoader(graph, test_nid, sampler, device=device,
-                                             batch_size=args.batch_size, shuffle=True, drop_last=False,
+    va_loader = dgl.dataloading.DataLoader(graph, va_nid, sampler, device=device,
+                                             batch_size=args.batch_size, shuffle=False, drop_last=False,
                                              num_workers=args.num_worker)
-    return train_loader, test_loader
+
+    te_loader = dgl.dataloading.DataLoader(graph, te_nid, sampler, device=device,
+                                             batch_size=args.batch_size, shuffle=False, drop_last=False,
+                                             num_workers=args.num_worker)
+    return tr_loader, va_loader, te_loader
+
+
+def randomsplit(graph, num_node_per_class, train_ratio=0.7, test_ratio=0.2):
+    y = graph.ndata['label']
+    num_classes = y.max().item() + 1
+    num_train_nodes_per_class = int(num_node_per_class * train_ratio)
+    num_test_nodes_per_class = int(num_node_per_class * test_ratio)
+
+    train_mask = torch.zeros_like(y)
+    test_mask = torch.zeros_like(y)
+    val_mask = torch.zeros_like(y)
+
+    for c in range(num_classes):
+        idx = (y == c).nonzero(as_tuple=False).view(-1)
+        num_nodes = idx.size(0)
+        if num_nodes >= num_node_per_class:
+            idx = idx[torch.randperm(idx.size(0))][:num_node_per_class]
+            train_mask[idx[:num_train_nodes_per_class]] = True
+            test_mask[idx[num_train_nodes_per_class:num_train_nodes_per_class + num_test_nodes_per_class]] = True
+            val_mask[idx[num_train_nodes_per_class + num_test_nodes_per_class:]] = True
+
+    graph.ndata['str_mask'] = train_mask
+    graph.ndata['sva_mask'] = val_mask
+    graph.ndata['ste_mask'] = test_mask
