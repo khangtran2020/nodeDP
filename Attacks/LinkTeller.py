@@ -125,7 +125,7 @@ class Attacker:
         precision, recall, thresholds_2 = metrics.precision_recall_curve(y, pred)
         print('ap =', metrics.average_precision_score(y, pred))
 
-        folder_name = 'SavedModel/'
+        folder_name = self.args.save_path
         filename = 'attack_result.pt'
         torch.save({
             'auc': {
