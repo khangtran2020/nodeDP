@@ -63,7 +63,8 @@ def run_NMI(args, current_time, device):
 
         with torch.no_grad():
             tar_conf = None
-            for bi, d in enumerate(loader):
+            bi = 0
+            for d in loader:
                 input_nodes, output_nodes, mfgs = d
                 inputs = mfgs[0].srcdata["feat"]
                 predictions = tar_model(mfgs, inputs)
@@ -71,6 +72,7 @@ def run_NMI(args, current_time, device):
                     tar_conf = predictions
                 else:
                     tar_conf = torch.cat((tar_conf, predictions), dim=0)
+                bi += 1
 
         graph.ndata['tar_conf'] = tar_conf
         randomsplit(graph=graph, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
