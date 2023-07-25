@@ -65,7 +65,6 @@ def run(args, current_time, device):
     shadow_test_mask[test_id] = 1
     graph.ndata['shadow_train_mask'] = shadow_train_mask
     graph.ndata['shadow_test_mask'] = shadow_test_mask
-
     shadow_tr_loader, shadow_te_loader = init_shadow_loader(args=args, device=device, graph=graph)
 
     # init shadow model

@@ -58,7 +58,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
         #     break
 
     model.load_state_dict(torch.load(args.save_path + model_name))
-    test_loss, te_acc = eval_fn(te_loader, model, criterion, device)
+    test_loss, te_acc = eval_fn(te_loader, model, criterion, metric=metrics, device=device)
     history['best_test'] = te_acc.item()
     save_res(name=name, args=args, dct=history)
     return model, history

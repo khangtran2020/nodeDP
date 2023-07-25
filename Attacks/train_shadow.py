@@ -8,27 +8,17 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 
 
-def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history):
-    _, tr_loader = tr_info
-    va_loader = va_info
-    _, te_loader = te_info
-    model_name = '{}.pt'.format(name)
-    model.to(device)
+def run(args, tr_loader, shadow_model, tar_model, optimizer, name, device, history):
+    model_name = '{}_shadow.pt'.format(name)
+
+    shadow_model.to(device)
+    tar_model.to(device)
 
     # DEfining criterion
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.MSELoss()
     criterion.to(device)
 
-    if args.performance_metric == 'acc':
-        metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
-    elif args.performance_metric == 'pre':
-        metrics = torchmetrics.classification.Precision(task="multiclass", num_classes=args.num_class).to(device)
-    elif args.performance_metric == 'f1':
-        metrics = torchmetrics.classification.F1Score(task="multiclass", num_classes=args.num_class).to(device)
-    elif args.performance_metric == 'auc':
-        metrics = torchmetrics.classification.AUROC(task="multiclass", num_classes=args.num_class).to(device)
-    else:
-        metrics = None
+    metrics = torchmetrics.regression.SymmetricMeanAbsolutePercentageError().to(device)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
