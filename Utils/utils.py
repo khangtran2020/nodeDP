@@ -80,8 +80,8 @@ def print_args(args):
 
 def print_args_attack(args):
     arg_dict = {}
-    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'tar_model_type',
-            'attack_model_type', 'lr', 'tar_n_layers', 'attack_n_layers', 'attack_hid_dim',
+    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type',
+            'attack_model_type', 'lr', 'n_layers', 'attack_n_layers', 'attack_hid_dim',
             'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device']
     for key in keys:
         arg_dict[key] = getattr(args, key)
