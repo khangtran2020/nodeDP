@@ -62,6 +62,9 @@ def read_data(args, data_name, history):
     history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
     history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
+    graph = graph.subgraph(torch.LongTensor(idx))
+    graph = drop_isolated_node(graph)
     if args.submode == 'density':
         g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
@@ -126,6 +129,7 @@ def filter_class_by_count(graph, min_count):
     graph.ndata['train_mask'] = graph.ndata['train_mask'] & mask
     graph.ndata['val_mask'] = graph.ndata['val_mask'] & mask
     graph.ndata['test_mask'] = graph.ndata['test_mask'] & mask
+    graph.ndata['label_mask'] = mask
     return index.tolist()
 
 
