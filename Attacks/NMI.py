@@ -6,7 +6,7 @@ from Runs.run_nodedp import run as run_nodedp
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
-from Attacks.train_shadow import train_shadow, train_attack, eval_attack_step
+from Attacks.train_eval import train_shadow, train_attack, eval_attack_step
 from Attacks.helper import generate_attack_samples, Data
 from Models.models import NN
 

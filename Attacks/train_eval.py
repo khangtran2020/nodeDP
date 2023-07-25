@@ -119,6 +119,7 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
         optimizer.zero_grad()
         features, target = d
         predictions = model(features)
+        predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target)
         loss.backward()
         optimizer.step()
@@ -139,6 +140,7 @@ def eval_attack_step(model, device, loader, metrics, criterion):
         for bi, d in enumerate(loader):
             features, target = d
             predictions = model(features)
+            predictions = torch.squeeze(predictions, dim=-1)
             loss = criterion(predictions, target)
             metrics.update(predictions.argmax(dim=1), target)
             num_data += predictions.size(dim=0)
