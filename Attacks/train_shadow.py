@@ -46,7 +46,7 @@ def update_step(model, device, loader, metrics, criterion, optimizer):
         optimizer.zero_grad()
         input_nodes, output_nodes, mfgs = d
         inputs = mfgs[0].srcdata["feat"]
-        labels = mfgs[-1].dstdata["label"]
+        labels = mfgs[-1].dstdata["tar_conf"]
         predictions = model(mfgs, inputs)
         loss = criterion(predictions, labels)
         loss.backward()
@@ -68,7 +68,7 @@ def eval_step(model, device, loader, metrics, criterion):
         for bi, d in enumerate(loader):
             input_nodes, output_nodes, mfgs = d
             inputs = mfgs[0].srcdata["feat"]
-            labels = mfgs[-1].dstdata["label"]
+            labels = mfgs[-1].dstdata["tar_conf"]
             predictions = model(mfgs, inputs)
             loss = criterion(predictions, labels)
             metrics.update(predictions.argmax(dim=1), labels.argmax(dim=1))
