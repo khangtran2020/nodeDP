@@ -90,6 +90,7 @@ def add_model_attack_group(group):
     group.add_argument("--aggregator_type", type=str, default='gcn')
     group.add_argument("--attack_epochs", type=int, default=100, help='training step')
     group.add_argument("--shaddow_epochs", type=int, default=100, help='training step')
+    group.add_argument("--num_shadow_model", type=int, default=2, help='training step')
 
 
 def parse_args_attack():

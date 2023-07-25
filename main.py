@@ -22,7 +22,7 @@ def run(args, current_time, device):
         history = init_history_nodeDP()
 
     with timeit(logger, 'init-data'):
-        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, history=history)
+        train_g, val_g, test_g, _ = read_data(args=args, data_name=args.dataset, history=history)
         train_g = train_g.to(device)
         val_g = val_g.to(device)
         test_g = test_g.to(device)

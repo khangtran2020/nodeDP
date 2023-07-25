@@ -1,6 +1,8 @@
 import datetime
 import warnings
 import sys
+import torch
+from sklearn.model_selection import train_test_split
 from config import parse_args_attack
 from Data.read import *
 from Models.init import init_model, init_optimizer
@@ -14,8 +16,7 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 warnings.filterwarnings("ignore")
 
 
-def retrain(args, train_g, val_g, test_g,current_time, device, history):
-
+def retrain(args, train_g, val_g, test_g, current_time, device, history):
     train_g = train_g.to(device)
     val_g = val_g.to(device)
     test_g = test_g.to(device)
@@ -38,25 +39,38 @@ def retrain(args, train_g, val_g, test_g,current_time, device, history):
         run_mode = run_nodedp
 
     tar_model, tar_history = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
-                                  optimizer=optimizer, name=tar_name, device=device, history=history)
+                                      optimizer=optimizer, name=tar_name, device=device, history=history)
     return tar_model, tar_history
 
 
 def run(args, current_time, device):
-
     if args.retrain_tar:
         history = init_history_attack()
-        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, history=history)
+        train_g, val_g, test_g, graph = read_data(args=args, data_name=args.dataset, history=history)
         tar_model, tar_history = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g,
                                          current_time=current_time, history=history, device=device)
     else:
         tar_history = read_pickel(args.res_path + f'{args.tar_name}.pkl')
-        train_g, val_g, test_g = read_data_attack(args=args, data_name=args.dataset, history=tar_history)
+        train_g, val_g, test_g, graph = read_data_attack(args=args, data_name=args.dataset, history=tar_history)
         tar_model = init_model(args=args)
         tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
+    # split shadow data
+    graph = drop_isolated_node(graph=graph)
+    num_node = graph.ndata['feat'].size(dim=0)
+    shadow_train_mask = torch.zeros(size=num_node)
+    shadow_test_mask = torch.zeros(size=num_node)
+    train_id, test_id = train_test_split(range(num_node), test_size=args.ratio, shuffle=True)
+    shadow_train_mask[train_id] = 1
+    shadow_test_mask[test_id] = 1
+    graph.ndata['shadow_train_mask'] = shadow_train_mask
+    graph.ndata['shadow_test_mask'] = shadow_test_mask
 
+    shadow_tr_loader, shadow_te_loader = init_shadow_loader(args=args, device=device, graph=graph)
 
+    # init shadow model
+    shadow_models = init_model(args=args)
+    shadow_optimizers = init_optimizer(optimizer_name=args.optimizer, model=shadow_models, lr=args.lr)
 
 
 if __name__ == "__main__":

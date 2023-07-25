@@ -14,20 +14,20 @@ from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import *
 from torch_geometric.transforms import Compose, RandomNodeSplit
 
-def read_data(args, data_name, history):
 
+def read_data(args, data_name, history):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
         node_split(graph=graph, val_size=0.1, test_size=0.15)
-        list_of_label = filter_class_by_count(graph=graph, min_count = 10000)
+        list_of_label = filter_class_by_count(graph=graph, min_count=10000)
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
-            transform=Compose([
-                RandomNodeSplit(num_val=0.1, num_test=0.15)
-                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
-            ])
-        )
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
+                            ])
+                            )
         data = load_data(root='dataset/')[0]
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
@@ -41,10 +41,10 @@ def read_data(args, data_name, history):
         # sys.exit()
     elif data_name == 'amazon':
         load_data = partial(Amazon,
-            transform=Compose([
-                RandomNodeSplit(num_val=0.1, num_test=0.15)
-            ])
-        )
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                            ])
+                            )
         data = load_data(root='dataset/')[0]
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
@@ -65,7 +65,7 @@ def read_data(args, data_name, history):
     if args.submode == 'density':
         g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
-    return g_train, g_val, g_test
+    return g_train, g_val, g_test, graph
 
 
 def node_split(graph, val_size, test_size):
@@ -73,7 +73,8 @@ def node_split(graph, val_size, test_size):
     if 'train_mask' not in keys or 'val_mask' not in keys or 'test_mask' not in keys:
         node_id = np.arrange(len(graph.nodes()))
         node_label = graph.ndata['label'].numpy()
-        id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=test_size, stratify=node_label)
+        id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=test_size,
+                                                              stratify=node_label)
         test_mask = np.zeros_like(node_id)
         test_mask[id_test] = 1
         id_train, id_val, y_train, y_val = train_test_split(id_train, y_train, test_size=val_size, stratify=y_train)
@@ -87,7 +88,6 @@ def node_split(graph, val_size, test_size):
 
 
 def graph_split(graph, drop=True):
-
     train_id = torch.index_select(graph.nodes(), 0, graph.ndata['train_mask'].nonzero().squeeze()).numpy()
     val_id = torch.index_select(graph.nodes(), 0, graph.ndata['val_mask'].nonzero().squeeze()).numpy()
     test_id = torch.index_select(graph.nodes(), 0, graph.ndata['test_mask'].nonzero().squeeze()).numpy()
@@ -103,6 +103,7 @@ def graph_split(graph, drop=True):
 
     return train_g, val_g, test_g
 
+
 def drop_isolated_node(graph):
     mask = torch.zeros_like(graph.nodes())
     src, dst = graph.edges()
@@ -111,6 +112,7 @@ def drop_isolated_node(graph):
     index = get_index_by_value(a=mask, val=1)
     nodes_id = graph.nodes()[index]
     return graph.subgraph(torch.LongTensor(nodes_id))
+
 
 def filter_class_by_count(graph, min_count):
     target = deepcopy(graph.ndata['label'])
@@ -126,8 +128,8 @@ def filter_class_by_count(graph, min_count):
     graph.ndata['test_mask'] = graph.ndata['test_mask'] & mask
     return index.tolist()
 
-def init_loader(args, device, train_g, test_g, val_g):
 
+def init_loader(args, device, train_g, test_g, val_g):
     train_nodes = train_g.nodes()
     val_nodes = val_g.nodes()
     test_nodes = test_g.nodes()
@@ -176,6 +178,7 @@ def fold_assign(g, folds, current_fold):
     g.ndata['val_mask'] = torch.BoolTensor(va_mask)
     return
 
+
 def reduce_desity(g, dens_reduction):
     # num_edge = g.edges()[0].size(dim=0)
     # num_node = g.nodes().size(dim=0)
@@ -205,11 +208,11 @@ def read_data_attack(args, data_name, history):
         list_of_label = filter_class_by_count(graph=graph, min_count=10000)
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
-            transform=Compose([
-                RandomNodeSplit(num_val=0.1, num_test=0.15)
-                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
-            ])
-        )
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
+                            ])
+                            )
         data = load_data(root='dataset/')[0]
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
@@ -220,10 +223,10 @@ def read_data_attack(args, data_name, history):
         # sys.exit()
     elif data_name == 'amazon':
         load_data = partial(Amazon,
-            transform=Compose([
-                RandomNodeSplit(num_val=0.1, num_test=0.15)
-            ])
-        )
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                            ])
+                            )
         data = load_data(root='dataset/')[0]
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
@@ -248,4 +251,20 @@ def read_data_attack(args, data_name, history):
     if args.submode == 'density':
         g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
-    return g_train, g_val, g_test
+    return g_train, g_val, g_test, graph
+
+
+def init_shadow_loader(args, device, graph):
+
+    train_nid = get_index_by_value(a=graph.ndata['shadow_train_mask'], val=1)
+    test_nid = get_index_by_value(a=graph.ndata['shadow_test_mask'], val=1)
+
+    sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
+    train_loader = dgl.dataloading.DataLoader(graph, train_nid, sampler, device=device,
+                                              batch_size=args.batch_size, shuffle=True, drop_last=True,
+                                              num_workers=args.num_worker)
+
+    test_loader = dgl.dataloading.DataLoader(graph, test_nid, sampler, device=device,
+                                             batch_size=args.batch_size, shuffle=True, drop_last=False,
+                                             num_workers=args.num_worker)
+    return train_loader, test_loader
