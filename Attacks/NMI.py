@@ -57,7 +57,8 @@ def run_NMI(args, current_time, device):
     device = torch.device('cpu')
     with timeit(logger=logger, task='preparing-shadow-data'):
         # split shadow data
-        graph = drop_isolated_node(graph=graph)
+        graph = drop_isolated_node(graph=graph).to(device)
+        tar_model.to(device)
         sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
         loader = dgl.dataloading.DataLoader(graph, graph.nodes(), sampler, device=device,
                                             batch_size=args.batch_size, shuffle=False, drop_last=False,
