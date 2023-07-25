@@ -82,7 +82,7 @@ def print_args_attack(args):
     arg_dict = {}
     keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type',
             'attack_model_type', 'lr', 'n_layers', 'attack_n_layers', 'attack_hid_dim',
-            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device']
+            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device', 'tar_clean', 'tar_dp_eps']
     for key in keys:
         arg_dict[key] = getattr(args, key)
 
