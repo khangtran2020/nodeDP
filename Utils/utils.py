@@ -113,3 +113,23 @@ def init_history_nodeDP():
         'best_test': 0
     }
     return history
+
+def init_history_attack():
+    history = {
+        'tr_id': None,
+        'va_id': None,
+        'te_id': None,
+        'name': None,
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        '% subgraph': [],
+        '% node avg': [],
+        '% edge avg': [],
+        'avg rank': [],
+        'best_test': 0
+    }
+    return history

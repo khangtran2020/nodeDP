@@ -1,13 +1,11 @@
 import datetime
 import warnings
 import sys
-import torch
 from config import parse_args
 from Data.read import read_data, init_loader
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
-from Runs.run_dp import run as run_dp
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
@@ -20,10 +18,8 @@ def run(args, current_time, device):
 
     if args.mode == 'clean':
         history = init_history_clean()
-    elif args.mode == 'nodeDP':
-        history = init_history_nodeDP()
     else:
-        history = init_history_attack()
+        history = init_history_nodeDP()
 
     with timeit(logger, 'init-data'):
         train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, history=history)
@@ -45,8 +41,7 @@ def run(args, current_time, device):
 
     run_dict = {
         'clean': run_clean,
-        'nodedp': run_nodedp,
-        'dp': run_dp
+        'nodedp': run_nodedp
     }
     run_mode = run_dict[args.mode]
 
