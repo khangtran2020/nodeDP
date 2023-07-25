@@ -22,7 +22,7 @@ def generate_attack_samples(graph, tar_conf, mode, device):
     te_mask = 'test_mask' if mode == 'target' else 'ste_mask'
 
     num_classes = tar_conf.size(1)
-    print(num_classes, graph.ndata['label'])
+    print(num_classes, graph.ndata['label'].unique())
     num_train = graph.ndata[tr_mask].sum()
     num_test = graph.ndata[te_mask].sum()
     num_half = min(num_train, num_test)
