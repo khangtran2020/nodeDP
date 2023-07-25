@@ -8,7 +8,7 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 
 
-def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
+def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history):
     _, tr_loader = tr_info
     va_loader = va_info
     _, te_loader = te_info
@@ -32,17 +32,6 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device):
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
-
-    # History dictionary to store everything
-    history = {
-        'train_history_loss': [],
-        'train_history_acc': [],
-        'val_history_loss': [],
-        'val_history_acc': [],
-        'test_history_loss': [],
-        'test_history_acc': [],
-        'best_test': 0
-    }
 
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs)

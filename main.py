@@ -4,12 +4,11 @@ import sys
 import torch
 from config import parse_args
 from Data.read import read_data, init_loader
-from Utils.utils import seed_everything, get_name, timeit
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 from Runs.run_dp import run as run_dp
-from Utils.utils import print_args
+from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
 
@@ -19,8 +18,15 @@ warnings.filterwarnings("ignore")
 
 def run(args, current_time, device):
 
+    if args.mode == 'clean':
+        history = init_history_clean()
+    elif args.mode == 'nodeDP':
+        history = init_history_nodeDP()
+    else:
+        history = init_history_attack()
+
     with timeit(logger, 'init-data'):
-        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset)
+        train_g, val_g, test_g = read_data(args=args, data_name=args.dataset, history=history)
         train_g = train_g.to(device)
         val_g = val_g.to(device)
         test_g = test_g.to(device)
@@ -32,7 +38,7 @@ def run(args, current_time, device):
     model = init_model(args=args)
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
     name = get_name(args=args, current_date=current_time)
-
+    history['name'] = name
     tr_info = (train_g, tr_loader)
     va_info = va_loader
     te_info = (test_g, te_loader)
@@ -45,7 +51,7 @@ def run(args, current_time, device):
     run_mode = run_dict[args.mode]
 
     run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
-             optimizer=optimizer, name=name, device=device)
+             optimizer=optimizer, name=name, device=device, history=history)
 
 
 if __name__ == "__main__":

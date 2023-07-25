@@ -11,10 +11,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from Data.dataloader import NodeDataLoader
 from ogb.nodeproppred import DglNodePropPredDataset
-from Utils.utils import get_index_by_value
-from torch_geometric.transforms import Compose, ToSparseTensor, RandomNodeSplit
+from Utils.utils import *
+from torch_geometric.transforms import Compose, RandomNodeSplit
 
-def read_data(args, data_name):
+def read_data(args, data_name, history):
     if data_name == 'cora':
         data = dgl.data.CoraGraphDataset()
         graph = data[0]
@@ -85,6 +85,9 @@ def read_data(args, data_name):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
+    history['tr_id'] = get_index_bynot_value(a=graph['train_mask'], val=0)
+    history['va_id'] = get_index_bynot_value(a=graph['val_mask'], val=0)
+    history['te_id'] = get_index_bynot_value(a=graph['test_mask'], val=0)
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
     if args.submode == 'density':
         g_train = reduce_desity(g=g_train, dens_reduction=args.density)
