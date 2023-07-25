@@ -142,7 +142,7 @@ def eval_attack_step(model, device, loader, metrics, criterion):
             predictions = model(features)
             predictions = torch.squeeze(predictions, dim=-1)
             loss = criterion(predictions, target.float())
-            metrics.update(predictions.argmax(dim=1), target)
+            metrics.update(predictions, target)
             num_data += predictions.size(dim=0)
             loss += loss.item()
         performance = metrics.compute()
