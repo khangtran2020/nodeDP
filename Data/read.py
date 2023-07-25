@@ -15,29 +15,8 @@ from Utils.utils import *
 from torch_geometric.transforms import Compose, RandomNodeSplit
 
 def read_data(args, data_name, history):
-    if data_name == 'cora':
-        data = dgl.data.CoraGraphDataset()
-        graph = data[0]
-        node_split(graph=graph, val_size=0.1, test_size=0.15)
-        list_of_label = filter_class_by_count(graph=graph, min_count=1)
-    elif data_name == 'citeseer':
-        data = dgl.data.CiteseerGraphDataset()
-        graph = data[0]
-        node_split(graph=graph, val_size=0.1, test_size=0.15)
-        list_of_label = filter_class_by_count(graph=graph, min_count=1)
-    elif data_name == 'pubmed':
-        data = dgl.data.PubmedGraphDataset()
-        graph = data[0]
-        node_split(graph=graph, val_size=0.1, test_size=0.15)
-        list_of_label = filter_class_by_count(graph=graph, min_count=1)
-    elif data_name == 'ogbn-arxiv':
-        data = DglNodePropPredDataset('ogbn-arxiv')
-        graph, node_labels = data[0]
-        graph = dgl.add_reverse_edges(graph)
-        graph.ndata['label'] = node_labels[:, 0]
-        node_split(graph=graph, val_size=0.1, test_size=0.15)
-        list_of_label = filter_class_by_count(graph=graph, min_count=1)
-    elif data_name == 'reddit':
+
+    if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
         node_split(graph=graph, val_size=0.1, test_size=0.15)
@@ -50,9 +29,6 @@ def read_data(args, data_name, history):
             ])
         )
         data = load_data(root='dataset/')[0]
-        # print("Facebook data:")
-        # print(data)
-        # print('Data edge index:', data.edge_index[0], data.edge_index[1])
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
@@ -65,14 +41,11 @@ def read_data(args, data_name, history):
         # sys.exit()
     elif data_name == 'amazon':
         load_data = partial(Amazon,
-                            transform=Compose([
-                                RandomNodeSplit(num_val=0.1, num_test=0.15)
-                            ])
-                            )
+            transform=Compose([
+                RandomNodeSplit(num_val=0.1, num_test=0.15)
+            ])
+        )
         data = load_data(root='dataset/')[0]
-        # print("Facebook data:")
-        # print(data)
-        # print('Data edge index:', data.edge_index[0], data.edge_index[1])
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
@@ -85,9 +58,9 @@ def read_data(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    history['tr_id'] = get_index_bynot_value(a=graph['train_mask'], val=0)
-    history['va_id'] = get_index_bynot_value(a=graph['val_mask'], val=0)
-    history['te_id'] = get_index_bynot_value(a=graph['test_mask'], val=0)
+    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
+    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
+    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
     if args.submode == 'density':
         g_train = reduce_desity(g=g_train, dens_reduction=args.density)
@@ -222,3 +195,57 @@ def reduce_desity(g, dens_reduction):
     new_g = drop_isolated_node(graph=new_g)
     print(f"Old # edges: {num_edge}, New # edges: {new_g.edges()[0].size(dim=0)}")
     return new_g
+
+
+def read_data_attack(args, data_name, history):
+    if data_name == 'reddit':
+        data = dgl.data.RedditDataset()
+        graph = data[0]
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=10000)
+    elif data_name == 'facebook':
+        load_data = partial(Facebook, name='UIllinois20', target='year',
+            transform=Compose([
+                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
+            ])
+        )
+        data = load_data(root='dataset/')[0]
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        list_of_label = filter_class_by_count(graph=graph, min_count=1000)
+        # sys.exit()
+    elif data_name == 'amazon':
+        load_data = partial(Amazon,
+            transform=Compose([
+                RandomNodeSplit(num_val=0.1, num_test=0.15)
+            ])
+        )
+        data = load_data(root='dataset/')[0]
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        list_of_label = filter_class_by_count(graph=graph, min_count=6000)
+    args.num_class = len(list_of_label)
+    args.num_feat = graph.ndata['feat'].shape[1]
+    graph = dgl.remove_self_loop(graph)
+    num_node = graph.ndata['feat'].size(dim=0)
+    tr_mask = torch.zeros(size=num_node)
+    va_mask = torch.zeros(size=num_node)
+    te_mask = torch.zeros(size=num_node)
+    tr_mask[history['tr_id']] = 1
+    va_mask[history['va_id']] = 1
+    te_mask[history['te_id']] = 1
+    graph.ndata['train_mask'] = tr_mask
+    graph.ndata['val_mask'] = va_mask
+    graph.ndata['test_mask'] = te_mask
+    g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    if args.submode == 'density':
+        g_train = reduce_desity(g=g_train, dens_reduction=args.density)
+    args.num_data_point = len(g_train.nodes())
+    return g_train, g_val, g_test

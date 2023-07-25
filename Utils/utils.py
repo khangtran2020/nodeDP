@@ -78,6 +78,12 @@ def print_args(args):
     # print(getattr(args, )
 
 
+def read_pickel(file):
+    with open(file, 'rb') as f:
+        res = pickle.load(f)
+    return res
+
+
 def print_args_attack(args):
     arg_dict = {}
     keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type',
