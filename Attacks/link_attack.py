@@ -1,3 +1,4 @@
+import torch
 import torchmetrics
 from Data.read import *
 from Models.init import init_model, init_optimizer
@@ -52,6 +53,6 @@ def run_LinkTeller(args, current_time, device):
             tar_model = init_model(args=args)
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
-    attack = Attacker(graph=train_g, model=tar_model, n_samples=500, influence=0.01)
+    attack = Attacker(args=args, graph=train_g, model=tar_model, n_samples=500, influence=0.01, device=torch.device('cpu'))
     attack.construct_edge_sets_from_random_subgraph()
     attack.link_prediction_attack_efficient()
