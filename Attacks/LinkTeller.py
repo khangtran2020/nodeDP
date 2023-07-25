@@ -10,9 +10,9 @@ from copy import deepcopy
 class Attacker:
 
     def __init__(self, args, graph, model, n_samples, influence, device):
-        self.model = model
-        self.graph = graph
-        self.graph_ = deepcopy(graph)
+        self.model = model.to(device)
+        self.graph = graph.to(device)
+        self.graph_ = deepcopy(self.graph)
         self.args = args
         self.graph = dgl.add_self_loop(self.graph)
         self.n_node = self.graph.ndata['feat'].shape[0]
