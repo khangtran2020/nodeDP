@@ -80,6 +80,7 @@ def add_model_attack_group(group):
     group.add_argument("--tar_dp_eps", type=float, default=0.1)
     group.add_argument("--epochs", type=int, default=100, help='training step')
 
+    group.add_argument("--attack_mode", type=str, default='node', help="Model type")
     group.add_argument("--attack_model_type", type=str, default='mlp', help="Model type")
     group.add_argument('--attack_n_layers', type=int, default=2, help='# of layers')
     group.add_argument('--attack_hid_dim', type=int, default=64, help='hidden embedding dim')
