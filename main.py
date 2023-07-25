@@ -45,7 +45,7 @@ def run(args, current_time, device):
     }
     run_mode = run_dict[args.mode]
 
-    run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
+    _, _ = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
              optimizer=optimizer, name=name, device=device, history=history)
 
 

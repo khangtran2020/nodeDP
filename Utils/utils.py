@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from rich import print as rprint
 from rich.pretty import pretty_repr
 
+
 # from rich.tree import
 
 
@@ -57,8 +58,10 @@ def save_res(name, args, dct):
 def get_index_by_value(a, val):
     return (a == val).nonzero(as_tuple=True)[0]
 
+
 def get_index_by_list(arr, test_arr):
-     return torch.isin(arr, test_arr).nonzero(as_tuple=True)[0]
+    return torch.isin(arr, test_arr).nonzero(as_tuple=True)[0]
+
 
 def get_index_bynot_value(a, val):
     return (a != val).nonzero(as_tuple=True)[0]
@@ -73,6 +76,18 @@ def print_args(args):
 
     rprint("Running experiments with hyper-parameters as follows: \n", pretty_repr(arg_dict))
     # print(getattr(args, )
+
+
+def print_args_attack(args):
+    arg_dict = {}
+    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'tar_model_type',
+            'attack_model_type', 'lr', 'tar_n_layers', 'attack_n_layers', 'attack_hid_dim',
+            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device']
+    for key in keys:
+        arg_dict[key] = getattr(args, key)
+
+    rprint("Running experiments with hyper-parameters as follows: \n", pretty_repr(arg_dict))
+
 
 def print_dict(dict_, name):
     rprint(f"Dictionary of {name}: \n", pretty_repr(dict_))
@@ -94,6 +109,7 @@ def init_history_clean():
     }
     return history
 
+
 def init_history_nodeDP():
     history = {
         'tr_id': None,
@@ -113,6 +129,7 @@ def init_history_nodeDP():
         'best_test': 0
     }
     return history
+
 
 def init_history_attack():
     history = {

@@ -61,3 +61,4 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
     test_loss, te_acc = eval_fn(te_loader, model, criterion, device)
     history['best_test'] = te_acc.item()
     save_res(name=name, args=args, dct=history)
+    return model, history

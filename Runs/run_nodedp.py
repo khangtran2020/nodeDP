@@ -75,3 +75,5 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
     if args.debug:
         rprint(pretty_repr(history))
     save_res(name=name, args=args, dct=history)
+
+    return model, history
