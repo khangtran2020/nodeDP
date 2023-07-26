@@ -259,23 +259,22 @@ def read_data_attack(args, data_name, history):
 
 
 def init_shadow_loader(args, device, graph):
-
     tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1)
     va_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1)
     te_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1)
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
     tr_loader = dgl.dataloading.DataLoader(graph, tr_nid, sampler, device=device,
-                                              batch_size=args.batch_size, shuffle=True, drop_last=True,
-                                              num_workers=args.num_worker)
+                                           batch_size=args.batch_size, shuffle=True, drop_last=True,
+                                           num_workers=args.num_worker)
 
     va_loader = dgl.dataloading.DataLoader(graph, va_nid, sampler, device=device,
-                                             batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                             num_workers=args.num_worker)
+                                           batch_size=args.batch_size, shuffle=False, drop_last=False,
+                                           num_workers=args.num_worker)
 
     te_loader = dgl.dataloading.DataLoader(graph, te_nid, sampler, device=device,
-                                             batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                             num_workers=args.num_worker)
+                                           batch_size=args.batch_size, shuffle=False, drop_last=False,
+                                           num_workers=args.num_worker)
     return tr_loader, va_loader, te_loader
 
 

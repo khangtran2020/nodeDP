@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
+from Utils.utils import get_index_by_value
 from torch.utils.data import Dataset
 
 class Data(Dataset):
@@ -31,10 +32,12 @@ def generate_attack_samples(graph, tar_conf, mode, device):
     samples = torch.cat([tar_conf, labels], dim=1).to(device)
 
     perm = torch.randperm(num_train, device=device)[:num_half]
-    pos_samples = samples[graph.ndata[tr_mask]][perm]
+    idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
+    pos_samples = samples[idx][perm]
 
     perm = torch.randperm(num_test, device=device)[:num_half]
-    neg_samples = samples[graph.ndata[te_mask]][perm]
+    idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
+    neg_samples = samples[idx][perm]
 
     # pos_entropy = Categorical(probs=pos_samples[:, :num_classes]).entropy().mean()
     # neg_entropy = Categorical(probs=neg_samples[:, :num_classes]).entropy().mean()
