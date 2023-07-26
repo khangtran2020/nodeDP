@@ -134,7 +134,7 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
 def eval_attack_step(model, device, loader, metrics, criterion):
     model.to(device)
     model.eval()
-    loss = 0
+    val_loss = 0
     num_data = 0.0
     with torch.no_grad():
         for bi, d in enumerate(loader):
@@ -144,7 +144,7 @@ def eval_attack_step(model, device, loader, metrics, criterion):
             loss = criterion(predictions, target.float())
             metrics.update(predictions, target)
             num_data += predictions.size(dim=0)
-            loss += loss.item()
+            val_loss += loss.item()
         performance = metrics.compute()
         metrics.reset()
-    return loss / num_data, performance
+    return val_loss / num_data, performance
