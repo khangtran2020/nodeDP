@@ -1,3 +1,4 @@
+import torch
 import torchmetrics
 from Data.read import *
 from Models.init import init_model, init_optimizer
@@ -141,6 +142,7 @@ def run_NMI(args, current_time, device):
         va_data = Data(X=x[num_train:-num_test], y=y[num_train:-num_test])
         te_data = Data(X=x[-num_test:], y=y[-num_test:])
 
+    device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):
 
         tr_loader = torch.utils.data.DataLoader(tr_data, batch_size=args.batch_size,

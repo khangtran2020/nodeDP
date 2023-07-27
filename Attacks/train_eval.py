@@ -113,7 +113,6 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
 def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.to(device)
     model.train()
-    device = next(model.parameters()).device
     train_loss = 0
     num_data = 0.0
     for bi, d in enumerate(loader):
@@ -121,7 +120,6 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
         features, target = d
         features = features.to(device)
         target = target.to(device)
-        print(f"Model device {[param.device for param in model.parameters()]}, Feature device: {features.device}, Label device: {target.device}")
         predictions = model(features)
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())

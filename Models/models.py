@@ -103,13 +103,10 @@ class NN(nn.Module):
 
 
     def forward(self, x):
-        print(x.device)
         h = torch.nn.functional.relu(self.in_layer(x))
-        print(h.device)
         for i in range(self.n_hid):
-            print(h.device)
             h = self.dropout(h) if self.dropout is not None else h
             h = torch.nn.functional.relu(self.hid_layer[i](h))
-        print(h.device)
+
         h = torch.nn.functional.sigmoid(self.out_layer(h))
         return h
