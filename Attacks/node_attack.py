@@ -55,7 +55,7 @@ def run_NMI(args, current_time, device):
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
 
-    # device = torch.device('cpu')
+    device = torch.device('cpu')
     with timeit(logger=logger, task='preparing-shadow-data'):
         # split shadow data
         graph = drop_isolated_node(graph=graph).to(device)

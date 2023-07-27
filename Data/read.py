@@ -259,9 +259,9 @@ def read_data_attack(args, data_name, history):
 
 
 def init_shadow_loader(args, device, graph):
-    tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1)
-    va_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1)
-    te_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1)
+    tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1).to(device)
+    va_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1).to(device)
+    te_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1).to(device)
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
     tr_loader = dgl.dataloading.DataLoader(graph, tr_nid, sampler, device=device,
