@@ -13,7 +13,7 @@ from Data.dataloader import NodeDataLoader
 from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import *
 from torch_geometric.transforms import Compose, RandomNodeSplit
-import scipy as sp
+import scipy.sparse as sp
 
 
 def read_data(args, data_name, history):
