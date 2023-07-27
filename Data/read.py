@@ -345,6 +345,7 @@ def read_data_link(args, data_name, history):
         graph.ndata['test_mask'] = data.test_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
 
+    drop_isolated_node(graph)
     # Split edge set for training and testing
     u, v = graph.edges()
 
