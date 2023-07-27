@@ -120,7 +120,7 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
         features, target = d
         features = features.to(device)
         target = target.to(device)
-        print(f"Model device {next(model.parameters()).device}, Feature device: {features.device}, Label device: {target.device}")
+        print(f"Model device {[param.device for param in model.parameters()]}, Feature device: {features.device}, Label device: {target.device}")
         predictions = model(features)
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
