@@ -3,11 +3,12 @@ import warnings
 import sys
 from config import parse_args
 from Data.read import read_data_link
-from Models.init import init_model, init_optimizer
+from Models.init import init_optimizer
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
 from Models.models import GraphSageGraph, DotPredictor
+from Models.train_eval import EarlyStopping
 import torch.nn.functional as F
 from sklearn.metrics import roc_auc_score
 
@@ -29,6 +30,7 @@ def run(args, current_time, device):
 
 
     history = init_history_link()
+    model_name = f'{args.dataset}_link_predition.pt'
 
     with timeit(logger, 'init-data'):
         train_g, tr_data, te_data = read_data_link(args=args, data_name=args.dataset, history=history)
@@ -38,7 +40,7 @@ def run(args, current_time, device):
     model = GraphSageGraph(train_g.ndata['feat'].shape[1], 16)
     pred = DotPredictor()
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
-
+    es = EarlyStopping(patience=args.patience, verbose=False, mode='min')
     all_logits = []
     for e in range(100):
         # forward
@@ -46,6 +48,7 @@ def run(args, current_time, device):
         pos_score = pred(train_pos_g, h)
         neg_score = pred(train_neg_g, h)
         loss = compute_loss(pos_score, neg_score)
+        es(epoch=e, epoch_score=loss.item(), model=model, model_path=args.save_path + model_name)
 
         # backward
         optimizer.zero_grad()
