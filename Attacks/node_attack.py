@@ -41,7 +41,6 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
 
 
 def run_NMI(args, current_time, device):
-
     with timeit(logger=logger, task='init-target-model'):
         if args.retrain_tar:
             history = init_history_attack()
@@ -54,7 +53,6 @@ def run_NMI(args, current_time, device):
             tar_model = init_model(args=args)
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
-
     # device = torch.device('cpu')
     with timeit(logger=logger, task='preparing-shadow-data'):
         # split shadow data
@@ -66,37 +64,37 @@ def run_NMI(args, current_time, device):
                                             batch_size=args.batch_size, shuffle=False, drop_last=False)
 
         with torch.no_grad():
-            tar_conf = None
+            tr_conf = None
             bi = 0
             for d in loader:
                 input_nodes, output_nodes, mfgs = d
                 inputs = mfgs[0].srcdata["feat"]
                 predictions = tar_model(mfgs, inputs)
                 if bi == 0:
-                    tar_conf = predictions
+                    tr_conf = predictions
                 else:
-                    tar_conf = torch.cat((tar_conf, predictions), dim=0)
+                    tr_conf = torch.cat((tr_conf, predictions), dim=0)
                 bi += 1
 
-        train_g.ndata['tar_conf'] = tar_conf
+        train_g.ndata['tar_conf'] = tr_conf
 
         loader = dgl.dataloading.DataLoader(test_g, test_g.nodes().to(device), sampler, device=device,
                                             batch_size=args.batch_size, shuffle=False, drop_last=False)
 
         with torch.no_grad():
-            tar_conf = None
+            te_conf = None
             bi = 0
             for d in loader:
                 input_nodes, output_nodes, mfgs = d
                 inputs = mfgs[0].srcdata["feat"]
                 predictions = tar_model(mfgs, inputs)
                 if bi == 0:
-                    tar_conf = predictions
+                    te_conf = predictions
                 else:
-                    tar_conf = torch.cat((tar_conf, predictions), dim=0)
+                    te_conf = torch.cat((te_conf, predictions), dim=0)
                 bi += 1
 
-        test_g.ndata['tar_conf'] = tar_conf
+        test_g.ndata['tar_conf'] = te_conf
         randomsplit(graph=train_g, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
 
     with timeit(logger=logger, task='training-shadow-model'):
@@ -114,6 +112,8 @@ def run_NMI(args, current_time, device):
 
     with timeit(logger=logger, task='preparing-attack-data'):
 
+        loader = dgl.dataloading.DataLoader(train_g, train_g.nodes().to(device), sampler, device=device,
+                                            batch_size=args.batch_size, shuffle=False, drop_last=False)
         with torch.no_grad():
             shadow_conf = None
             for bi, d in enumerate(loader):
@@ -124,10 +124,11 @@ def run_NMI(args, current_time, device):
                     shadow_conf = predictions
                 else:
                     shadow_conf = torch.cat((shadow_conf, predictions), dim=0)
-        graph.ndata['shadow_conf'] = shadow_conf
+        train_g.ndata['shadow_conf'] = shadow_conf
 
-        x, y = generate_attack_samples(graph=graph, tar_conf=shadow_conf, mode='shadow', device=device)
-        x_test, y_test = generate_attack_samples(graph=graph, tar_conf=tar_conf, mode='target', device=device)
+        x, y = generate_attack_samples(tr_graph=train_g, tr_conf=shadow_conf, mode='shadow', device=device)
+        x_test, y_test = generate_attack_samples(tr_graph=train_g, tr_conf=tr_conf, mode='target', device=device,
+                                                 te_graph=test_g, te_conf=te_conf)
         x = torch.cat([x, x_test], dim=0)
         y = torch.cat([y, y_test], dim=0)
         num_test = x_test.size(0)
