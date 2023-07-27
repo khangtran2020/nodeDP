@@ -144,13 +144,13 @@ def run_NMI(args, current_time, device):
     with timeit(logger=logger, task='train-attack-model'):
 
         tr_loader = torch.utils.data.DataLoader(tr_data, batch_size=args.batch_size,
-                                                pin_memory=True, drop_last=True, shuffle=True)
+                                                pin_memory=False, drop_last=True, shuffle=True)
 
         va_loader = torch.utils.data.DataLoader(va_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
-                                                pin_memory=True, drop_last=False)
+                                                pin_memory=False, drop_last=False)
 
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
-                                                pin_memory=True, drop_last=False)
+                                                pin_memory=False, drop_last=False)
         attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 
