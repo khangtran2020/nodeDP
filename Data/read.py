@@ -111,8 +111,8 @@ def graph_split(graph, drop=True):
 def drop_isolated_node(graph):
     mask = torch.zeros_like(graph.nodes())
     src, dst = graph.edges()
-    mask[src.unque()] = 1
-    mask[dst.unque()] = 1
+    mask[src.unique()] = 1
+    mask[dst.unique()] = 1
     index = get_index_by_value(a=mask, val=1)
     nodes_id = graph.nodes()[index]
     return graph.subgraph(torch.LongTensor(nodes_id))
