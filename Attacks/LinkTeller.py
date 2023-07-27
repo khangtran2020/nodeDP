@@ -16,7 +16,7 @@ class Attacker:
         self.args = args
         self.graph = dgl.add_self_loop(self.graph)
         self.n_node = self.graph.ndata['feat'].shape[0]
-        self.adj = self.graph.adj(scipy_fmt='csr')
+        self.adj = self.graph.adj_tensors(scipy_fmt='csr')
         self.features = self.graph.ndata['feat']
         self.n_samples = n_samples
         self.influence = influence
