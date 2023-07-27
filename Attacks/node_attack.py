@@ -153,7 +153,7 @@ def run_NMI(args, current_time, device):
 
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
                                                 pin_memory=False, drop_last=False)
-        attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
+        attack_model = NN(input_dim=new_dim, hidden_dim=16, output_dim=1, n_layer=2)
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
