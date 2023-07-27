@@ -143,7 +143,7 @@ def train_fn(dataloader, model, criterion, optimizer, device, metric, scheduler)
             scheduler.step()
         metric.update(pred, target)
         num_data += pred.size(dim=0)
-        train_loss += loss.item()
+        train_loss += loss.item()*pred.size(dim=0)
     performance = metric.compute()
     metric.reset()
     return train_loss / num_data, performance
