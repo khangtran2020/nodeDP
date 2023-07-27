@@ -2,6 +2,8 @@ import dgl
 import dgl.nn.pytorch as dglnn
 import torch.nn
 from torch import nn
+import dgl.function as fn
+import torch.nn.functional as F
 
 class GraphSAGE(nn.Module):
     def __init__(self, in_feats, n_hidden, n_classes, n_layers, dropout=0.2, aggregator_type='gcn'):
@@ -109,4 +111,28 @@ class NN(nn.Module):
             h = torch.nn.functional.relu(self.hid_layer[i](h))
 
         h = torch.nn.functional.sigmoid(self.out_layer(h))
+        return h
+
+class DotPredictor(nn.Module):
+    def forward(self, g, h):
+        with g.local_scope():
+            g.ndata['h'] = h
+            # Compute a new edge feature named 'score' by a dot-product between the
+            # source node feature 'h' and destination node feature 'h'.
+            g.apply_edges(fn.u_dot_v('h', 'h', 'score'))
+            # u_dot_v returns a 1-element vector for each edge so you need to squeeze it.
+            return g.edata['score'][:, 0]
+
+
+
+class GraphSageGraph(nn.Module):
+    def __init__(self, in_feats, h_feats):
+        super(GraphSageGraph, self).__init__()
+        self.conv1 = dglnn.SAGEConv(in_feats, h_feats, 'mean')
+        self.conv2 = dglnn.SAGEConv(h_feats, h_feats, 'mean')
+
+    def forward(self, g, in_feat):
+        h = self.conv1(g, in_feat)
+        h = F.relu(h)
+        h = self.conv2(g, h)
         return h

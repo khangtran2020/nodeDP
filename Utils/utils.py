@@ -156,3 +156,21 @@ def init_history_attack():
         'best_test': 0
     }
     return history
+
+def init_history_link():
+    history = {
+        'name': None,
+        'train_history_loss': [],
+        'train_history_acc': [],
+        'val_history_loss': [],
+        'val_history_acc': [],
+        'test_history_loss': [],
+        'test_history_acc': [],
+        'best_test': 0
+    }
+    return history
+
+def get_name_link(args, current_date):
+    dataset_str = f'{args.dataset}_run_{args.seed}_link_pred_'
+    date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
+    return dataset_str + date_str

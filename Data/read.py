@@ -13,6 +13,7 @@ from Data.dataloader import NodeDataLoader
 from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import *
 from torch_geometric.transforms import Compose, RandomNodeSplit
+import scipy as sp
 
 
 def read_data(args, data_name, history):
@@ -300,3 +301,73 @@ def randomsplit(graph, num_node_per_class, train_ratio=0.7, test_ratio=0.2):
     graph.ndata['str_mask'] = train_mask
     graph.ndata['sva_mask'] = val_mask
     graph.ndata['ste_mask'] = test_mask
+
+
+def read_data_link(args, data_name, history):
+
+    if data_name == 'reddit':
+        data = dgl.data.RedditDataset()
+        graph = data[0]
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=10000)
+    elif data_name == 'facebook':
+        load_data = partial(Facebook, name='UIllinois20', target='year',
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
+                            ])
+                            )
+        data = load_data(root='dataset/')[0]
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        graph.ndata['train_mask'] = data.train_mask
+        graph.ndata['val_mask'] = data.val_mask
+        graph.ndata['test_mask'] = data.test_mask
+        list_of_label = filter_class_by_count(graph=graph, min_count=1000)
+        # sys.exit()
+    elif data_name == 'amazon':
+        load_data = partial(Amazon,
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                            ])
+                            )
+        data = load_data(root='dataset/')[0]
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        graph.ndata['train_mask'] = data.train_mask
+        graph.ndata['val_mask'] = data.val_mask
+        graph.ndata['test_mask'] = data.test_mask
+        list_of_label = filter_class_by_count(graph=graph, min_count=6000)
+
+    # Split edge set for training and testing
+    u, v = graph.edges()
+
+    eids = np.arange(graph.number_of_edges())
+    eids = np.random.permutation(eids)
+    test_size = int(len(eids) * 0.2)
+    train_size = graph.number_of_edges() - test_size
+    test_pos_u, test_pos_v = u[eids[:test_size]], v[eids[:test_size]]
+    train_pos_u, train_pos_v = u[eids[test_size:]], v[eids[test_size:]]
+
+    # Find all negative edges and split them for training and testing
+    adj = sp.coo_matrix((np.ones(len(u)), (u.numpy(), v.numpy())))
+    adj_neg = 1 - adj.todense() - np.eye(graph.number_of_nodes())
+    neg_u, neg_v = np.where(adj_neg != 0)
+
+    neg_eids = np.random.choice(len(neg_u), graph.number_of_edges())
+    test_neg_u, test_neg_v = neg_u[neg_eids[:test_size]], neg_v[neg_eids[:test_size]]
+    train_neg_u, train_neg_v = neg_u[neg_eids[test_size:]], neg_v[neg_eids[test_size:]]
+
+    train_pos_g = dgl.graph((train_pos_u, train_pos_v), num_nodes=graph.number_of_nodes())
+    train_neg_g = dgl.graph((train_neg_u, train_neg_v), num_nodes=graph.number_of_nodes())
+
+    test_pos_g = dgl.graph((test_pos_u, test_pos_v), num_nodes=graph.number_of_nodes())
+    test_neg_g = dgl.graph((test_neg_u, test_neg_v), num_nodes=graph.number_of_nodes())
+    train_g = dgl.remove_edges(graph, eids[:test_size])
+    return train_g, (train_pos_g, train_neg_g), (test_pos_g, test_neg_g)
