@@ -264,15 +264,15 @@ def init_shadow_loader(args, device, graph):
     te_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1).to(device)
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
-    tr_loader = dgl.dataloading.DataLoader(graph, tr_nid, sampler, device=device,
+    tr_loader = dgl.dataloading.DataLoader(graph.to(device), tr_nid.to(device), sampler, device=device,
                                            batch_size=args.batch_size, shuffle=True, drop_last=True,
                                            num_workers=args.num_worker)
 
-    va_loader = dgl.dataloading.DataLoader(graph, va_nid, sampler, device=device,
+    va_loader = dgl.dataloading.DataLoader(graph.to(device), va_nid.to(device), sampler, device=device,
                                            batch_size=args.batch_size, shuffle=False, drop_last=False,
                                            num_workers=args.num_worker)
 
-    te_loader = dgl.dataloading.DataLoader(graph, te_nid, sampler, device=device,
+    te_loader = dgl.dataloading.DataLoader(graph.to(device), te_nid.to(device), sampler, device=device,
                                            batch_size=args.batch_size, shuffle=False, drop_last=False,
                                            num_workers=args.num_worker)
     return tr_loader, va_loader, te_loader

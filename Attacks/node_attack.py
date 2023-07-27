@@ -55,15 +55,15 @@ def run_NMI(args, current_time, device):
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
 
-    device = torch.device('cpu')
+    # device = torch.device('cpu')
     with timeit(logger=logger, task='preparing-shadow-data'):
         # split shadow data
-        graph = drop_isolated_node(graph=graph).to(device)
+        train_g = train_g.to(device)
+        test_g = test_g.to(device)
         tar_model.to(device)
         sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
-        loader = dgl.dataloading.DataLoader(graph, graph.nodes(), sampler, device=device,
-                                            batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                            num_workers=args.num_worker)
+        loader = dgl.dataloading.DataLoader(train_g, train_g.nodes().to(device), sampler, device=device,
+                                            batch_size=args.batch_size, shuffle=False, drop_last=False)
 
         with torch.no_grad():
             tar_conf = None
@@ -78,8 +78,26 @@ def run_NMI(args, current_time, device):
                     tar_conf = torch.cat((tar_conf, predictions), dim=0)
                 bi += 1
 
-        graph.ndata['tar_conf'] = tar_conf
-        randomsplit(graph=graph, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
+        train_g.ndata['tar_conf'] = tar_conf
+
+        loader = dgl.dataloading.DataLoader(test_g, test_g.nodes().to(device), sampler, device=device,
+                                            batch_size=args.batch_size, shuffle=False, drop_last=False)
+
+        with torch.no_grad():
+            tar_conf = None
+            bi = 0
+            for d in loader:
+                input_nodes, output_nodes, mfgs = d
+                inputs = mfgs[0].srcdata["feat"]
+                predictions = tar_model(mfgs, inputs)
+                if bi == 0:
+                    tar_conf = predictions
+                else:
+                    tar_conf = torch.cat((tar_conf, predictions), dim=0)
+                bi += 1
+
+        test_g.ndata['tar_conf'] = tar_conf
+        randomsplit(graph=train_g, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
 
     with timeit(logger=logger, task='training-shadow-model'):
         # init shadow model
@@ -87,7 +105,7 @@ def run_NMI(args, current_time, device):
         shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model, lr=args.lr)
 
         # init loader
-        tr_loader, va_loader, te_loader = init_shadow_loader(args=args, device=device, graph=graph)
+        tr_loader, va_loader, te_loader = init_shadow_loader(args=args, device=device, graph=train_g)
 
         # train shadow model
         shadow_model = train_shadow(args=args, tr_loader=tr_loader, va_loader=va_loader, shadow_model=shadow_model,
