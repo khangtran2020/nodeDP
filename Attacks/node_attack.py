@@ -67,12 +67,17 @@ def run_NMI(args, current_time, device):
         # device = torch.device('cpu')
         with timeit(logger=logger, task='preparing-shadow-data'):
             # split shadow data
-            graph = graph.to(device)
+            train_g = train_g.to(device)
+            test_g = test_g.to(device)
             model.to(device)
 
-            tar_conf = model(graph, graph.ndata['feat'])
-            graph.ndata['tar_conf'] = tar_conf
-            randomsplit(graph=graph, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
+            tr_conf = model(train_g, train_g.ndata['feat'])
+            train_g.ndata['tar_conf'] = tr_conf
+
+            te_conf = model(test_g, test_g.ndata['feat'])
+            test_g.ndata['tar_conf'] = te_conf
+
+            randomsplit(graph=train_g, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
 
     with timeit(logger=logger, task='training-shadow-model'):
         # init shadow model
@@ -80,7 +85,7 @@ def run_NMI(args, current_time, device):
         shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model, lr=args.lr)
 
         # init loader
-        tr_loader, va_loader, te_loader = init_shadow_loader(args=args, device=device, graph=graph)
+        tr_loader, va_loader, te_loader = init_shadow_loader(args=args, device=device, graph=train_g)
 
         # train shadow model
         shadow_model = train_shadow(args=args, tr_loader=tr_loader, va_loader=va_loader, shadow_model=shadow_model,
@@ -99,11 +104,12 @@ def run_NMI(args, current_time, device):
 
         with timeit(logger=logger, task='preparing-attack-data'):
             model_shadow.to(device)
-            shadow_conf = model_shadow(graph, graph.ndata['feat'])
-            graph.ndata['shadow_conf'] = shadow_conf
+            shadow_conf = model_shadow(train_g, train_g.ndata['feat'])
+            train_g.ndata['shadow_conf'] = shadow_conf
 
-            x, y = generate_attack_samples(tr_graph=graph, tr_conf=shadow_conf, mode='shadow', device=device)
-            x_test, y_test = generate_attack_samples(tr_graph=graph, tr_conf=tar_conf, mode='target', device=device)
+            x, y = generate_attack_samples(tr_graph=train_g, tr_conf=shadow_conf, mode='shadow', device=device)
+            x_test, y_test = generate_attack_samples(tr_graph=train_g, tr_conf=tr_conf, mode='target', device=device,
+                                                     te_graph=test_g, te_conf=te_conf)
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
             num_test = x_test.size(0)
