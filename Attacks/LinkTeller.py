@@ -34,44 +34,8 @@ class Attacker:
     def get_gradient_eps_mat(self, v):
         pert_1 = torch.zeros_like(self.features)
         pert_1[v] = self.features[v] * self.influence
-
-        self.graph_.ndata['feat'] = deepcopy(self.graph.ndata['feat'] + pert_1)
-
-        sampler = dgl.dataloading.NeighborSampler([self.args.n_neighbor for i in range(self.args.n_layers)])
-        loader = dgl.dataloading.DataLoader(self.graph, self.graph.nodes(), sampler, device=self.device,
-                                            batch_size=self.args.batch_size, shuffle=False, drop_last=False,
-                                            num_workers=self.args.num_worker)
-
-        with torch.no_grad():
-            tar_conf = None
-            bi = 0
-            for d in loader:
-                input_nodes, output_nodes, mfgs = d
-                inputs = mfgs[0].srcdata["feat"]
-                predictions = self.model(mfgs, inputs)
-                if bi == 0:
-                    tar_conf = predictions
-                else:
-                    tar_conf = torch.cat((tar_conf, predictions), dim=0)
-                bi += 1
-
-        loader_ = dgl.dataloading.DataLoader(self.graph_, self.graph_.nodes(), sampler, device=self.device,
-                                            batch_size=self.args.batch_size, shuffle=False, drop_last=False,
-                                            num_workers=self.args.num_worker)
-
-        with torch.no_grad():
-            tar_conf_ = None
-            bi = 0
-            for d in loader_:
-                input_nodes, output_nodes, mfgs = d
-                inputs = mfgs[0].srcdata["feat"]
-                predictions = self.model(mfgs, inputs)
-                if bi == 0:
-                    tar_conf_ = predictions
-                else:
-                    tar_conf_ = torch.cat((tar_conf_, predictions), dim=0)
-                bi += 1
-        grad = (tar_conf_ - tar_conf) / self.influence
+        grad = (self.model(self.graph, self.features + pert_1).detach() -
+                self.model(self.graph, self.features).detach()) / self.influence
         return grad
 
     def link_prediction_attack_efficient(self):

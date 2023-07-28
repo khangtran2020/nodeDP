@@ -8,6 +8,7 @@ from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
 from Attacks.LinkTeller import Attacker
+from Models.models import GraphSageFull, GATFull
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -40,7 +41,6 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
 
 
 def run_LinkTeller(args, current_time, device):
-
     with timeit(logger=logger, task='init-target-model'):
         if args.retrain_tar:
             history = init_history_attack()
@@ -53,6 +53,15 @@ def run_LinkTeller(args, current_time, device):
             tar_model = init_model(args=args)
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
-    attack = Attacker(args=args, graph=train_g, model=tar_model, n_samples=500, influence=0.01, device=device)
+    if args.model_type == 'sage':
+        model = GraphSageFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                              n_layers=args.n_layers, dropout=args.dropout, aggregator_type=args.aggregator_type)
+        model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
+    else:
+        model = GATFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class, n_layers=args.n_layers,
+                        num_head=args.num_head, dropout=args.dropout)
+        model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
+
+    attack = Attacker(args=args, graph=train_g, model=model, n_samples=500, influence=0.01, device=device)
     attack.construct_edge_sets_from_random_subgraph()
     attack.link_prediction_attack_efficient()
