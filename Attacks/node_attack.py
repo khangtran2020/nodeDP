@@ -103,8 +103,7 @@ def run_NMI(args, current_time, device):
             graph.ndata['shadow_conf'] = shadow_conf
 
             x, y = generate_attack_samples(tr_graph=graph, tr_conf=shadow_conf, mode='shadow', device=device)
-            x_test, y_test = generate_attack_samples(tr_graph=graph, tr_conf=tar_conf, mode='target', device=device,
-                                                     te_graph=test_g, te_conf=te_conf)
+            x_test, y_test = generate_attack_samples(tr_graph=graph, tr_conf=tar_conf, mode='target')
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
             num_test = x_test.size(0)
