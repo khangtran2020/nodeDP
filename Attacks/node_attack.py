@@ -71,7 +71,7 @@ def run_NMI(args, current_time, device):
             model.to(device)
 
             tar_conf = model(graph, graph.ndata['feat'])
-            graph['tar_conf'] = tar_conf
+            graph.ndata['tar_conf'] = tar_conf
             randomsplit(graph=graph, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
 
     with timeit(logger=logger, task='training-shadow-model'):
