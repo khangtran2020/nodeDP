@@ -9,7 +9,7 @@ from loguru import logger
 from rich import print as rprint
 from Attacks.train_eval import train_shadow, train_attack, eval_attack_step
 from Attacks.helper import generate_attack_samples, Data
-from Models.models import NN
+from Models.models import NN, GraphSageFull, GATFull
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -54,48 +54,28 @@ def run_NMI(args, current_time, device):
             tar_model = init_model(args=args)
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
 
+    if args.model_type == 'sage':
+        model = GraphSageFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                              n_layers=args.n_layers, dropout=args.dropout, aggregator_type=args.aggregator_type)
+        model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
+    else:
+        model = GATFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class, n_layers=args.n_layers,
+                        num_head=args.num_head, dropout=args.dropout)
+        model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
+
     # device = torch.device('cpu')
     with timeit(logger=logger, task='preparing-shadow-data'):
         # split shadow data
         train_g = train_g.to(device)
         test_g = test_g.to(device)
-        tar_model.to(device)
-        sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
-        loader = dgl.dataloading.DataLoader(train_g, train_g.nodes().to(device), sampler, device=device,
-                                            batch_size=args.batch_size, shuffle=False, drop_last=False)
+        model.to(device)
 
-        with torch.no_grad():
-            tr_conf = None
-            bi = 0
-            for d in loader:
-                input_nodes, output_nodes, mfgs = d
-                inputs = mfgs[0].srcdata["feat"]
-                predictions = tar_model(mfgs, inputs)
-                if bi == 0:
-                    tr_conf = predictions
-                else:
-                    tr_conf = torch.cat((tr_conf, predictions), dim=0)
-                bi += 1
-
+        tr_conf = model(train_g, train_g.ndata['feat'])
         train_g.ndata['tar_conf'] = tr_conf
 
-        loader = dgl.dataloading.DataLoader(test_g, test_g.nodes().to(device), sampler, device=device,
-                                            batch_size=args.batch_size, shuffle=False, drop_last=False)
-
-        with torch.no_grad():
-            te_conf = None
-            bi = 0
-            for d in loader:
-                input_nodes, output_nodes, mfgs = d
-                inputs = mfgs[0].srcdata["feat"]
-                predictions = tar_model(mfgs, inputs)
-                if bi == 0:
-                    te_conf = predictions
-                else:
-                    te_conf = torch.cat((te_conf, predictions), dim=0)
-                bi += 1
-
+        te_conf = model(test_g, test_g.ndata['feat'])
         test_g.ndata['tar_conf'] = te_conf
+
         randomsplit(graph=train_g, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
 
     with timeit(logger=logger, task='training-shadow-model'):
@@ -110,21 +90,20 @@ def run_NMI(args, current_time, device):
         shadow_model = train_shadow(args=args, tr_loader=tr_loader, va_loader=va_loader, shadow_model=shadow_model,
                                     epochs=args.shaddow_epochs, optimizer=shadow_optimizer, name=tar_history['name'],
                                     device=device)
+    if args.model_type == 'sage':
+        model_shadow = GraphSageFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                              n_layers=args.n_layers, dropout=args.dropout, aggregator_type=args.aggregator_type)
+        model_shadow.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_shadow.pt"))
+    else:
+        model_shadow = GATFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class, n_layers=args.n_layers,
+                        num_head=args.num_head, dropout=args.dropout)
+        model_shadow.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_shadow.pt"))
+
+
 
     with timeit(logger=logger, task='preparing-attack-data'):
-
-        loader = dgl.dataloading.DataLoader(train_g, train_g.nodes().to(device), sampler, device=device,
-                                            batch_size=args.batch_size, shuffle=False, drop_last=False)
-        with torch.no_grad():
-            shadow_conf = None
-            for bi, d in enumerate(loader):
-                input_nodes, output_nodes, mfgs = d
-                inputs = mfgs[0].srcdata["feat"]
-                predictions = shadow_model(mfgs, inputs)
-                if bi == 0:
-                    shadow_conf = predictions
-                else:
-                    shadow_conf = torch.cat((shadow_conf, predictions), dim=0)
+        model_shadow.to(device)
+        shadow_conf = model_shadow(train_g, train_g.ndata['feat'])
         train_g.ndata['shadow_conf'] = shadow_conf
 
         x, y = generate_attack_samples(tr_graph=train_g, tr_conf=shadow_conf, mode='shadow', device=device)
