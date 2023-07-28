@@ -95,7 +95,7 @@ class NN(nn.Module):
         self.n_hid = n_layer - 2
         self.in_layer = nn.Linear(in_features=input_dim, out_features=hidden_dim)
         nn.init.kaiming_uniform_(self.in_layer.weight, nonlinearity="relu")
-        self.hid_layer = []
+        self.hid_layer = nn.ModuleList()
         for i in range(self.n_hid):
             layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
             nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
