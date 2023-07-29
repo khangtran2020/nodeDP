@@ -67,7 +67,7 @@ class AppearDict(object):
         self.node_roots = np.char.strip(self.node_roots.astype(str), '|')
         self.num_node_batch = len(np.where(self.node_appear > 0)[0].tolist())
         self.node_to_trim = np.where(self.node_appear > self.clip_node)[0].tolist()
-        rprint(f"% of node to trim: {len(self.node_to_trim)/self.num_node_batch*100:.2f}")
+        # rprint(f"% of node to trim: {len(self.node_to_trim)/self.num_node_batch*100:.2f}")
 
     def trim(self):
         if self.debug:
