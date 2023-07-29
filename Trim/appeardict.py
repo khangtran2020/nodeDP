@@ -46,7 +46,7 @@ class AppearDict(object):
         if len(self.subgraph.keys()) > self.batch_size:
             logger.error("ROOT as string problem")
             sys.exit()
-        logger.info(f"Batch size {self.batch_size}")
+        # logger.info(f"Batch size {self.batch_size}")
 
 
     def build_dict(self):

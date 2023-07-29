@@ -156,10 +156,9 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
     model.train()
     train_loss = 0
     batch = next(iter(dataloader))
-    with timeit(logger, task="update-node-dp"):
-        target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
-                                           batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
-                                           trim_rule=trim_rule, history=history, step=step, device=device)
+    target, pred, loss = update_nodedp(args=args, model=model, optimizer=optimizer, objective=criterion,
+                                       batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, ns=ns,
+                                       trim_rule=trim_rule, history=history, step=step, device=device)
     train_loss += loss
     if scheduler is not None:
         scheduler.step()
