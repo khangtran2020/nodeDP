@@ -9,33 +9,25 @@ from copy import deepcopy
 
 class Attacker:
 
-    def __init__(self, args, graph, model, n_samples, influence, device):
+    def __init__(self, args, graph, subgraph, model, n_samples, influence, device):
         self.model = model.to(device)
         self.graph = graph.to(device)
-        self.graph_ = deepcopy(self.graph)
+        self.subgraph = subgraph.to(device)
         self.args = args
-        self.graph = dgl.add_self_loop(self.graph)
-        self.n_node = self.graph.ndata['feat'].shape[0]
+        self.n_node = self.subgraph.nodes().size(dim=0)
         self.adj = self.graph.adj_external(scipy_fmt='csr')
-        self.features = self.graph.ndata['feat']
+        self.sub_adj = self.subgraph.adj_external(scipy_fmt='csr')
+        self.features = self.subgraph.ndata['feat']
         self.n_samples = n_samples
         self.influence = influence
         self.device = device
         # print(self.adj.shape, self.adj.indices, self.adj.indptr)
 
-    # def get_gradient_eps(self, u, v):
-    #     pert_1 = torch.zeros_like(self.features)
-    #     pert_1[v] = self.features[v] * self.influence
-    #     grad = (self.model(self.graph, self.features + pert_1).detach() -
-    #             self.model(self.graph, self.features).detach()) / self.influence
-    #
-    #     return grad[u]
-
     def get_gradient_eps_mat(self, v):
         pert_1 = torch.zeros_like(self.features)
         pert_1[v] = self.features[v] * self.influence
-        grad = (self.model(self.graph, self.features + pert_1).detach() -
-                self.model(self.graph, self.features).detach()) / self.influence
+        grad = (self.model(self.subgraph, self.features + pert_1).detach() -
+                self.model(self.subgraph, self.features).detach()) / self.influence
         return grad
 
     def link_prediction_attack_efficient(self):
@@ -112,10 +104,10 @@ class Attacker:
     def construct_edge_sets_from_random_subgraph(self):
         indices = self.adj.indices
         indptr = self.adj.indptr
-        n_nodes = self.adj.shape[0]
-        indice_all = range(n_nodes)
-        print('#indice =', len(indice_all))
-        nodes = np.random.choice(indice_all, self.n_samples, replace=False)  # choose from low degree nodes
+        n_nodes = self.subgraph.nodes().detach().cpu().numpy()
+        # indice_all = range(n_nodes)
+        print('#indice =', len(n_nodes))
+        nodes = np.random.choice(n_nodes, self.n_samples, replace=False)  # choose from low degree nodes
         self.test_nodes = nodes
         self.exist_edges, self.nonexist_edges = self._get_edge_sets_among_nodes(indices=indices, indptr=indptr,
                                                                                      nodes=nodes)

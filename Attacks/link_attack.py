@@ -9,6 +9,7 @@ from loguru import logger
 from rich import print as rprint
 from Attacks.LinkTeller import Attacker
 from Models.models import GraphSageFull, GATFull
+from Data.read import reduce_desity
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -62,6 +63,8 @@ def run_LinkTeller(args, current_time, device):
                         num_head=args.num_head, dropout=args.dropout)
         model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
 
-    attack = Attacker(args=args, graph=train_g, model=model, n_samples=500, influence=0.01, device=device)
+    new_g = reduce_desity(g=train_g, dens_reduction=args.density)
+
+    attack = Attacker(args=args, graph=train_g, subgraph=new_g, model=model, n_samples=500, influence=0.01, device=device)
     attack.construct_edge_sets_from_random_subgraph()
     attack.link_prediction_attack_efficient()
