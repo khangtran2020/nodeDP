@@ -327,7 +327,7 @@ def randomsplit(graph, num_node_per_class, train_ratio=0.7, test_ratio=0.2):
     graph.ndata['ste_mask'] = test_mask
 
 
-def read_pair_file(args, file_path='Data/wpair/'):
+def read_pair_file(args, file_path='Data/wpair/', nodes=None):
     temp = None
     data_name = args.dataset if args.dataset != 'amazon' else 'arxiv'
     for i in range(1,6):
@@ -338,6 +338,7 @@ def read_pair_file(args, file_path='Data/wpair/'):
             temp = df.values
         else:
             temp = np.concatenate((temp, df.values), axis=0)
+    temp = temp[np.where(np.isin(temp[:, 0], nodes) & np.isin(temp[:, 1], nodes))[0]]
     print(f"Number of new possible edges is: {temp.shape[0]}")
     temp = temp[temp[:, 2].argsort()]
     return temp
