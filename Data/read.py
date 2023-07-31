@@ -350,7 +350,7 @@ def increase_density(args, g, density_increase):
     dens = num_edge / num_node
     dens = dens * (1 + density_increase)
     num_edge_new = int(dens * num_node)
-    temp = read_pair_file(args=args)
+    temp = read_pair_file(args=args, nodes=g.nodes().tolist())
     new_edges = temp[:int(num_edge_new-num_edge)]
     src_edge_new = torch.cat((src_edge, torch.from_numpy(new_edges[:, 0])), dim=0)
     dst_edge_new = torch.cat((dst_edge, torch.from_numpy(new_edges[:, 1])), dim=0)
