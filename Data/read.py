@@ -60,6 +60,11 @@ def read_data(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
+    if args.submode == 'density':
+        if args.density < 1.0:
+            graph = reduce_desity(g=graph, dens_reduction=args.density)
+        else:
+            graph = increase_density(args=args, g=graph, density_increase=args.density - 1)
     history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
     history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
     history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
@@ -67,8 +72,6 @@ def read_data(args, data_name, history):
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
     graph = drop_isolated_node(graph)
-    if args.submode == 'density':
-        g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 
