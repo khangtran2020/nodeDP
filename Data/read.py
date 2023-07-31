@@ -337,9 +337,7 @@ def read_pair_file(args, file_path='Data/wpairs/'):
             temp = df.values
         else:
             temp = np.concatenate((temp, df.values), axis=0)
-        perm = np.arange(temp.shape[0]).astype(int)
-        np.random.shuffle(perm)
-        temp = temp[perm.tolist(), :]
+    temp = temp[temp[:, 2].argsort()]
     return temp
 
 def increase_density(args, g, density_increase):
