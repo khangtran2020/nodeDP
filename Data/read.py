@@ -337,6 +337,7 @@ def read_pair_file(args, file_path='Data/wpairs/'):
             temp = df.values
         else:
             temp = np.concatenate((temp, df.values), axis=0)
+    print(f"Number of new possible edges is: {temp.shape[0]}")
     temp = temp[temp[:, 2].argsort()]
     return temp
 
