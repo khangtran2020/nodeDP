@@ -331,6 +331,7 @@ def read_pair_file(args, file_path='Data/wpair/'):
     temp = None
     data_name = args.dataset if args.dataset != 'amazon' else 'arxiv'
     for i in range(1,6):
+        print(f"Redding file: {data_name}_{i}_{data_name}_{i}-ranked.wpairs")
         file_name = f'{data_name}_{i}_{data_name}_{i}-ranked.wpairs'
         df = pd.read_csv(f'{file_path}{file_name}', delimiter='\t', header=None)
         if i == 1:
