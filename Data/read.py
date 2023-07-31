@@ -352,8 +352,8 @@ def increase_density(args, g, density_increase):
     num_edge_new = int(dens * num_node)
     temp = read_pair_file(args=args, nodes=g.nodes().tolist())
     new_edges = temp[:int(num_edge_new-num_edge)]
-    src_edge_new = torch.cat((src_edge, torch.from_numpy(new_edges[:, 0])), dim=0)
-    dst_edge_new = torch.cat((dst_edge, torch.from_numpy(new_edges[:, 1])), dim=0)
+    src_edge_new = torch.cat((src_edge, torch.from_numpy(new_edges[:, 0]).int()), dim=0)
+    dst_edge_new = torch.cat((dst_edge, torch.from_numpy(new_edges[:, 1]).int()), dim=0)
     new_g = dgl.graph((src_edge_new, dst_edge_new), num_nodes=num_node)
     new_g.ndata['feat'] = g.ndata['feat'].clone()
     new_g.ndata['label'] = g.ndata['label'].clone()
