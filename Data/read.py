@@ -207,6 +207,7 @@ def reduce_desity(g, dens_reduction):
     new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
     new_g.ndata['val_mask'] = g.ndata['val_mask'].clone()
     new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
+    new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
     new_g = drop_isolated_node(graph=new_g)
     print(f"Old # edges: {num_edge}, New # edges: {new_g.edges()[0].size(dim=0)}")
     return new_g
@@ -363,6 +364,7 @@ def increase_density(args, g, density_increase):
     new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
     new_g.ndata['val_mask'] = g.ndata['val_mask'].clone()
     new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
+    new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
     new_g = drop_isolated_node(graph=new_g)
     print(f"Old # edges: {num_edge}, New # edges: {new_g.edges()[0].size(dim=0)}")
     return new_g
