@@ -104,14 +104,12 @@ def run_NMI(args, current_time, device):
 
         with timeit(logger=logger, task='preparing-attack-data'):
             model_shadow.to(device)
-            tr_sh_conf = model_shadow(train_g, train_g.ndata['feat'])
-            train_g.ndata['shadow_conf'] = tr_sh_conf
-            te_sh_conf = model_shadow(test_g, test_g.ndata['feat'])
-            test_g.ndata['shadow_conf'] = te_sh_conf
+            shadow_conf = model_shadow(train_g, train_g.ndata['feat'])
+            train_g.ndata['shadow_conf'] = shadow_conf
 
-            x, y = generate_attack_samples(tr_graph=train_g, tr_conf=tr_sh_conf, mode='shadow', device=device)
-            x_test, y_test = generate_attack_samples(tr_graph=train_g, tr_conf=tr_sh_conf, mode='target', device=device,
-                                                     te_graph=test_g, te_conf=te_sh_conf)
+            x, y = generate_attack_samples(tr_graph=train_g, tr_conf=shadow_conf, mode='shadow', device=device)
+            x_test, y_test = generate_attack_samples(tr_graph=train_g, tr_conf=tr_conf, mode='target', device=device,
+                                                     te_graph=test_g, te_conf=te_conf)
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
             num_test = x_test.size(0)
