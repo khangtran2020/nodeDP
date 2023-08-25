@@ -49,21 +49,21 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
         # scheduler.step(va_loss)
 
-        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc, Va_Loss=va_loss, Va_ACC=va_acc, Te_ACC=te_acc)
 
         history['train_history_loss'].append(tr_loss)
-        history['train_history_acc'].append(tr_acc.item())
+        history['train_history_acc'].append(tr_acc)
         history['val_history_loss'].append(va_loss)
-        history['val_history_acc'].append(va_acc.item())
+        history['val_history_acc'].append(va_acc)
         history['test_history_loss'].append(te_loss)
-        history['test_history_acc'].append(te_acc.item())
-        es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
+        history['test_history_acc'].append(te_acc)
+        es(epoch=epoch, epoch_score=va_acc, model=model, model_path=args.save_path + model_name)
         # torch.save(model.state_dict(), args.save_path + model_name)
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, te_acc = eval_mlp(loader=te_loader, model=model, criter=criterion,
                                   metrics=metrics, device=device)
-    history['best_test'] = te_acc.item()
+    history['best_test'] = te_acc
     if args.debug:
         rprint(pretty_repr(history))
     save_res(name=name, args=args, dct=history)
