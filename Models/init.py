@@ -1,4 +1,4 @@
-from Models.models import GraphSAGE, GAT
+from Models.models import GraphSAGE, GAT, NN
 from torch.optim import Adam, AdamW, SGD
 
 
@@ -11,6 +11,8 @@ def init_model(args):
     elif args.model_type == 'gat':
         model = GAT(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class, n_layers=args.n_layers,
                     num_head=args.num_head, dropout=args.dropout)
+    elif args.model_type == 'mlp':
+        model = NN(input_dim=args.num_feat, n_layer=args.n_layers, hidden_dim=args.hid_dim,output_dim=args.num_class)
     return model
 
 

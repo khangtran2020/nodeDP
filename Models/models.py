@@ -92,26 +92,38 @@ class GAT(nn.Module):
 class NN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, n_layer, dropout=None):
         super(NN, self).__init__()
-        self.n_hid = n_layer - 2
-        self.in_layer = nn.Linear(in_features=input_dim, out_features=hidden_dim)
-        nn.init.kaiming_uniform_(self.in_layer.weight, nonlinearity="relu")
-        self.hid_layer = nn.ModuleList()
-        for i in range(self.n_hid):
-            layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
-            nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
-            self.hid_layer.append(layer)
-        self.out_layer = nn.Linear(in_features=hidden_dim, out_features=output_dim)
+        self.n_layers = n_layer
+        if self.n_layers > 1:
+            self.n_hid = n_layer - 2
+            self.layers = nn.ModuleList()
+            self.layers.append(nn.Linear(in_features=input_dim, out_features=hidden_dim))
+            for i in range(self.n_hid):
+                layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+                nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
+                self.hid_layer.append(layer)
+            self.layers.append(nn.Linear(in_features=hidden_dim, out_features=output_dim))
+        else:
+            self.out_layer = nn.Linear(in_features=input_dim, out_features=output_dim)
+        
+        self.activation = torch.nn.SELU()
+        self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
         self.dropout = nn.Dropout(dropout) if dropout is not None else None
 
 
     def forward(self, x):
-        h = torch.nn.functional.relu(self.in_layer(x))
-        for i in range(self.n_hid):
-            h = self.dropout(h) if self.dropout is not None else h
-            h = torch.nn.functional.relu(self.hid_layer[i](h))
-
-        h = torch.nn.functional.sigmoid(self.out_layer(h))
-        return h
+        if self.n_layers > 1:
+            h = x
+            for i in range(0, self.n_layers-1):
+                h = self.layers[i](h)
+                h = self.activation(h)
+            h = self.layers[-1](h)
+            h = self.last_activation(h)
+            return h
+        else:
+            h = x
+            h = self.out_layer(h)
+            h = self.last_activation(h)
+            return h
 
 class DotPredictor(nn.Module):
     def forward(self, g, h):

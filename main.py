@@ -6,6 +6,7 @@ from Data.read import read_data, init_loader
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
+from Runs.run_mlp import run as run_mlp
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
@@ -41,12 +42,13 @@ def run(args, current_time, device):
 
     run_dict = {
         'clean': run_clean,
-        'nodedp': run_nodedp
+        'nodedp': run_nodedp,
+        'mlp': run_mlp
     }
     run_mode = run_dict[args.mode]
 
     _, _ = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
-             optimizer=optimizer, name=name, device=device, history=history)
+                    optimizer=optimizer, name=name, device=device, history=history)
 
 
 if __name__ == "__main__":

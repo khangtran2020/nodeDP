@@ -12,6 +12,7 @@ def add_general_group(group):
     group.add_argument("--num_worker", type=int, default=0, help="")
     group.add_argument("--debug", type=int, default=True)
     group.add_argument("--performance_metric", type=str, default='acc', help="Metrics of performance")
+    group.add_argument("--mlp_mode", type=str, default='clean', help="Mode of running MLP ['clean', 'dp']")
 
 
 def add_data_group(group):

@@ -65,7 +65,7 @@ def update_clean(model, optimizer, objective, batch):
     loss.backward()
     optimizer.step()
     return labels, predictions, loss
-
+    
 
 def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
                   clip_node, ns, trim_rule, history, step, device):
@@ -237,17 +237,90 @@ def update_dp(model, optimizer, objective, batch, clip, ns):
     return labels, predictions.argmax(1), running_loss
 
 
-def train_dp(loader, model, criter, optimizer, device, clip, ns):
+def update_mlp_clean(model, optimizer, objective, loader, metrics):
+    train_loss = 0
+    num_data = 0
+    for batch in loader:
+        optimizer.zero_grad()
+        input_nodes, output_nodes, mfgs = batch
+        inputs = mfgs[-1].srcdata["feat"]
+        labels = mfgs[-1].dstdata["label"]
+        predictions = model(inputs)
+        loss = objective(predictions, labels)
+        loss.backward()
+        optimizer.step()
+        metrics.update(predictions, labels)
+        num_data += predictions.size(dim=0)
+        train_loss += loss.item() * predictions.size(dim=0)
+    perf = metrics.compute()
+    metrics.reset()
+    return perf, train_loss / num_data
+
+def update_mlp_dpsgd(model:torch.nn.Module, optimizer, objective, loader, clip_grad, ns, metrics, device):
+    batch = next(iter(loader))
+    optimizer.zero_grad()
+    model.zero_grad()
+    input_nodes, output_nodes, mfgs = batch
+    inputs = mfgs[-1].srcdata["feat"]
+    labels = mfgs[-1].dstdata["label"]
+    predictions = model(inputs)
+    loss = objective(predictions, labels)
+    metrics.update(predictions, labels)
+    train_loss = torch.mean(loss).item()
+    num_data = predictions.size(dim = 0)
+    
+    saved_var = {}
+    for tensor_name, tensor in model.named_parameters():
+        saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
+
+    for pos, j in enumerate(loss):
+        j.backward(retain_graph=True)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
+        for tensor_name, tensor in model.named_parameters():
+            if tensor.grad is not None:
+                new_grad = tensor.grad
+                saved_var[tensor_name].add_(new_grad)
+        model.zero_grad()
+
+    for tensor_name, tensor in model.named_parameters():
+        if tensor.grad is not None:
+            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns*clip_grad).to(device))
+            tensor.grad = saved_var[tensor_name] / num_data
+
+    optimizer.step()
+    perf = metrics.compute()
+    metrics.reset()
+    return perf, train_loss / num_data
+
+
+def train_mlp(loader, model, criter, optimizer, device, metrics, mode='clean', clip=None, ns=None):
+    
     model.to(device)
     model.train()
-    train_targets = []
-    train_outputs = []
-    train_loss = 0
-    d = next(iter(loader))
-    target, pred, loss = update_dp(model=model, optimizer=optimizer, objective=criter, batch=d, clip=clip, ns=ns)
 
-    pred = pred.cpu().detach().numpy()
-    train_targets.extend(target.cpu().detach().numpy().astype(int).tolist())
-    train_outputs.extend(pred)
-    train_loss += loss
-    return train_loss, train_outputs, train_targets
+    if mode == 'clean':
+        tr_acc, tr_loss = update_mlp_clean(model=model, optimizer=optimizer, objective=criter, loader=loader, metrics=metrics)
+    else:
+        tr_acc, tr_loss = update_mlp_dpsgd(model=model, optimizer=optimizer, objective=criter, loader=loader, clip_grad=clip, ns=ns, metrics=metrics, device=device)
+
+    return tr_acc, tr_loss
+
+def eval_mlp(loader, model, criter, metrics, device):
+    model.to(device)
+    loss_eval = 0
+    model.eval()
+    num_point = 0
+    with torch.no_grad():
+        for bi, d in enumerate(loader):
+            input_nodes, output_nodes, mfgs = d
+            inputs = mfgs[-1].srcdata["feat"]
+            labels = mfgs[-1].dstdata["label"]
+            predictions = model(inputs)
+            loss = criter(predictions, labels)
+            num_pt = predictions.size(dim=0)
+            loss_eval += loss.item() * num_pt
+            num_point += num_pt
+            metrics.update(predictions, labels)
+        performance = metrics.compute()
+        metrics.reset()
+    return performance, loss_eval / num_point

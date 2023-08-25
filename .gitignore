@@ -9,6 +9,7 @@ results
 # C extensions
 *.so
 dataset
+.DS_Store
 
 # Distribution / packaging
 .Python
