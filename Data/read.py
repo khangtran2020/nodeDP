@@ -13,6 +13,7 @@ from sklearn.model_selection import StratifiedKFold
 from Data.dataloader import NodeDataLoader
 from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import *
+from dgl.data import CoraGraphDataset, CiteseerGraphDataset, PubmedGraphDataset
 from torch_geometric.transforms import Compose, RandomNodeSplit
 import scipy.sparse as sp
 
@@ -23,6 +24,21 @@ def read_data(args, data_name, history):
         graph = data[0]
         node_split(graph=graph, val_size=0.1, test_size=0.15)
         list_of_label = filter_class_by_count(graph=graph, min_count=10000)
+    elif data_name == 'cora':
+        data = CoraGraphDataset()
+        graph = data[0]
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=0)
+    elif data_name == 'citeseer':
+        data = CiteseerGraphDataset()
+        graph = data[0]
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=0)
+    elif data_name == 'pubmed':
+        data = PubmedGraphDataset()
+        graph = data[0]
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=0)
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
                             transform=Compose([
