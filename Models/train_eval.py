@@ -313,7 +313,7 @@ def eval_mlp(loader, model, criter, metrics, device):
     with torch.no_grad():
         for bi, d in enumerate(loader):
             input_nodes, output_nodes, mfgs = d
-            inputs = mfgs[-1].srcdata["feat"]
+            inputs = mfgs[-1].dstdata["feat"]
             labels = mfgs[-1].dstdata["label"]
             predictions = model(inputs)
             loss = criter(predictions, labels)
