@@ -8,17 +8,22 @@
 module load python
 conda activate torch
 
-for RUN in 1 2 3 4 5
-do
-    python main.py --folds 5 --seed $RUN --batch_size 128 --epochs 400 --lr 0.05 --dataset cora --mode clean
-done
 
-for RUN in 1 2 3 4 5
-do
-    python main.py --folds 5 --seed $RUN --batch_size 128 --epochs 400 --lr 0.05 --dataset citeseer --mode clean
-done
+# mlp submission
 
-for RUN in 1 2 3 4 5
-do
-    python main.py --folds 5 --seed $RUN --batch_size 128 --epochs 400 --lr 0.05 --dataset pubmed --mode clean
-done
+python main.py --mode mlp \
+        --mlp_mode clean \
+        --dataset facebook \
+        --model_type mlp \
+        --lr 0.01 \
+        --sampling_rate 0.01 \
+        --n_layers 2 \
+        --hid_dim 16 \
+        --epochs 200 \
+        --clip 1.0 \
+        --ns 0.622 \
+        --debug 0 \
+        --n_neighbor 3 \
+        --seed 1 \
+        --dropout 0.0 \
+        --device gpu
