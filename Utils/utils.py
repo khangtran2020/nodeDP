@@ -33,7 +33,10 @@ def seed_everything(seed):
 def get_name(args, current_date):
     dataset_str = f'{args.dataset}_run_{args.seed}_'
     date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
-    model_str = f'{args.model_type}_{args.mode}_{args.epochs}_hops_{args.n_layers}_'
+    if args.mode != 'mlp':
+        model_str = f'{args.model_type}_{args.mode}_{args.epochs}_hops_{args.n_layers}_'
+    else:
+        model_str = f'{args.model_type}_{args.mode}_{args.mlp_mode}_{args.epochs}_hops_{args.n_layers}_'
     dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
     desity_str = f'density_{args.density}_'
     if args.mode == 'clean':
