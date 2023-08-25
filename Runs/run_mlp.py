@@ -40,7 +40,8 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
             criter_tr = criterion
         else:
             criter_tr = criter
-        tr_acc, tr_loss = train_mlp(loader=tr_loader, model=model, criter=criter_tr, optimizer=optimizer, device=device, metrics=metrics, mode=mode, clip=args.clip, ns=args)
+        tr_acc, tr_loss = train_mlp(loader=tr_loader, model=model, criter=criter_tr, optimizer=optimizer, device=device, 
+                                    metrics=metrics, mode=mode, clip=args.clip, ns=args.ns)
         # scheduler.step()
         va_acc, va_loss  = eval_mlp(loader=va_loader, model=model, criter=criterion,
                                   metrics=metrics, device=device)
