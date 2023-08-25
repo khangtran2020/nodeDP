@@ -243,7 +243,7 @@ def update_mlp_clean(model, optimizer, objective, loader, metrics):
     for batch in loader:
         optimizer.zero_grad()
         input_nodes, output_nodes, mfgs = batch
-        inputs = mfgs[-1].srcdata["feat"]
+        inputs = mfgs[-1].dstdata["feat"]
         labels = mfgs[-1].dstdata["label"]
         predictions = model(inputs)
         loss = objective(predictions, labels)
@@ -261,7 +261,7 @@ def update_mlp_dpsgd(model:torch.nn.Module, optimizer, objective, loader, clip_g
     optimizer.zero_grad()
     model.zero_grad()
     input_nodes, output_nodes, mfgs = batch
-    inputs = mfgs[-1].srcdata["feat"]
+    inputs = mfgs[-1].dstdata["feat"]
     labels = mfgs[-1].dstdata["label"]
     predictions = model(inputs)
     loss = objective(predictions, labels)
