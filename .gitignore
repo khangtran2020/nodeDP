@@ -10,7 +10,7 @@ results
 *.so
 dataset
 .DS_Store
-./submit.sh
+*.sh
 
 # Distribution / packaging
 .Python
