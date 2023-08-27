@@ -208,16 +208,26 @@ def reduce_desity(g, dens_reduction):
     # num_edge = g.edges()[0].size(dim=0)
     # num_node = g.nodes().size(dim=0)
     src_edge, dst_edge = g.edges()
+    index = (src_edge < dst_edge).nonzero(as_tuple=True)[0]
+    src_edge = src_edge[index]
+    dst_edge = dst_edge[index]
+
     num_edge = src_edge.size(dim=0)
     num_node = g.nodes().size(dim=0)
+
     dens = num_edge / num_node
     dens = dens * (1 - dens_reduction)
     num_edge_new = int(dens * num_node)
     indices = np.arange(num_edge)
+
     chosen_index = torch.from_numpy(np.random.choice(a=indices, size=num_edge_new, replace=False)).int()
     src_edge_new = torch.index_select(input=src_edge, dim=0, index=chosen_index)
     dst_edge_new = torch.index_select(input=dst_edge, dim=0, index=chosen_index)
-    new_g = dgl.graph((src_edge_new, dst_edge_new), num_nodes=num_node)
+
+    src_edge_undirected = torch.cat((src_edge_new, dst_edge_new), dim=0)
+    dst_edge_undirected = torch.cat((dst_edge_new, src_edge_new), dim=0)
+
+    new_g = dgl.graph((src_edge_undirected, dst_edge_undirected), num_nodes=num_node)
     new_g.ndata['feat'] = g.ndata['feat'].clone()
     new_g.ndata['label'] = g.ndata['label'].clone()
     new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
