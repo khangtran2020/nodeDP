@@ -1,9 +1,10 @@
+import os
 import sys
 import dgl
 import pandas as pd
 import torch
 import numpy as np
-
+import networkx as nx
 from functools import partial
 from Data.facebook import Facebook
 from Data.amazon import Amazon
@@ -15,7 +16,7 @@ from ogb.nodeproppred import DglNodePropPredDataset
 from Utils.utils import *
 from dgl.data import CoraGraphDataset, CiteseerGraphDataset, PubmedGraphDataset
 from torch_geometric.transforms import Compose, RandomNodeSplit
-import scipy.sparse as sp
+from joblib import Parallel, delayed
 
 
 def read_data(args, data_name, history):
@@ -374,17 +375,47 @@ def read_pair_file(args, file_path='Data/wpair/', nodes=None):
     return temp
 
 def increase_density(args, g, density_increase):
+
+    if os.path.exists(f'Data/pairs/{args.dataset}.npy') == False:
+        nodes = g.nodes()
+        perm_indx = torch.randperm(n=nodes.size(dim=0))
+        nodes = nodes[perm_indx]
+        del perm_indx
+        num_node = 5000
+        num_batch = int(nodes.size(dim=0)/num_node) + 1
+        adj = graph.adj_external(scipy_fmt='csr')
+        G = nx.from_scipy_sparse_matrix(adj)
+        link_pred = partial(link_prediction_on_sub_graph, num_node=num_node, nodes=nodes, org_graph=g, org_graph_nx=G)
+        results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(link_pred)(i) for i in range(num_batch))
+
+        res = []
+        for r in r: res.extend(r)
+        res = sorted(res, key=lambda x: x[-1], reverse=True)
+        res = np.array(res)
+        np.save(f'Data/pairs/{args.dataset}.npy', res)
+        rprint(f"Saved file to directory: Data/pairs/{args.dataset}.npy")
+    else:
+        res = np.load(f'Data/pairs/{args.dataset}.npy')
+        rprint(f"Loaded file from directory: Data/pairs/{args.dataset}.npy")
+    
     src_edge, dst_edge = g.edges()
+    index = (src_edge < dst_edge).nonzero(as_tuple=True)[0]
+    src_edge = src_edge[index]
+    dst_edge = dst_edge[index]
+
     num_edge = src_edge.size(dim=0)
     num_node = g.nodes().size(dim=0)
-    dens = num_edge / num_node
-    dens = dens * (1 + density_increase)
-    num_edge_new = int(dens * num_node)
-    temp = read_pair_file(args=args, nodes=g.nodes().tolist())
-    new_edges = temp[:int(num_edge_new-num_edge)]
-    src_edge_new = torch.cat((src_edge, torch.from_numpy(new_edges[:, 0]).int()), dim=0)
-    dst_edge_new = torch.cat((dst_edge, torch.from_numpy(new_edges[:, 1]).int()), dim=0)
-    new_g = dgl.graph((src_edge_new, dst_edge_new), num_nodes=num_node)
+    num_edge_new = int(density_increase * num_edge)
+    indices = np.arange(res.shape[0])
+    
+    choosen_index = np.random.choice(a=indices, size=num_edge_new, replace=False)
+    new_src_edge = torch.from_numpy(res[choosen_index, 0]).int()
+    new_dst_edge = torch.from_numpy(res[choosen_index, 1]).int()
+
+    src_edge_undirected = torch.cat((src_edge, new_src_edge, dst_edge, new_dst_edge), dim=0)
+    dst_edge_undirected = torch.cat((dst_edge, num_edge_new, src_edge, new_src_edge), dim=0)
+
+    new_g = dgl.graph((src_edge_undirected, dst_edge_undirected), num_nodes=num_node)
     new_g.ndata['feat'] = g.ndata['feat'].clone()
     new_g.ndata['label'] = g.ndata['label'].clone()
     new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
@@ -392,5 +423,25 @@ def increase_density(args, g, density_increase):
     new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
     new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
     new_g = drop_isolated_node(graph=new_g)
-    print(f"Old # edges: {num_edge}, New # edges: {new_g.edges()[0].size(dim=0)}")
+    print(f"Old # edges: {num_edge}, New # edges: {new_src_edge.size(dim=0) + num_edge}")
     return new_g
+
+def link_prediction_on_sub_graph(indx, num_node, nodes, org_graph, org_graph_nx):
+    rprint(f"Running process {indx}")
+    sub_node = nodes[indx*num_node:(indx+1)*num_node]
+    sub_graph = org_graph.subgraph(sub_node)
+    adj = sub_graph.adj_external(scipy_fmt='csr').todense()
+    iu1 = np.triu_indices(adj.shape[0], 1)
+    index = np.where(adj[iu1] < 1)[1]
+    src_edge, dst_edge = iu1
+    src_edge = src_edge[index]
+    dst_edge = dst_edge[index]
+    # print(f"Start predicting for process {indx}")
+    pair = list(zip(src_edge, dst_edge))
+    preds = nx.jaccard_coefficient(org_graph_nx, pair)
+    new_pair = []
+    for u, v, p in preds:
+        if p > 0:
+            new_pair.append([u, v, p])
+    rprint(f"Done process {index}")
+    return new_pair
