@@ -393,13 +393,14 @@ def increase_density(args, g, density_increase):
         for r in res: results_.extend(r)
         results_ = sorted(results_, key=lambda x: x[-1], reverse=True)
         results_ = np.array(results_).astype(int)
-        print(f'Results of pairs:', results_, results_.shape)
         np.save(f'Data/pairs/{args.dataset}.npy', results_)
         rprint(f"Saved file to directory: Data/pairs/{args.dataset}.npy")
     else:
         results_ = np.load(f'Data/pairs/{args.dataset}.npy')
         rprint(f"Loaded file from directory: Data/pairs/{args.dataset}.npy")
     
+    print("\n*10")
+    print(f'Results of pairs:', results_, results_.shape)
     src_edge, dst_edge = g.edges()
     index = (src_edge < dst_edge).nonzero(as_tuple=True)[0]
     src_edge = src_edge[index]
