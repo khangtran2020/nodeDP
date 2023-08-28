@@ -380,7 +380,7 @@ def increase_density(args, g, density_increase):
     if os.path.exists(f'Data/pairs/{args.dataset}.npy') == False:
         nodes = g.nodes()
         perm_indx = torch.randperm(n=nodes.size(dim=0))
-        nodes = nodes[:100]
+        nodes = nodes[:2000]
         del perm_indx
         num_node = 10
         num_batch = int(nodes.size(dim=0)/num_node) + 1
@@ -388,7 +388,7 @@ def increase_density(args, g, density_increase):
         G = nx.from_scipy_sparse_matrix(adj)
         link_pred = partial(link_prediction_on_sub_graph, num_node=num_node, nodes=nodes, org_graph=g, org_graph_nx=G)
         results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(link_pred)(i) for i in range(num_batch))
-        res = []
+        res = [r for r in results]
         for r in results: res.extend(r)
         res = sorted(res, key=lambda x: x[-1], reverse=True)
         res = np.array(res)
@@ -444,5 +444,5 @@ def link_prediction_on_sub_graph(indx, num_node, nodes, org_graph, org_graph_nx)
     for u, v, p in tqdm(preds):
         if p > 0:
             new_pair.append([u, v, p])
-    rprint(f"Done process {index}")
+    rprint(f"Done process {index}, new pair has size {len(new_pair)}")
     return new_pair
