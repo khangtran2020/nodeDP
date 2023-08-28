@@ -383,7 +383,7 @@ def increase_density(args, g, density_increase):
         del perm_indx
         num_node = 5000
         num_batch = int(nodes.size(dim=0)/num_node) + 1
-        adj = graph.adj_external(scipy_fmt='csr')
+        adj = g.adj_external(scipy_fmt='csr')
         G = nx.from_scipy_sparse_matrix(adj)
         link_pred = partial(link_prediction_on_sub_graph, num_node=num_node, nodes=nodes, org_graph=g, org_graph_nx=G)
         results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(link_pred)(i) for i in range(num_batch))
