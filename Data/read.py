@@ -392,12 +392,12 @@ def increase_density(args, g, density_increase):
         results_ = []
         for r in res: results_.extend(r)
         results_ = sorted(results_, key=lambda x: x[-1], reverse=True)
-        results_ = np.array(results_)
+        results_ = np.array(results_).astype(int)
         print(f'Results of pairs:', results_, results_.shape)
         np.save(f'Data/pairs/{args.dataset}.npy', results_)
         rprint(f"Saved file to directory: Data/pairs/{args.dataset}.npy")
     else:
-        res = np.load(f'Data/pairs/{args.dataset}.npy')
+        results_ = np.load(f'Data/pairs/{args.dataset}.npy')
         rprint(f"Loaded file from directory: Data/pairs/{args.dataset}.npy")
     
     src_edge, dst_edge = g.edges()
@@ -408,11 +408,11 @@ def increase_density(args, g, density_increase):
     num_edge = src_edge.size(dim=0)
     num_node = g.nodes().size(dim=0)
     num_edge_new = int(density_increase * num_edge)
-    indices = np.arange(res.shape[0])
+    indices = np.arange(results_.shape[0])
     
     choosen_index = np.random.choice(a=indices, size=num_edge_new, replace=False)
-    new_src_edge = torch.from_numpy(res[choosen_index, 0]).int()
-    new_dst_edge = torch.from_numpy(res[choosen_index, 1]).int()
+    new_src_edge = torch.from_numpy(results_[choosen_index, 0]).int()
+    new_dst_edge = torch.from_numpy(results_[choosen_index, 1]).int()
 
     src_edge_undirected = torch.cat((src_edge, new_src_edge, dst_edge, new_dst_edge), dim=0)
     dst_edge_undirected = torch.cat((dst_edge, num_edge_new, src_edge, new_src_edge), dim=0)
