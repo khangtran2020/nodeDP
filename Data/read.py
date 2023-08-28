@@ -380,9 +380,9 @@ def increase_density(args, g, density_increase):
     if os.path.exists(f'Data/pairs/{args.dataset}.npy') == False:
         nodes = g.nodes()
         perm_indx = torch.randperm(n=nodes.size(dim=0))
-        nodes = nodes[:20000]
+        nodes = nodes[perm_indx]
         del perm_indx
-        num_node = 1000
+        num_node = 2000
         num_batch = int(nodes.size(dim=0)/num_node) + 1
         adj = g.adj_external(scipy_fmt='csr')
         G = nx.from_scipy_sparse_matrix(adj)
