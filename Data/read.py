@@ -413,10 +413,10 @@ def increase_density(args, g, density_increase):
     new_src_edge = torch.from_numpy(results_[choosen_index, 0]).int()
     new_dst_edge = torch.from_numpy(results_[choosen_index, 1]).int()
 
-    print(new_src_edge.size(), new_dst_edge.size())
+    # print(new_src_edge.size(), new_dst_edge.size())
 
     src_edge_undirected = torch.cat((src_edge, new_src_edge, dst_edge, new_dst_edge), dim=0)
-    dst_edge_undirected = torch.cat((dst_edge, num_edge_new, src_edge, new_src_edge), dim=0)
+    dst_edge_undirected = torch.cat((dst_edge, new_dst_edge, src_edge, new_src_edge), dim=0)
 
     new_g = dgl.graph((src_edge_undirected, dst_edge_undirected), num_nodes=num_node)
     new_g.ndata['feat'] = g.ndata['feat'].clone()
