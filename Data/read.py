@@ -9,6 +9,7 @@ from functools import partial
 from Data.facebook import Facebook
 from Data.amazon import Amazon
 from copy import deepcopy
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 from Data.dataloader import NodeDataLoader
@@ -440,7 +441,7 @@ def link_prediction_on_sub_graph(indx, num_node, nodes, org_graph, org_graph_nx)
     pair = list(zip(src_edge, dst_edge))
     preds = nx.jaccard_coefficient(org_graph_nx, pair)
     new_pair = []
-    for u, v, p in preds:
+    for u, v, p in tqdm(preds):
         if p > 0:
             new_pair.append([u, v, p])
     rprint(f"Done process {index}")
