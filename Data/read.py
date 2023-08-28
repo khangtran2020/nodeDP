@@ -399,7 +399,7 @@ def increase_density(args, g, density_increase):
         results_ = np.load(f'Data/pairs/{args.dataset}.npy')
         rprint(f"Loaded file from directory: Data/pairs/{args.dataset}.npy")
     
-    print("\n*10")
+    print("\n"*10)
     print(f'Results of pairs:', results_, results_.shape)
     src_edge, dst_edge = g.edges()
     index = (src_edge < dst_edge).nonzero(as_tuple=True)[0]
