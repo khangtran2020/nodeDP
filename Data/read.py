@@ -388,11 +388,11 @@ def increase_density(args, g, density_increase):
         G = nx.from_scipy_sparse_matrix(adj)
         link_pred = partial(link_prediction_on_sub_graph, num_node=num_node, nodes=nodes, org_graph=g, org_graph_nx=G)
         results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(link_pred)(i) for i in range(num_batch))
-
         res = []
         for r in results: res.extend(r)
         res = sorted(res, key=lambda x: x[-1], reverse=True)
         res = np.array(res)
+        print(f'Results of pairs:', res, res.shape)
         np.save(f'Data/pairs/{args.dataset}.npy', res)
         rprint(f"Saved file to directory: Data/pairs/{args.dataset}.npy")
     else:
