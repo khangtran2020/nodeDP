@@ -398,6 +398,8 @@ def increase_density(args, g, density_increase):
     else:
         results_ = np.load(f'Data/pairs/{args.dataset}.npy')
         rprint(f"Loaded file from directory: Data/pairs/{args.dataset}.npy")
+
+    rprint(f"Available addition edges: {results_.shape}")    
     
     src_edge, dst_edge = g.edges()
     index = (src_edge < dst_edge).nonzero(as_tuple=True)[0]
