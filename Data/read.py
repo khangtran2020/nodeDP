@@ -406,7 +406,7 @@ def increase_density(args, g, density_increase):
 
     num_edge = src_edge.size(dim=0)
     num_node = g.nodes().size(dim=0)
-    num_edge_new = int((density_increase-1) * num_edge)
+    num_edge_new = int(density_increase * num_edge)
     indices = np.arange(results_.shape[0])
     
     choosen_index = np.random.choice(a=indices, size=num_edge_new, replace=False)
