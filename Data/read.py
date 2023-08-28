@@ -382,7 +382,7 @@ def increase_density(args, g, density_increase):
         perm_indx = torch.randperm(n=nodes.size(dim=0))
         nodes = nodes[perm_indx]
         del perm_indx
-        num_node = 2000
+        num_node = 10
         num_batch = int(nodes.size(dim=0)/num_node) + 1
         adj = g.adj_external(scipy_fmt='csr')
         G = nx.from_scipy_sparse_matrix(adj)
