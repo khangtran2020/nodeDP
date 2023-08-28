@@ -380,7 +380,7 @@ def increase_density(args, g, density_increase):
     if os.path.exists(f'Data/pairs/{args.dataset}.npy') == False:
         nodes = g.nodes()
         perm_indx = torch.randperm(n=nodes.size(dim=0))
-        nodes = nodes[perm_indx]
+        nodes = nodes[:100]
         del perm_indx
         num_node = 10
         num_batch = int(nodes.size(dim=0)/num_node) + 1
@@ -390,7 +390,7 @@ def increase_density(args, g, density_increase):
         results = Parallel(n_jobs=os.cpu_count(), prefer="threads")(delayed(link_pred)(i) for i in range(num_batch))
 
         res = []
-        for r in r: res.extend(r)
+        for r in results: res.extend(r)
         res = sorted(res, key=lambda x: x[-1], reverse=True)
         res = np.array(res)
         np.save(f'Data/pairs/{args.dataset}.npy', res)
