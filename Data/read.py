@@ -444,5 +444,5 @@ def link_prediction_on_sub_graph(indx, num_node, nodes, org_graph, org_graph_nx)
     for u, v, p in tqdm(preds):
         if p > 0:
             new_pair.append([u, v, p])
-    rprint(f"Done process {index}, new pair has size {len(new_pair)}")
+    rprint(f"Done process {indx}, new pair has size {len(new_pair)}")
     return new_pair
