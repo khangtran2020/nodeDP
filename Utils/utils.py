@@ -38,7 +38,7 @@ def get_name(args, current_date):
     else:
         model_str = f'{args.model_type}_{args.mode}_{args.mlp_mode}_{args.epochs}_hops_{args.n_layers}_'
     dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
-    desity_str = f'density_{args.density}_'
+    desity_str = f'{args.submode}_{args.density}_'
     if args.mode == 'clean':
         if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
             res_str = dataset_str + model_str + date_str
