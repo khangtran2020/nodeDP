@@ -196,7 +196,7 @@ def cycle_generate(graph):
 def tree_generate(graph):
     adj = graph.adj_external(scipy_fmt='csr')
     G = nx.from_scipy_sparse_matrix(adj)
-    H = nx.minimum_branching(G)
+    H = nx.maximum_branching(G)
     g = dgl.from_networkx(H)
     g.ndata['feat'] = graph.ndata['feat']
     g.ndata['label'] = graph.ndata['label']
