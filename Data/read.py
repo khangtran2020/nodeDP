@@ -94,6 +94,12 @@ def read_data(args, data_name, history):
             graph = increase_density(args=args, g=graph, density_increase=args.density - 1)
     elif args.submode == 'spectral':
         graph = spectral_reduction(graph=graph, reduction_rate=args.density)
+    elif args.submode == 'complete':
+        graph = complete_generate(graph=graph)
+    elif args.submode == 'line':
+        graph = cycle_generate(graph=graph)
+    elif args.submode == 'tree':
+        graph = tree_generate(graph=graph)
     history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
     history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
     history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
@@ -154,6 +160,43 @@ def spectral_reduction(graph, reduction_rate):
     adj = graph.adj_external(scipy_fmt='csr')
     G = nx.from_scipy_sparse_matrix(adj)
     H = nx.spectral_graph_forge(G, reduction_rate)
+    g = dgl.from_networkx(H)
+    g.ndata['feat'] = graph.ndata['feat']
+    g.ndata['label'] = graph.ndata['label']
+    g.ndata['train_mask'] = graph.ndata['train_mask']
+    g.ndata['val_mask'] = graph.ndata['val_mask']
+    g.ndata['test_mask'] = graph.ndata['test_mask']
+    g.ndata['label_mask'] = graph.ndata['label_mask']
+    return g
+
+def complete_generate(graph):
+    num_node = graph.nodes().size(dim=0)
+    G = nx.complete_graph(n=num_node)
+    g = dgl.from_networkx(G)
+    g.ndata['feat'] = graph.ndata['feat']
+    g.ndata['label'] = graph.ndata['label']
+    g.ndata['train_mask'] = graph.ndata['train_mask']
+    g.ndata['val_mask'] = graph.ndata['val_mask']
+    g.ndata['test_mask'] = graph.ndata['test_mask']
+    g.ndata['label_mask'] = graph.ndata['label_mask']
+    return g
+
+def cycle_generate(graph):
+    num_node = graph.nodes().size(dim=0)
+    G = nx.cycle_graph(n=num_node)
+    g = dgl.from_networkx(G)
+    g.ndata['feat'] = graph.ndata['feat']
+    g.ndata['label'] = graph.ndata['label']
+    g.ndata['train_mask'] = graph.ndata['train_mask']
+    g.ndata['val_mask'] = graph.ndata['val_mask']
+    g.ndata['test_mask'] = graph.ndata['test_mask']
+    g.ndata['label_mask'] = graph.ndata['label_mask']
+    return g
+
+def tree_generate(graph):
+    adj = graph.adj_external(scipy_fmt='csr')
+    G = nx.from_scipy_sparse_matrix(adj)
+    H = nx.minimum_branching(G)
     g = dgl.from_networkx(H)
     g.ndata['feat'] = graph.ndata['feat']
     g.ndata['label'] = graph.ndata['label']
