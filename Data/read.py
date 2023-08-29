@@ -160,6 +160,7 @@ def spectral_reduction(graph, reduction_rate):
     g.ndata['train_mask'] = graph.ndata['train_mask']
     g.ndata['val_mask'] = graph.ndata['val_mask']
     g.ndata['test_mask'] = graph.ndata['test_mask']
+    g.ndata['label_mask'] = graph.ndata['label_mask']
     return g
 
 def filter_class_by_count(graph, min_count):
