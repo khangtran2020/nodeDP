@@ -29,16 +29,25 @@ def read_data(args, data_name, history):
     elif data_name == 'cora':
         data = CoraGraphDataset()
         graph = data[0]
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
         node_split(graph=graph, val_size=0.1, test_size=0.15)
         list_of_label = filter_class_by_count(graph=graph, min_count=0)
     elif data_name == 'citeseer':
         data = CiteseerGraphDataset()
         graph = data[0]
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
         node_split(graph=graph, val_size=0.1, test_size=0.15)
         list_of_label = filter_class_by_count(graph=graph, min_count=0)
     elif data_name == 'pubmed':
         data = PubmedGraphDataset()
         graph = data[0]
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
         node_split(graph=graph, val_size=0.1, test_size=0.15)
         list_of_label = filter_class_by_count(graph=graph, min_count=0)
     elif data_name == 'facebook':
