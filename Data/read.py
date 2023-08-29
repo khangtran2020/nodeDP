@@ -92,6 +92,8 @@ def read_data(args, data_name, history):
             graph = reduce_desity(g=graph, dens_reduction=args.density)
         else:
             graph = increase_density(args=args, g=graph, density_increase=args.density - 1)
+    elif args.submode == 'spectral':
+        graph = spectral_reduction(graph=graph, reduction_rate=args.density)
     history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
     history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
     history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
@@ -148,6 +150,17 @@ def drop_isolated_node(graph):
     nodes_id = graph.nodes()[index]
     return graph.subgraph(torch.LongTensor(nodes_id))
 
+def spectral_reduction(graph, reduction_rate):
+    adj = graph.adj_external(scipy_fmt='csr')
+    G = nx.from_scipy_sparse_matrix(adj)
+    H = nx.spectral_graph_forge(G, reduction_rate)
+    g = dgl.from_networkx(H)
+    g.ndata['feat'] = graph.ndata['feat']
+    g.ndata['label'] = graph.ndata['label']
+    g.ndata['train_mask'] = graph.ndata['train_mask']
+    g.ndata['val_mask'] = graph.ndata['val_mask']
+    g.ndata['test_mask'] = graph.ndata['test_mask']
+    return g
 
 def filter_class_by_count(graph, min_count):
     target = deepcopy(graph.ndata['label'])
