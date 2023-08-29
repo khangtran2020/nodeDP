@@ -106,7 +106,7 @@ def read_data(args, data_name, history):
 def node_split(graph, val_size, test_size):
     keys = graph.ndata.keys()
     if 'train_mask' not in keys or 'val_mask' not in keys or 'test_mask' not in keys:
-        node_id = np.arrange(len(graph.nodes()))
+        node_id = np.arange(len(graph.nodes()))
         node_label = graph.ndata['label'].numpy()
         id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=test_size,
                                                               stratify=node_label)
