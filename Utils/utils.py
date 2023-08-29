@@ -40,12 +40,12 @@ def get_name(args, current_date):
     dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
     desity_str = f'density_{args.density}_'
     if args.mode == 'clean':
-        if args.submode != 'density':
+        if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
             res_str = dataset_str + model_str + date_str
         else:
             res_str = dataset_str + model_str + desity_str + date_str
     else:
-        if args.submode != 'density':
+        if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
             res_str = dataset_str + model_str + dp_str + date_str
         else:
             res_str = dataset_str + model_str + dp_str + desity_str + date_str
