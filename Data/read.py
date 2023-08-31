@@ -462,7 +462,7 @@ def increase_density(args, g, density_increase):
         np.save(f'Data/pairs/{args.dataset}.npy', results_)
         rprint(f"Saved file to directory: Data/pairs/{args.dataset}.npy")
     else:
-        results_ = np.load(f'Data/pairs/{args.dataset}.npy')
+        results_ = np.load(f'Data/pairs/{args.dataset}.npy', allow_pickle=True)
         rprint(f"Loaded file from directory: Data/pairs/{args.dataset}.npy")
 
     rprint(f"Available addition edges: {results_.shape}")    
