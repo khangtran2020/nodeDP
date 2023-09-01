@@ -11,6 +11,7 @@ results
 dataset
 .DS_Store
 *.sh
+Data/pairs/
 
 # Distribution / packaging
 .Python
