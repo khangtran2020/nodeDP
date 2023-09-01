@@ -1,3 +1,0 @@
-Data/pairs/reddit.npy filter=lfs diff=lfs merge=lfs -text
-Data/pairs/amazon.npy filter=lfs diff=lfs merge=lfs -text
-Data/pairs/facebook.npy filter=lfs diff=lfs merge=lfs -text
