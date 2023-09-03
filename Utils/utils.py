@@ -73,7 +73,7 @@ def get_index_bynot_value(a, val):
 def print_args(args):
     arg_dict = {}
     keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type', 'lr', 'n_layers',
-            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device']
+            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device', 'submode']
     for key in keys:
         arg_dict[key] = getattr(args, key)
 
