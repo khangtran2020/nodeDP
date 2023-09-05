@@ -87,8 +87,11 @@ def read_data(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
+    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
+    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
+    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
     if args.submode == 'density':
-        if args.density < 1.0:
+        if args.density <= 1.0:
             graph = reduce_desity(g=graph, dens_reduction=args.density)
         else:
             graph = increase_density(args=args, g=graph, density_increase=args.density - 1)
@@ -100,10 +103,12 @@ def read_data(args, data_name, history):
         graph = cycle_generate(graph=graph)
     elif args.submode == 'tree':
         graph = tree_generate(graph=graph)
-    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
-    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
-    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
-    g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    
+    if (args.submode == 'density') and (args.density == 1.0):
+        g_train, g_val, g_test = graph_split(graph=graph, drop=False)
+    else:
+        g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+            
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
     graph = drop_isolated_node(graph)
@@ -286,23 +291,32 @@ def reduce_desity(g, dens_reduction):
     dens = num_edge / num_node
     dens = dens * (1 - dens_reduction)
     num_edge_new = int(dens * num_node)
-    indices = np.arange(num_edge)
+    if num_edge_new == 0:
+        new_g = dgl.graph((torch.LongTensor([]), torch.LongTensor([])), num_nodes=num_node)
+        new_g.ndata['feat'] = g.ndata['feat'].clone()
+        new_g.ndata['label'] = g.ndata['label'].clone()
+        new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
+        new_g.ndata['val_mask'] = g.ndata['val_mask'].clone()
+        new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
+        new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
+    else:
+        indices = np.arange(num_edge)
 
-    chosen_index = torch.from_numpy(np.random.choice(a=indices, size=num_edge_new, replace=False)).int()
-    src_edge_new = torch.index_select(input=src_edge, dim=0, index=chosen_index)
-    dst_edge_new = torch.index_select(input=dst_edge, dim=0, index=chosen_index)
+        chosen_index = torch.from_numpy(np.random.choice(a=indices, size=num_edge_new, replace=False)).int()
+        src_edge_new = torch.index_select(input=src_edge, dim=0, index=chosen_index)
+        dst_edge_new = torch.index_select(input=dst_edge, dim=0, index=chosen_index)
 
-    src_edge_undirected = torch.cat((src_edge_new, dst_edge_new), dim=0)
-    dst_edge_undirected = torch.cat((dst_edge_new, src_edge_new), dim=0)
+        src_edge_undirected = torch.cat((src_edge_new, dst_edge_new), dim=0)
+        dst_edge_undirected = torch.cat((dst_edge_new, src_edge_new), dim=0)
 
-    new_g = dgl.graph((src_edge_undirected, dst_edge_undirected), num_nodes=num_node)
-    new_g.ndata['feat'] = g.ndata['feat'].clone()
-    new_g.ndata['label'] = g.ndata['label'].clone()
-    new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
-    new_g.ndata['val_mask'] = g.ndata['val_mask'].clone()
-    new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
-    new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
-    new_g = drop_isolated_node(graph=new_g)
+        new_g = dgl.graph((src_edge_undirected, dst_edge_undirected), num_nodes=num_node)
+        new_g.ndata['feat'] = g.ndata['feat'].clone()
+        new_g.ndata['label'] = g.ndata['label'].clone()
+        new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
+        new_g.ndata['val_mask'] = g.ndata['val_mask'].clone()
+        new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
+        new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
+        new_g = drop_isolated_node(graph=new_g)
     print(f"Old # edges: {num_edge}, New # edges: {src_edge_new.size(dim=0)}")
     return new_g
 
