@@ -7,7 +7,7 @@ def add_general_group(group):
     group.add_argument("--plot_path", type=str, default="results/plot/", help="dir path for output file")
     group.add_argument("--seed", type=int, default=2605, help="seed value")
     group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp']")
-    group.add_argument("--submode", type=str, default='full', help="")
+    group.add_argument("--submode", type=str, default='none', help="")
     group.add_argument("--device", type=str, default='cpu', help="")
     group.add_argument("--num_worker", type=int, default=0, help="")
     group.add_argument("--debug", type=int, default=True)
