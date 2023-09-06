@@ -20,7 +20,7 @@ from torch_geometric.transforms import Compose, RandomNodeSplit
 from joblib import Parallel, delayed
 from loguru import logger
 from Utils.utils import timeit
-from Data.read import node_split, filter_class_by_count, reduce_desity, graph_split
+from Data.read import node_split, filter_class_by_count, reduce_desity, graph_split, drop_isolated_node
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -38,14 +38,23 @@ def read_data(args, history):
     graph_ = reduce_desity(g=graph, dens_reduction=args.density)
 
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
+    graph = graph.subgraph(torch.LongTensor(idx))
+    graph = drop_isolated_node(graph)
+    args.num_data_point = len(g_train.nodes())
 
     if (args.submode == 'density') and (args.density == 1.0):
         g_train_, g_val_, g_test_ = graph_split(graph=graph_, drop=False)
+        idx = torch.index_select(graph_.nodes(), 0, graph_.ndata['label_mask'].nonzero().squeeze()).numpy()
+        graph_ = graph_.subgraph(torch.LongTensor(idx))
     else:
         g_train_, g_val_, g_test_ = graph_split(graph=graph_, drop=True)
+        idx = torch.index_select(graph_.nodes(), 0, graph_.ndata['label_mask'].nonzero().squeeze()).numpy()
+        graph_ = graph_.subgraph(torch.LongTensor(idx))
+        graph_ = drop_isolated_node(graph_)
     
-    org_graph_info = (g_train, g_val, g_test)
-    drop_graph_info = (g_train_, g_val_, g_test_)
+    org_graph_info = (g_train, g_val, g_test, graph)
+    drop_graph_info = (g_train_, g_val_, g_test_, graph_)
 
     return org_graph_info, drop_graph_info
     

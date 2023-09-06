@@ -4,7 +4,7 @@ import torch
 import torchmetrics
 
 from tqdm import tqdm
-from Models.train_eval import EarlyStopping, train_fn, eval_fn, performace_eval
+from Models.train_eval import EarlyStopping, train_fn, eval_fn, train_nodedp
 from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 from Utils.utils import timeit
@@ -23,8 +23,8 @@ def run(args, name, device, history):
         
         org_info, mod_info = read_data(args=args, data_name=args.dataset, history=history)
         
-        tr_g, va_g, te_g = org_info
-        tr_g_, va_g_, te_g_ = mod_info
+        tr_g, va_g, te_g, g = org_info
+        tr_g_, va_g_, te_g_, g_ = mod_info
 
         tr_g = tr_g.to(device)
         va_g = va_g.to(device)
@@ -68,10 +68,25 @@ def run(args, name, device, history):
         # THE ENGINE LOOP
         tk0 = tqdm(range(args.epochs), total=args.epochs)
         for epoch in tk0:
-            tr_loss, tr_acc = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
-                                    optimizer=optimizer, device=device, scheduler=None, metric=metrics)
-            tr_loss_, tr_acc_ = train_fn(dataloader=tr_loader_, model=model_, criterion=criterion,
-                                    optimizer=optimizer_, device=device, scheduler=None, metric=metrics)
+            if args.mode == 'clean':
+                tr_loss, tr_acc = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
+                                        optimizer=optimizer, device=device, scheduler=None, metric=metrics)
+                tr_loss_, tr_acc_ = train_fn(dataloader=tr_loader_, model=model_, criterion=criterion,
+                                        optimizer=optimizer_, device=device, scheduler=None, metric=metrics)
+            else:
+                criter = torch.nn.CrossEntropyLoss(reduction='none').to(device)
+                tr_loss, tr_acc = train_nodedp(args=args, dataloader=tr_loader, model=model,
+                                                criterion=criter, optimizer=optimizer, device=device,
+                                                scheduler=None, g=g, clip_grad=args.clip,
+                                                clip_node=args.clip_node, ns=args.ns,
+                                                trim_rule=args.trim_rule, history=history, step=epoch,
+                                                metric=metrics)
+                tr_loss_, tr_acc_ = train_nodedp(args=args, dataloader=tr_loader_, model=model_,
+                                                criterion=criter, optimizer=optimizer_, device=device,
+                                                scheduler=None, g=g_, clip_grad=args.clip,
+                                                clip_node=args.clip_node, ns=args.ns,
+                                                trim_rule=args.trim_rule, history=history, step=epoch,
+                                                metric=metrics)
             
             va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                     device=device, metric=metrics)
@@ -97,6 +112,7 @@ def run(args, name, device, history):
             history['test_history_loss'].append(te_loss)
             history['test_history_acc'].append(te_acc.item())
             es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
+            torch.save(model_.state_dict(), args.save_path + model_name_)
             # if es.early_stop:
             #     break
 
