@@ -60,11 +60,13 @@ def parse_args():
     model_group = parser.add_argument_group(title="Model-related configuration")
     general_group = parser.add_argument_group(title="General configuration")
     dp_group = parser.add_argument_group(title="DP configuration")
+    analysis_group = parser.add_argument_group(title="Analysis configuration")
 
     add_data_group(data_group)
     add_model_group(model_group)
     add_general_group(general_group)
     add_dp_group(dp_group)
+    add_analysis_group(analysis_group)
     return parser.parse_args()
 
 def add_data_attack_group(group):
