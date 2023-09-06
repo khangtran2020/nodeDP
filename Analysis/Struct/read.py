@@ -37,10 +37,10 @@ def read_data(args, history):
     graph = dgl.remove_self_loop(graph)
     graph_ = reduce_desity(g=graph, dens_reduction=args.density)
 
-    g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    g_train, g_val, g_test = graph_split(graph=graph, drop=False)
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
-    graph = drop_isolated_node(graph)
+    # graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
 
     if (args.submode == 'density') and (args.density == 1.0):
@@ -48,10 +48,10 @@ def read_data(args, history):
         idx = torch.index_select(graph_.nodes(), 0, graph_.ndata['label_mask'].nonzero().squeeze()).numpy()
         graph_ = graph_.subgraph(torch.LongTensor(idx))
     else:
-        g_train_, g_val_, g_test_ = graph_split(graph=graph_, drop=True)
+        g_train_, g_val_, g_test_ = graph_split(graph=graph_, drop=False)
         idx = torch.index_select(graph_.nodes(), 0, graph_.ndata['label_mask'].nonzero().squeeze()).numpy()
         graph_ = graph_.subgraph(torch.LongTensor(idx))
-        graph_ = drop_isolated_node(graph_)
+        # graph_ = drop_isolated_node(graph_)
     
     org_graph_info = (g_train, g_val, g_test, graph)
     drop_graph_info = (g_train_, g_val_, g_test_, graph_)
