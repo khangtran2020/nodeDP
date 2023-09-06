@@ -177,3 +177,10 @@ def get_name_link(args, current_date):
     dataset_str = f'{args.dataset}_run_{args.seed}_link_pred_'
     date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
     return dataset_str + date_str
+
+
+def save_args_to_history(args, history):
+    keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type', 'lr', 'n_layers',
+            'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device', 'submode']
+    for key in keys:
+        history[key] = getattr(args, key)

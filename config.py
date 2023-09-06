@@ -10,7 +10,7 @@ def add_general_group(group):
     group.add_argument("--submode", type=str, default='none', help="")
     group.add_argument("--device", type=str, default='cpu', help="")
     group.add_argument("--num_worker", type=int, default=0, help="")
-    group.add_argument("--debug", type=int, default=True)
+    group.add_argument("--debug", type=int, default=1)
     group.add_argument("--performance_metric", type=str, default='acc', help="Metrics of performance")
     group.add_argument("--mlp_mode", type=str, default='clean', help="Mode of running MLP ['clean', 'dp']")
 
@@ -23,6 +23,11 @@ def add_data_group(group):
     group.add_argument('--density', type=float, default=0.2, help="density reduction")
     group.add_argument('--min_counts', type=int, default=10000, help="count to filter the target label")
     group.add_argument('--folds', type=int, default=5, help='number of folds for cross-validation')
+
+def add_analysis_group(group):
+    group.add_argument("--analysis", type=int, default=0)
+    group.add_argument('--seed_info', type=str, default='', help="")
+    group.add_argument("--analyze_mode", type=str, default='struct')
 
 
 def add_model_group(group):
@@ -102,9 +107,11 @@ def parse_args_attack():
     data_group = parser.add_argument_group(title="Data-related configuration")
     model_group = parser.add_argument_group(title="Model-related configuration")
     dp_group = parser.add_argument_group(title="DP configuration")
+    analysis_group = parser.add_argument_group(title="Analysis configuration")
 
     add_data_attack_group(data_group)
     add_model_attack_group(model_group)
     add_general_group(general_group)
     add_dp_group(dp_group)
+    add_analysis_group(analysis_group)
     return parser.parse_args()
