@@ -23,8 +23,8 @@ def run(args, name, device, history):
         
         org_info, mod_info = read_data(args=args, history=history)
         
-        tr_g, va_g, te_g, g = org_info
-        tr_g_, va_g_, te_g_, g_ = mod_info
+        tr_g, va_g, te_g = org_info
+        tr_g_, va_g_, te_g_ = mod_info
 
         tr_g = tr_g.to(device)
         va_g = va_g.to(device)
@@ -77,13 +77,13 @@ def run(args, name, device, history):
                 criter = torch.nn.CrossEntropyLoss(reduction='none').to(device)
                 tr_loss, tr_acc = train_nodedp(args=args, dataloader=tr_loader, model=model,
                                                 criterion=criter, optimizer=optimizer, device=device,
-                                                scheduler=None, g=g, clip_grad=args.clip,
+                                                scheduler=None, g=tr_g, clip_grad=args.clip,
                                                 clip_node=args.clip_node, ns=args.ns,
                                                 trim_rule=args.trim_rule, history=history, step=epoch,
                                                 metric=metrics)
                 tr_loss_, tr_acc_ = train_nodedp(args=args, dataloader=tr_loader_, model=model_,
                                                 criterion=criter, optimizer=optimizer_, device=device,
-                                                scheduler=None, g=g_, clip_grad=args.clip,
+                                                scheduler=None, g=tr_g_, clip_grad=args.clip,
                                                 clip_node=args.clip_node, ns=args.ns,
                                                 trim_rule=args.trim_rule, history=history, step=epoch,
                                                 metric=metrics)
