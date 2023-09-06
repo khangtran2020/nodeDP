@@ -9,6 +9,7 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 from Utils.utils import timeit
 from loguru import logger
+from Models.init import init_model, init_optimizer
 from Analysis.Struct.read import read_data
 from rich import print as rprint
 from Data.read import init_loader
@@ -16,7 +17,7 @@ from Data.read import init_loader
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 
-def run(args, model, optimizer, name, device, history):
+def run(args, name, device, history):
 
     with timeit(logger, 'init-data'):
         
@@ -36,8 +37,13 @@ def run(args, model, optimizer, name, device, history):
         tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=tr_g, test_g=te_g, val_g=va_g)
         tr_loader_, va_loader_, te_loader_ = init_loader(args=args, device=device, train_g=tr_g_, test_g=te_g_, val_g=va_g_)
 
-    
+    model = init_model(args=args)
+    optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
+    model_ = init_model(args=args)
+    optimizer_ = init_optimizer(optimizer_name=args.optimizer, model=model_, lr=args.lr)
     model_name = '{}.pt'.format(name)
+    model.to(device)
+    model_name_ = '{}_drop.pt'.format(name)
     model.to(device)
 
     # DEfining criterion
@@ -64,11 +70,22 @@ def run(args, model, optimizer, name, device, history):
         for epoch in tk0:
             tr_loss, tr_acc = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
                                     optimizer=optimizer, device=device, scheduler=None, metric=metrics)
+            tr_loss_, tr_acc_ = train_fn(dataloader=tr_loader_, model=model_, criterion=criterion,
+                                    optimizer=optimizer_, device=device, scheduler=None, metric=metrics)
+            
             va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                     device=device, metric=metrics)
             te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
                                     device=device, metric=metrics)
 
+            te_conf_org = model.full(te_g, te_g.ndata['feat'])
+            te_conf_drop = model.full(te_g_, te_g_.ndata['feat'])
+            diff = (te_conf_org - te_conf_drop).norm(p=2, dim=-1).mean(dim=0)
+            history['avg_diff_org'].append(diff)
+            te_conf_org = model_.full(te_g, te_g.ndata['feat'])
+            te_conf_drop = model_.full(te_g_, te_g_.ndata['feat'])
+            diff = (te_conf_org - te_conf_drop).norm(p=2, dim=-1).mean(dim=0)
+            history['avg_diff_drop'].append(diff) 
             # scheduler.step(acc_score)
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())

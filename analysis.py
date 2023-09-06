@@ -2,7 +2,6 @@ import datetime
 import warnings
 import sys
 from config import parse_args
-from Models.init import init_model, init_optimizer
 from Analysis.Struct.run_struct_analysis import run as run_struct
 from Utils.utils import *
 from loguru import logger
@@ -19,11 +18,9 @@ def run(args, current_time, device):
         history = init_history_clean()
     else:
         history = init_history_nodeDP()
-    history['avg_diff'] = []
+    history['avg_diff_org'] = []
+    history['avg_diff_drop'] = []
     save_args_to_history(args=args, history=history)
-
-    model = init_model(args=args)
-    optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
     name = get_name(args=args, current_date=current_time)
     history['name'] = name
 
@@ -32,7 +29,7 @@ def run(args, current_time, device):
     }
 
     run_mode = run_dict[args.analyze_mode]
-    run_mode(args=args, model=model, optimizer=optimizer, name=name, device=device, history=history)
+    run_mode(args=args, name=name, device=device, history=history)
 
 
 if __name__ == "__main__":

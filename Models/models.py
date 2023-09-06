@@ -45,6 +45,19 @@ class GraphSAGE(nn.Module):
             h_dst = h[:blocks[0].num_dst_nodes()]
             h = self.last_activation(self.layer(blocks[0], (h, h_dst)))
             return h
+        
+    def full(self, g, x):
+        if self.n_layers > 1:
+            h = x
+            for i in range(0, self.n_layers-1):
+                h = self.layers[i](g, h)
+                h = self.activation(h)
+            h = self.last_activation(self.layers[-1](g, h))
+            return h
+        else:
+            h = x
+            h = self.last_activation(self.layer(g, (g, h)))
+            return h
 
 
 class GAT(nn.Module):
