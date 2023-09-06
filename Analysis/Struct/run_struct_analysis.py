@@ -21,7 +21,7 @@ def run(args, name, device, history):
 
     with timeit(logger, 'init-data'):
         
-        org_info, mod_info = read_data(args=args, data_name=args.dataset, history=history)
+        org_info, mod_info = read_data(args=args, history=history)
         
         tr_g, va_g, te_g, g = org_info
         tr_g_, va_g_, te_g_, g_ = mod_info
