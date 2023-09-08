@@ -22,6 +22,7 @@ def run(args, current_time, device):
     history['avg_diff_drop'] = []
     save_args_to_history(args=args, history=history)
     name = get_name(args=args, current_date=current_time)
+    name = 'analysis_'+name
     history['name'] = name
 
     run_dict = {
