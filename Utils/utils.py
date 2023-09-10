@@ -51,6 +51,24 @@ def get_name(args, current_date):
             res_str = dataset_str + model_str + dp_str + desity_str + date_str
     return res_str
 
+def get_name_analysis(args, current_date):
+    dataset_str = f'{args.dataset}_run_{args.seed}_'
+    date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
+    model_str = f'{args.model_type}_{args.mode}_{args.mlp_mode}_{args.epochs}_hops_{args.n_layers}_'
+    dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
+    desity_str = f'{args.density}_'
+    if args.mode == 'clean':
+        if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
+            res_str = dataset_str + model_str + date_str
+        else:
+            res_str = dataset_str + model_str + desity_str + date_str
+    else:
+        if args.submode not in ['density', 'spectral', 'line', 'complete', 'tree']:
+            res_str = dataset_str + model_str + dp_str + date_str
+        else:
+            res_str = dataset_str + model_str + dp_str + desity_str + date_str
+    return 'analysis_'+res_str
+
 
 def save_res(name, args, dct):
     save_name = args.res_path + name
