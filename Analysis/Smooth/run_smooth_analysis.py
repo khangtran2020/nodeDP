@@ -115,7 +115,7 @@ def run(args, name, device, history):
 
                 if epoch % int(args.epochs/4) == 0:
                     step_save += 1
-                    t_sne = TSNE(n_components=2, perplexity=50, learning_rate=20)
+                    t_sne = TSNE(n_components=2)
                     X_te = cp.asarray(te_conf.cpu().numpy())
                     X_te_emb = cp.asnumpy(t_sne.fit_transform(X_te))
                     X_va = cp.asarray(va_conf.cpu().numpy())
