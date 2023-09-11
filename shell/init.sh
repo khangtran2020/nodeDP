@@ -10,3 +10,6 @@ pip install torch_geometric
 pip install loguru numpy scipy rich tqdm matplotlib
 pip install torchmetrics
 pip install networkx==2.6.3
+pip install \
+    --extra-index-url=https://pypi.nvidia.com \
+    cudf-cu11 dask-cudf-cu11 cuml-cu11 cugraph-cu11 cuspatial-cu11 cuproj-cu11 cuxfilter-cu11 cucim
