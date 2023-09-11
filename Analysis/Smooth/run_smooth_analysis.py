@@ -4,6 +4,8 @@ import torch
 import torchmetrics
 import networkx as nx
 import numpy as np
+import cuml
+import cupy as cp
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_fn, eval_fn, train_nodedp
 from Utils.utils import save_res
@@ -13,7 +15,9 @@ from Models.init import init_model, init_optimizer
 # from Analysis.Struct.read import read_data
 from rich import print as rprint
 from Data.read import init_loader, read_data
-from sklearn.manifold import TSNE
+from cuml.manifold import TSNE
+# from sklearn.manifold import TSNE
+
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -112,13 +116,11 @@ def run(args, name, device, history):
 
                 if epoch % int(args.epochs/4) == 0:
                     step_save += 1
-                    t_sne = TSNE(n_components=2, learning_rate='auto', init='random', perplexity=3)
-                    X_te = te_conf.cpu().numpy()
-                    y_te = te_g.ndata['label'].cpu().numpy()
-                    X_te_emb = t_sne.fit_transform(X_te, y_te)
-                    X_va = va_conf.cpu().numpy()
-                    y_va = va_g.ndata['label'].cpu().numpy()
-                    X_va_emb = t_sne.fit_transform(X_va, y_va)
+                    t_sne = TSNE(n_components=2, perplexity=50, learning_rate=20)
+                    X_te = cp.asarray(te_conf.cpu().numpy())
+                    X_te_emb = t_sne.fit_transform(X_te).as_matrix().T
+                    X_va = cp.asarray(va_conf.cpu().numpy())
+                    X_va_emb = t_sne.fit_transform(X_va).as_matrix().T
                     history[f'tsne_te_step_{step_save}'] = X_te_emb
                     history[f'tsne_va_step_{step_save}'] = X_va_emb
 
