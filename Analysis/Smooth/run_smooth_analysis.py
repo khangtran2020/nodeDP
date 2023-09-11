@@ -83,6 +83,7 @@ def run(args, name, device, history):
     with timeit(logger=logger, task="training-process"):
         # THE ENGINE LOOP
         tk0 = tqdm(range(args.epochs), total=args.epochs)
+        step_save = 0
         for epoch in tk0:
             if args.mode == 'clean':
                 tr_loss, tr_acc = train_fn(dataloader=tr_loader, model=model, criterion=criterion,
@@ -109,7 +110,8 @@ def run(args, name, device, history):
                 history['va_avg_smooth'].append(diff)
                 del diff
 
-                if (epoch+1) * 4 % args.epochs == 0:
+                if epoch % int(args.epochs/4) == 0:
+                    step_save += 1
                     t_sne = TSNE(n_components=2, learning_rate='auto', init='random', perplexity=3)
                     X_te = te_conf.cpu().numpy()
                     y_te = te_g.ndata['label'].cpu().numpy()
@@ -117,8 +119,8 @@ def run(args, name, device, history):
                     X_va = va_conf.cpu().numpy()
                     y_va = va_g.ndata['label'].cpu().numpy()
                     X_va_emb = t_sne.fit_transform(X_va, y_va)
-                    history[f'tsne_te_step_{int((epoch+1) * 5 / args.epochs)}'] = X_te_emb
-                    history[f'tsne_va_step_{int((epoch+1) * 5 / args.epochs)}'] = X_va_emb
+                    history[f'tsne_te_step_{step_save}'] = X_te_emb
+                    history[f'tsne_va_step_{step_save}'] = X_va_emb
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
