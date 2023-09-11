@@ -67,7 +67,7 @@ def get_name_analysis(args, current_date):
             res_str = dataset_str + model_str + dp_str + date_str
         else:
             res_str = dataset_str + model_str + dp_str + desity_str + date_str
-    return f'analysis_analmode_{args.analyze_node}_'+res_str
+    return f'analysis_analmode_{args.analyze_mode}_'+res_str
 
 
 def save_res(name, args, dct):
