@@ -13,6 +13,7 @@ from Models.init import init_model, init_optimizer
 # from Analysis.Struct.read import read_data
 from rich import print as rprint
 from Data.read import init_loader, read_data
+from sklearn.manifold import TSNE
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -99,14 +100,25 @@ def run(args, name, device, history):
                                     device=device, metric=metrics)
             te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
                                     device=device, metric=metrics)
+            with torch.no_grad():
+                te_conf = model.full(te_g, te_g.ndata['feat'])
+                diff = torch.trace(torch.mm(te_conf.transpose(0, 1), torch.sparse.mm(te_Lsp, te_conf))).sqrt().item()
+                history['te_avg_smooth'].append(diff)
+                va_conf = model.full(va_g, va_g.ndata['feat'])
+                diff = torch.trace(torch.mm(va_conf.transpose(0, 1), torch.sparse.mm(va_Lsp, va_conf))).sqrt().item()
+                history['va_avg_smooth'].append(diff)
+                del diff
 
-            te_conf = model.full(te_g, te_g.ndata['feat'])
-            diff = torch.trace(torch.mm(te_conf.transpose(0, 1), torch.sparse.mm(te_Lsp, te_conf))).sqrt().item()
-            history['te_avg_smooth'].append(diff)
-            va_conf = model.full(va_g, va_g.ndata['feat'])
-            diff = torch.trace(torch.mm(va_conf.transpose(0, 1), torch.sparse.mm(va_Lsp, va_conf))).sqrt().item()
-            history['va_avg_smooth'].append(diff)
-            del diff
+                if (epoch+1) * 5 % args.epochs == 0:
+                    t_sne = TSNE(n_components=2, learning_rate='auto', init='random', perplexity=3)
+                    X_te = te_conf.cpu().numpy()
+                    y_te = te_g.ndata['label'].cpu().numpy()
+                    X_te_emb = t_sne.fit_transform(X_te, y_te)
+                    X_va = va_conf.cpu().numpy()
+                    y_va = va_g.ndata['label'].cpu().numpy()
+                    X_va_emb = t_sne.fit_transform(X_va, y_va)
+                    history[f'tsne_te_step_{int((epoch+1) * 5 / args.epochs)}'] = X_te_emb
+                    history[f'tsne_va_step_{int((epoch+1) * 5 / args.epochs)}'] = X_va_emb
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
