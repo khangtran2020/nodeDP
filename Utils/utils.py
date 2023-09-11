@@ -54,7 +54,7 @@ def get_name(args, current_date):
 def get_name_analysis(args, current_date):
     dataset_str = f'{args.dataset}_run_{args.seed}_'
     date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
-    model_str = f'{args.model_type}_{args.mode}_{args.mlp_mode}_{args.epochs}_hops_{args.n_layers}_'
+    model_str = f'{args.model_type}_mainmode_{args.mode}_mlpmode_{args.mlp_mode}_{args.epochs}_hops_{args.n_layers}_'
     dp_str = f'{args.trim_rule}_M_{args.clip_node}_C_{args.clip}_sigma_{args.ns}_'
     desity_str = f'{args.density}_'
     if args.mode == 'clean':
@@ -67,7 +67,7 @@ def get_name_analysis(args, current_date):
             res_str = dataset_str + model_str + dp_str + date_str
         else:
             res_str = dataset_str + model_str + dp_str + desity_str + date_str
-    return 'analysis_'+res_str
+    return f'analysis_analmode_{args.analyze_node}_'+res_str
 
 
 def save_res(name, args, dct):
