@@ -109,7 +109,7 @@ def run(args, name, device, history):
                 history['va_avg_smooth'].append(diff)
                 del diff
 
-                if (epoch+1) * 5 % args.epochs == 0:
+                if (epoch+1) * 4 % args.epochs == 0:
                     t_sne = TSNE(n_components=2, learning_rate='auto', init='random', perplexity=3)
                     X_te = te_conf.cpu().numpy()
                     y_te = te_g.ndata['label'].cpu().numpy()
