@@ -4,7 +4,6 @@ import torch
 import torchmetrics
 import networkx as nx
 import numpy as np
-import cuml
 import cupy as cp
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_fn, eval_fn, train_nodedp
@@ -118,9 +117,9 @@ def run(args, name, device, history):
                     step_save += 1
                     t_sne = TSNE(n_components=2, perplexity=50, learning_rate=20)
                     X_te = cp.asarray(te_conf.cpu().numpy())
-                    X_te_emb = t_sne.fit_transform(X_te).as_matrix().T
+                    X_te_emb = cp.asnumpy(t_sne.fit_transform(X_te))
                     X_va = cp.asarray(va_conf.cpu().numpy())
-                    X_va_emb = t_sne.fit_transform(X_va).as_matrix().T
+                    X_va_emb = cp.asnumpy(t_sne.fit_transform(X_va))
                     history[f'tsne_te_step_{step_save}'] = X_te_emb
                     history[f'tsne_va_step_{step_save}'] = X_va_emb
 
