@@ -125,9 +125,9 @@ def run(args, name, device, history):
     history['best_test'] = te_acc.item()
     te_conf = model.full(te_g, te_g.ndata['feat'])
     diff = torch.trace(torch.mm(te_conf.transpose(0, 1), torch.sparse.mm(te_Lsp, te_conf))).sqrt().item()
-    history['best_te_smooth'].append(diff)
+    history['best_te_smooth'] = diff
     va_conf = model.full(va_g, va_g.ndata['feat'])
     diff = torch.trace(torch.mm(va_conf.transpose(0, 1), torch.sparse.mm(va_Lsp, va_conf))).sqrt().item()
-    history['best_va_smooth'].append(diff)
+    history['best_va_smooth'] = diff
     save_res(name=name, args=args, dct=history)
     return model, history
