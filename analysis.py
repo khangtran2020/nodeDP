@@ -3,6 +3,7 @@ import warnings
 import sys
 from config import parse_args
 from Analysis.Struct.run_struct_analysis import run as run_struct
+from Analysis.Smooth.run_smooth_analysis import run as run_smooth
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
@@ -18,14 +19,20 @@ def run(args, current_time, device):
         history = init_history_clean()
     else:
         history = init_history_nodeDP()
-    history['avg_diff_org'] = []
-    history['avg_diff_drop'] = []
+    
+    if args.analyze_node == 'struct':
+        history['avg_diff_org'] = []
+        history['avg_diff_drop'] = []
+    elif args.analyze_node == 'smooth':
+        history['va_avg_smooth'] = []
+        history['te_avg_smooth'] = []
     save_args_to_history(args=args, history=history)
     name = get_name_analysis(args=args, current_date=current_time)
     history['name'] = name
 
     run_dict = {
         'struct': run_struct,
+        'smooth': run_smooth
     }
 
     run_mode = run_dict[args.analyze_mode]
