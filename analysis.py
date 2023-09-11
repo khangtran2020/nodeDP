@@ -20,10 +20,10 @@ def run(args, current_time, device):
     else:
         history = init_history_nodeDP()
     
-    if args.analyze_node == 'struct':
+    if args.analyze_mode == 'struct':
         history['avg_diff_org'] = []
         history['avg_diff_drop'] = []
-    elif args.analyze_node == 'smooth':
+    elif args.analyze_mode == 'smooth':
         history['va_avg_smooth'] = []
         history['te_avg_smooth'] = []
     save_args_to_history(args=args, history=history)
