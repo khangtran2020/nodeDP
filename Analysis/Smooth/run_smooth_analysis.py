@@ -32,7 +32,7 @@ def run(args, name, device, history):
             i = torch.LongTensor(indices)
             v = torch.FloatTensor(values)
             shape = L_va.shape
-            va_Lsp = torch.sparse.FloatTensor(i, v, torch.Size(shape))
+            va_Lsp = torch.sparse.FloatTensor(i, v, torch.Size(shape)).to(device)
             del G_va, L_va, values, indices, i, v, shape, va_adj
 
         with timeit(logger=logger, task='init-test-laplacian'):
@@ -44,7 +44,7 @@ def run(args, name, device, history):
             i = torch.LongTensor(indices)
             v = torch.FloatTensor(values)
             shape = L_te.shape
-            te_Lsp = torch.sparse.FloatTensor(i, v, torch.Size(shape))
+            te_Lsp = torch.sparse.FloatTensor(i, v, torch.Size(shape)).to(device)
             del G_te, L_te, values, indices, i, v, shape, te_adj
 
 
