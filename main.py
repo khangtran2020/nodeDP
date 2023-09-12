@@ -7,6 +7,7 @@ from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 from Runs.run_mlp import run as run_mlp
+from Runs.run_grad_inspect import run as run_grad_inspect
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
@@ -44,7 +45,8 @@ def run(args, current_time, device):
     run_dict = {
         'clean': run_clean,
         'nodedp': run_nodedp,
-        'mlp': run_mlp
+        'mlp': run_mlp,
+        'grad': run_grad_inspect
     }
     run_mode = run_dict[args.mode]
 

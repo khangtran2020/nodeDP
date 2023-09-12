@@ -324,3 +324,99 @@ def eval_mlp(loader, model, criter, metrics, device):
         performance = metrics.compute()
         metrics.reset()
     return performance, loss_eval / num_point
+
+
+def train_nodedp_grad_inspect(args, dataloader, model, model_clean, criterion, criterion_clean, optimizer, 
+                              device, scheduler, g, clip_grad, clip_node, ns, trim_rule, history, step, metric):
+    model.to(device)
+    g.to(device)
+    model.train()
+    train_loss = 0
+    model.zero_grad()
+    model_clean.zero_grad()
+    batch = next(iter(dataloader))
+    get_grad(model_clean=model_clean, batch=batch, criterion=criterion_clean)
+    target, pred, loss, saved_var = update_nodedp_grad_inspect(args=args, model=model, optimizer=optimizer, objective=criterion, 
+                                                               batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, 
+                                                               ns=ns, trim_rule=trim_rule, history=history, step=step, 
+                                                               device=device)
+    grad_diff = 0
+    num_data = target.size(dim=0)
+    for tensor_name, tensor in model_clean.named_parameters():
+        if tensor.grad is not None:
+            grad_diff += (tensor.grad.detach() - (saved_var[tensor_name] / num_data)).norm(p=2)**2
+
+    train_loss += loss
+    if scheduler is not None:
+        scheduler.step()
+
+    performace = metric(pred, target)
+    metric.reset()
+
+    return train_loss, performace, grad_diff.sqrt().item()
+
+
+def get_grad(model_clean, batch, criterion):
+    model_clean.zero_grad()
+    input_nodes, output_nodes, mfgs = batch
+    inputs = mfgs[0].srcdata["feat"]
+    labels = mfgs[-1].dstdata["label"]
+    predictions = model_clean(mfgs, inputs)
+    loss = criterion(predictions, labels)
+    loss.backward()
+    
+
+def update_nodedp_grad_inspect(args, model, optimizer, objective, batch, g, clip_grad, clip_node, 
+                               ns, trim_rule, history, step, device):
+    optimizer.zero_grad()
+    dst_node, subgraphs = batch
+    dst_node = list(dst_node)
+    if trim_rule == 'impact':
+        appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                                 num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=model)
+        info = appear_dict.trim()
+        history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
+        total = 0
+        for root in info['trimmed_subgraphs']:
+            total += info[root]['num_node_trimmed'] / info[root]['num_node_org']
+        history['% node avg'].append(total / (info['num_subgraphs_trimmed'] + 1e-12))
+        blocks = appear_dict.joint_blocks()
+    else:
+        with torch.no_grad():
+            appear_dict = AppearDict(roots=dst_node, subgraph=subgraphs, graph=g, clip_node=clip_node, rule=trim_rule,
+                             num_layer=args.n_layers, debug=args.debug, step=step, device=device, model=None)
+            info = appear_dict.trim()
+            history['% subgraph'].append(info['num_subgraphs_trimmed'] / info['num_subgraphs'])
+            total = 0
+            for root in info['trimmed_subgraphs']:
+                total += info[root]['num_node_trimmed'] / info[root]['num_node_org']
+            history['% node avg'].append(total / (info['num_subgraphs_trimmed'] + 1e-12))
+            blocks = appear_dict.joint_blocks()
+    model.zero_grad()
+    inputs = blocks[0].srcdata["feat"]
+    labels = blocks[-1].dstdata["label"]
+    predictions = model(blocks, inputs)
+    losses = objective(predictions, labels)
+    running_loss = torch.mean(losses).item()
+    num_data = predictions.size(dim=0)
+
+    saved_var = dict()
+    for tensor_name, tensor in model.named_parameters():
+        saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
+
+    for pos, j in enumerate(losses):
+        j.backward(retain_graph=True)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
+        for tensor_name, tensor in model.named_parameters():
+            if tensor.grad is not None:
+                new_grad = tensor.grad
+                saved_var[tensor_name].add_(new_grad)
+        model.zero_grad()
+
+    for tensor_name, tensor in model.named_parameters():
+        if tensor.grad is not None:
+            saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip_grad * clip_node).to(device))
+            tensor.grad = saved_var[tensor_name] / num_data
+
+    optimizer.step()
+    return labels, predictions, running_loss, saved_var

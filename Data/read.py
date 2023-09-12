@@ -238,7 +238,7 @@ def init_loader(args, device, train_g, test_g, val_g):
     print('Test label dist:', test_g.ndata['label'].unique(return_counts=True))
 
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
-    if args.mode == 'nodedp':
+    if args.mode in ['nodedp', 'grad']:
         train_loader = NodeDataLoader(g=train_g, batch_size=int(args.sampling_rate * len(train_nodes)),
                                       shuffle=True, num_workers=0,
                                       num_nodes=[args.n_neighbor for i in range(args.n_layers)], cache_result=False,
