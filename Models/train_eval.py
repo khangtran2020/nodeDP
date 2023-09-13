@@ -398,11 +398,6 @@ def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, o
     loss = objective_clean(predictions, labels)
     loss.backward()
 
-    clean_grad = 0.0
-    for tensor_name, tensor in model_clean.named_parameters():
-        if tensor.grad is not None:
-            clean_grad += tensor.grad.detach().norm(p=2)**2
-
 
     model.zero_grad()
     inputs = blocks[0].srcdata["feat"]
@@ -416,8 +411,16 @@ def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, o
     for tensor_name, tensor in model.named_parameters():
         saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
+    avg_clean_grad = 0.0
     for pos, j in enumerate(losses):
         j.backward(retain_graph=True)
+        
+        clean_grad = 0.0
+        for tensor_name, tensor in model.named_parameters():
+            if tensor.grad is not None:
+                clean_grad += tensor.grad.detach().norm(p=2)**2
+        avg_clean_grad += clean_grad.sqrt()
+
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
         for tensor_name, tensor in model.named_parameters():
             if tensor.grad is not None:
@@ -440,4 +443,4 @@ def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, o
             grad_diff += (tensor.grad.detach() - (saved_var[tensor_name] / num_data)).norm(p=2)**2
 
     optimizer.step()
-    return labels, predictions, running_loss, grad_diff.sqrt().item(), clean_grad.sqrt().item(), perturbed_grad_diff.sqrt().item()
+    return labels, predictions, running_loss, grad_diff.sqrt().item(), (avg_clean_grad / num_data).item(), perturbed_grad_diff.sqrt().item()
