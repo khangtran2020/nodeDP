@@ -96,7 +96,7 @@ def read_data(args, data_name, history):
         else:
             graph = increase_density(args=args, g=graph, density_increase=args.density - 1)
     elif args.submode == 'spectral':
-        graph = spectral_reduction(graph=graph, reduction_rate=args.density)
+        graph = spectral_reduction(args=args, graph=graph, reduction_rate=args.density)
     elif args.submode == 'complete':
         graph = complete_generate(graph=graph)
     elif args.submode == 'line':
