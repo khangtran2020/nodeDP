@@ -179,7 +179,7 @@ def spectral_reduction(args, graph, reduction_rate):
         edge_dict = read_pickel(file=f'Data/spectral/{args.dataset}_{args.density}.pkl')
         src_edge = torch.LongTensor(edge_dict['src_edge'])
         dst_edge = torch.LongTensor(edge_dict['dst_edge'])
-        num_node = graph.nodes().size(dim=1)
+        num_node = graph.nodes().size(dim=0)
         g = dgl.graph((src_edge, dst_edge), num_nodes=num_node)
         rprint(f"Loaded file from directory: Data/spectral/{args.dataset}_{args.density}.pkl")
 
