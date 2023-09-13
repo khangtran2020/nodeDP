@@ -335,7 +335,7 @@ def train_nodedp_grad_inspect(args, dataloader, model, model_clean, criterion, c
     model.zero_grad()
     model_clean.zero_grad()
     batch = next(iter(dataloader))
-    target, pred, loss, diff = update_nodedp_grad_inspect(args=args, model=model, model_clean=model_clean,
+    target, pred, loss, diff, clean_grad, grad_diff_clipped = update_nodedp_grad_inspect(args=args, model=model, model_clean=model_clean,
                                                                optimizer=optimizer, objective=criterion, objective_clean=criterion_clean,
                                                                batch=batch, g=g, clip_grad=clip_grad, clip_node=clip_node, 
                                                                ns=ns, trim_rule=trim_rule, history=history, step=step, 
@@ -348,7 +348,7 @@ def train_nodedp_grad_inspect(args, dataloader, model, model_clean, criterion, c
     performace = metric(pred, target)
     metric.reset()
 
-    return train_loss, performace, diff
+    return train_loss, performace, diff, clean_grad, grad_diff_clipped
 
 
 # def get_grad(model_clean, batch, criterion):
@@ -398,6 +398,11 @@ def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, o
     loss = objective_clean(predictions, labels)
     loss.backward()
 
+    clean_grad = 0.0
+    for tensor_name, tensor in model_clean.named_parameters():
+        if tensor.grad is not None:
+            clean_grad += tensor.grad.detach().norm(p=2)**2
+
 
     model.zero_grad()
     inputs = blocks[0].srcdata["feat"]
@@ -420,15 +425,19 @@ def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, o
                 saved_var[tensor_name].add_(new_grad)
         model.zero_grad()
 
+    perturbed_grad_diff = 0
     for tensor_name, tensor in model.named_parameters():
         if tensor.grad is not None:
+            temp_grad = saved_var[tensor_name].clone() / num_data
             saved_var[tensor_name].add_(torch.FloatTensor(tensor.grad.shape).normal_(0, ns * clip_grad * clip_node).to(device))
             tensor.grad = saved_var[tensor_name] / num_data
+            perturbed_grad_diff += (saved_var[tensor_name] / num_data - temp_grad).norm(p=2)**2
 
+    
     grad_diff = 0
     for tensor_name, tensor in model_clean.named_parameters():
         if tensor.grad is not None:
             grad_diff += (tensor.grad.detach() - (saved_var[tensor_name] / num_data)).norm(p=2)**2
 
     optimizer.step()
-    return labels, predictions, running_loss, grad_diff.sqrt().item()
+    return labels, predictions, running_loss, grad_diff.sqrt().item(), clean_grad.sqrt().item(), perturbed_grad_diff.sqrt().item()

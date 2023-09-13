@@ -52,22 +52,27 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
     tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green',
                bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
     history['time_one_step'] = []
-    history['grad_diff'] = []
+    history['grad_diff_clean'] = []
+    history['clean_grad_norm'] = []
+    history['grad_diff_clipped'] = []
     
     with timeit(logger=logger, task="training-process"):
         for epoch in tk0:
             states = model.state_dict()
             model_clean.load_state_dict(states)
             t0 = time.time()
-            tr_loss, tr_acc, diff = train_nodedp_grad_inspect(args=args, dataloader=tr_loader, model=model, model_clean=model_clean, criterion_clean=criterion,
-                                            criterion=criter, optimizer=optimizer, device=device,
-                                            scheduler=None, g=graph, clip_grad=args.clip,
-                                            clip_node=args.clip_node, ns=args.ns,
-                                            trim_rule=args.trim_rule, history=history, step=epoch,
-                                            metric=metrics)
+            tr_loss, tr_acc, diff, clean_grad, grad_diff_clipped = train_nodedp_grad_inspect(args=args, dataloader=tr_loader, model=model, 
+                                                                                            model_clean=model_clean, criterion_clean=criterion,
+                                                                                            criterion=criter, optimizer=optimizer, device=device,
+                                                                                            scheduler=None, g=graph, clip_grad=args.clip,
+                                                                                            clip_node=args.clip_node, ns=args.ns,
+                                                                                            trim_rule=args.trim_rule, history=history, step=epoch,
+                                                                                            metric=metrics)
             t1 = time.time()
             t = t1 - t0
-            history['grad_diff'].append(diff)
+            history['grad_diff_clean'].append(diff)
+            history['clean_grad_norm'].append(clean_grad)
+            history['grad_diff_clipped'].append(grad_diff_clipped)
             history['time_one_step'].append(t)
             # scheduler.step()
             va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
