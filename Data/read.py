@@ -161,11 +161,28 @@ def drop_isolated_node(graph):
     nodes_id = graph.nodes()[index]
     return graph.subgraph(torch.LongTensor(nodes_id))
 
-def spectral_reduction(graph, reduction_rate):
-    adj = graph.adj_external(scipy_fmt='csr')
-    G = nx.from_scipy_sparse_matrix(adj)
-    H = nx.spectral_graph_forge(G, reduction_rate)
-    g = dgl.from_networkx(H)
+def spectral_reduction(args, graph, reduction_rate):
+    if os.path.exists(f'Data/spectral/{args.dataset}_{args.density}.pkl') == False:
+        adj = graph.adj_external(scipy_fmt='csr')
+        G = nx.from_scipy_sparse_matrix(adj)
+        H = nx.spectral_graph_forge(G, reduction_rate)
+        g = dgl.from_networkx(H)
+        src_edge, dst_edge = g.edges()
+        edge_dict = {
+            'src_edge': src_edge.tolist(),
+            'dst_edge': dst_edge.tolist()
+        }
+        with open(f'Data/spectral/{args.dataset}_{args.density}.pkl', 'wb') as f:
+            pickle.dump(edge_dict, f)
+        rprint(f"Saved file to directory: Data/spectral/{args.dataset}_{args.density}.pkl")
+    else:
+        edge_dict = read_pickel(file=f'Data/spectral/{args.dataset}_{args.density}.pkl')
+        src_edge = torch.LongTensor(edge_dict['src_edge'])
+        dst_edge = torch.LongTensor(edge_dict['dst_edge'])
+        num_node = graph.nodes().size(dim=1)
+        g = dgl.graph((src_edge, dst_edge), num_nodes=num_node)
+        rprint(f"Loaded file from directory: Data/spectral/{args.dataset}_{args.density}.pkl")
+
     g.ndata['feat'] = graph.ndata['feat']
     g.ndata['label'] = graph.ndata['label']
     g.ndata['train_mask'] = graph.ndata['train_mask']
