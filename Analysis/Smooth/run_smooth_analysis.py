@@ -144,5 +144,7 @@ def run(args, name, device, history):
     va_conf = model.full(va_g, va_g.ndata['feat'])
     diff = torch.trace(torch.mm(va_conf.transpose(0, 1), torch.sparse.mm(va_Lsp, va_conf))).sqrt().item()
     history['best_va_smooth'] = diff
+    history['te_label'] = te_g.ndata['label'].detach().tolist()
+    history['va_label'] = va_g.ndata['label'].detach().tolist()
     save_res(name=name, args=args, dct=history)
     return model, history
