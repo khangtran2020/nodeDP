@@ -99,6 +99,8 @@ def run_white_box(args, current_time, device):
         x_te_feat = torch.cat((x_te_feat, pred[x_te].detach()), dim=1)
         x_te_feat = x_te_feat.to(device)
 
+        print(x_tr_feat.size(), x_te_feat.size())
+
         tr_data = Data(X=x_tr_feat, y=y_tr)
         te_data = Data(X=x_te_feat, y=y_te)
 
