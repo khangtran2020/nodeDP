@@ -120,13 +120,14 @@ def generate_attack_samples_white_box(graph, device):
 
     # console.debug(f'pos_entropy: {pos_entropy:.4f}, neg_entropy: {neg_entropy:.4f}')
 
-    x = torch.cat([idx_neg, idx_pos], dim=0)
-    y = torch.cat([
-        torch.zeros(num_half, dtype=torch.long, device=device),
-        torch.ones(num_half, dtype=torch.long, device=device),
-    ])
-
+    # x = torch.cat([idx_neg, idx_pos], dim=0)
+    # y = torch.cat([
+    #     torch.zeros(num_half, dtype=torch.long, device=device),
+    #     torch.ones(num_half, dtype=torch.long, device=device),
+    # ])
+    y_pos = torch.ones(num_half, dtype=torch.long, device=device)
+    y_neg = torch.zeros(num_half, dtype=torch.long, device=device)
     # shuffle data
-    perm = torch.randperm(2 * num_half, device=device)
-    x, y = x[perm], y[perm]
-    return x, y
+    # perm = torch.randperm(2 * num_half, device=device)
+    # x, y = x[perm], y[perm]
+    return idx_neg, idx_pos, y_neg, y_pos
