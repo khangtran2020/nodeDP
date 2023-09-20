@@ -90,6 +90,8 @@ def run_white_box(args, current_time, device):
                     grad = grad + tensor.grad.detach().norm(p=2)**2
             neg_grad_norm.append(grad.sqrt().item())
         neg_grad_norm = torch.Tensor(neg_grad_norm).to(device)
+
+        rprint(f"Mean pos grad: {pos_grad_norm.mean()}, Mean neg grad: {neg_grad_norm.mean()}")
         # neg_grad_norm = torch.nn.functional.softmax(-1*neg_grad_norm)
 
         grad_pred = torch.cat((pos_grad_norm, neg_grad_norm), dim=0)
