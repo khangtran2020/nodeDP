@@ -78,7 +78,7 @@ def run_white_box(args, current_time, device):
                 if tensor.grad is not None:
                     grad_norm = grad_norm + tensor.grad.detach().norm(p=2)**2
             pred_grad.append(torch.nn.functional.sigmoid(grad_norm).item())
-        pred_grad = torch.Tensor(pred_grad)
+        pred_grad = torch.Tensor(pred_grad).to(device)
 
         auc_loss = metrics(pred_loss, y)
         auc_grad = metrics(pred_grad, y)
