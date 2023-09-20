@@ -132,3 +132,27 @@ def generate_attack_samples_white_box(graph, device):
     # y_te = y_te[perm]
 
     return x_tr, x_te, y_tr, y_te
+
+
+def generate_attack_samples_white_box_grad(graph, device):
+
+    tr_mask = 'train_mask'
+    te_mask = 'test_mask'
+    num_train = graph.ndata[tr_mask].sum()
+    num_test = graph.ndata[te_mask].sum()
+    num_half = min(num_train, num_test)
+
+    nodes_id = graph.nodes()
+
+    perm = torch.randperm(num_train, device=device)[:num_half]
+    idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
+    idx_pos = nodes_id[idx][perm]
+
+    perm = torch.randperm(num_test, device=device)[:num_half]
+    idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
+    idx_neg = nodes_id[idx][perm]
+
+    y_pos = torch.ones(num_half)
+    y_neg = torch.zeros(num_half)
+
+    return idx_pos, idx_neg, y_pos, y_neg

@@ -8,7 +8,7 @@ from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
 from Attacks.train_eval import train_shadow, train_attack, eval_attack_step
-from Attacks.helper import generate_attack_samples_white_box, Data
+from Attacks.helper import generate_attack_samples_white_box_grad, Data
 from Models.models import NN, GraphSageFull, GATFull
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -62,63 +62,37 @@ def run_white_box(args, current_time, device):
         metrics = torchmetrics.classification.AUROC(task="binary").to(device)
 
         criter = torch.nn.CrossEntropyLoss(reduction='none')
-        x_tr, x_te, y_tr, y_te = generate_attack_samples_white_box(graph=graph, device=device)
+        idx_pos, idx_neg, y_pos, y_neg = generate_attack_samples_white_box_grad(graph=graph, device=device)
 
         feature = graph.ndata['feat']
         label = graph.ndata['label']
         pred = tar_model.full(g = graph, x = feature)
         loss = criter(pred, label)
 
-        x_tr_feat = None
-        for i, idx in enumerate(x_tr):
-            grad = torch.Tensor([]).to(device)
+        pos_grad_norm = []
+        for i, idx in enumerate(idx_pos):
+            grad = 0
             loss[idx].backward(retain_graph=True)
             for _, tensor in tar_model.named_parameters():
                 if tensor.grad is not None:
-                    grad =  torch.cat((grad, torch.flatten(tensor.grad.detach().clone())), dim = 0)
-            if i == 0:
-                x_tr_feat = torch.unsqueeze(grad, dim=0).clone()
-            else:
-                x_tr_feat = torch.cat((x_tr_feat, torch.unsqueeze(grad, dim=0)), dim=0)
+                    grad = grad + tensor.grad.detach().norm(p=2)**2
+            pos_grad_norm.append(grad.sqrt().item())
 
-        x_tr_feat = torch.cat((x_tr_feat, pred[x_tr].detach()), dim=1)
-        x_tr_feat = x_tr_feat.to(device)
+        pos_grad_norm = torch.Tensor(pos_grad_norm).to(device)
+        pos_grad_norm = torch.nn.functional.softmax(-1*pos_grad_norm)
 
-        x_te_feat = None
-        for i, idx in enumerate(x_te):
-            grad = torch.Tensor([]).to(device)
+        neg_grad_norm = []
+        for i, idx in enumerate(idx_neg):
+            grad = 0
             loss[idx].backward(retain_graph=True)
             for _, tensor in tar_model.named_parameters():
                 if tensor.grad is not None:
-                    grad =  torch.cat((grad, torch.flatten(tensor.grad.detach().clone())), dim = 0)
-            if i == 0:
-                x_te_feat = torch.unsqueeze(grad, dim=0).clone()
-            else:
-                x_te_feat = torch.cat((x_te_feat, torch.unsqueeze(grad, dim=0)), dim=0)
+                    grad = grad + tensor.grad.detach().norm(p=2)**2
+            neg_grad_norm.append(grad.sqrt().item())
+        neg_grad_norm = torch.Tensor(neg_grad_norm).to(device)
+        neg_grad_norm = torch.nn.functional.softmax(-1*neg_grad_norm)
 
-        x_te_feat = torch.cat((x_te_feat, pred[x_te].detach()), dim=1)
-        x_te_feat = x_te_feat.to(device)
-
-        print(x_tr_feat.size(), x_te_feat.size())
-
-        tr_data = Data(X=x_tr_feat, y=y_tr)
-        te_data = Data(X=x_te_feat, y=y_te)
-
-    with timeit(logger=logger, task='train-attack-model'):
-        tr_loader = torch.utils.data.DataLoader(tr_data, batch_size=args.batch_size,
-                                                pin_memory=False, drop_last=True, shuffle=True)
-        te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
-                                                pin_memory=False, drop_last=False)
-        
-        attack_model = NN(input_dim=x_tr_feat.size(dim=1), hidden_dim=16, output_dim=1, n_layer=2)
-        attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
-
-        attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=None, te_loader=te_loader,
-                                    attack_model=attack_model, epochs=args.attack_epochs, optimizer=attack_optimizer,
-                                    name=tar_history['name'], device=device)
-
-    attack_model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_attack.pt"))
-    te_loss, te_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
-                                       metrics=torchmetrics.classification.BinaryAUROC().to(device),
-                                       criterion=torch.nn.BCELoss())
-    rprint(f"Attack AUC: {te_auc}")
+        grad_pred = torch.cat((pos_grad_norm, neg_grad_norm), dim=0)
+        y = torch.cat((y_pos, y_neg), dim=0)
+        auc = metrics(grad_pred, y)
+        rprint(f"Attack AUC: {auc}")
