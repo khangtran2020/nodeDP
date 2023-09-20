@@ -98,14 +98,21 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
     for epoch in tk0:
         tr_loss, tr_acc = update_attack_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
                                              criterion=criterion, optimizer=optimizer)
-        va_loss, va_acc = eval_attack_step(model=attack_model, device=device, loader=va_loader, metrics=metrics,
-                                           criterion=criterion)
+        if va_loader is not None:
+            va_loss, va_acc = eval_attack_step(model=attack_model, device=device, loader=va_loader, metrics=metrics,
+                                            criterion=criterion)
         te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
                                            criterion=criterion)
 
-        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
+        if va_loader is not None:
+            tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
+        else:
+            tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Te_ACC=te_acc.item())
 
-        es(epoch=epoch, epoch_score=va_acc.item(), model=attack_model, model_path=args.save_path + model_name)
+        if va_loader is not None:
+            es(epoch=epoch, epoch_score=va_acc.item(), model=attack_model, model_path=args.save_path + model_name)
+        else:
+            es(epoch=epoch, epoch_score=tr_acc.item(), model=attack_model, model_path=args.save_path + model_name)
 
     return attack_model
 

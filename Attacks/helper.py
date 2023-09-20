@@ -97,7 +97,7 @@ def generate_attack_samples(tr_graph, tr_conf, mode, device, te_graph=None, te_c
         return x, y
     
 
-def generate_attack_samples_white_box(graph, device):
+def generate_attack_samples_white_box(graph, ratio, device):
 
     tr_mask = 'train_mask'
     te_mask = 'test_mask'
@@ -109,25 +109,26 @@ def generate_attack_samples_white_box(graph, device):
 
     perm = torch.randperm(num_train, device=device)[:num_half]
     idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
-    idx_pos = nodes_id[idx][perm]
+    idx_tr = nodes_id[idx][perm]
 
     perm = torch.randperm(num_test, device=device)[:num_half]
     idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
-    idx_neg = nodes_id[idx][perm]
+    idx_te = nodes_id[idx][perm]
 
-    # pos_entropy = Categorical(probs=pos_samples[:, :num_classes]).entropy().mean()
-    # neg_entropy = Categorical(probs=neg_samples[:, :num_classes]).entropy().mean()
+    num_tr = int(0.8 * idx_te.size(dim=0))
+    num_te = idx_te.dim(dim=0) - num_tr
 
-    # console.debug(f'pos_entropy: {pos_entropy:.4f}, neg_entropy: {neg_entropy:.4f}')
+    x_tr = torch.cat((idx_tr[:num_tr], idx_te[:num_tr]), dim=0)
+    y_tr = torch.cat((torch.ones(num_tr), torch.zeros(num_tr)), dim=0)
+    x_te = torch.cat((idx_tr[num_tr:], idx_te[num_tr:]), dim=0)
+    y_te = torch.cat((torch.ones(num_te), torch.zeros(num_te)), dim=0)
 
-    # x = torch.cat([idx_neg, idx_pos], dim=0)
-    # y = torch.cat([
-    #     torch.zeros(num_half, dtype=torch.long, device=device),
-    #     torch.ones(num_half, dtype=torch.long, device=device),
-    # ])
-    y_pos = torch.ones(num_half, dtype=torch.long, device=device)
-    y_neg = torch.zeros(num_half, dtype=torch.long, device=device)
-    # shuffle data
-    # perm = torch.randperm(2 * num_half, device=device)
-    # x, y = x[perm], y[perm]
-    return idx_neg, idx_pos, y_neg, y_pos
+    perm = torch.randperm(x_tr.size(dim=0), device=device)
+    x_tr = x_tr[perm]
+    y_tr = y_tr[perm]
+
+    perm = torch.randperm(x_te.size(dim=0), device=device)
+    x_te = x_te[perm]
+    y_te = y_te[perm]
+
+    return x_tr, x_te, y_tr, y_te
