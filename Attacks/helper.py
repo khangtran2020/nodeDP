@@ -97,7 +97,7 @@ def generate_attack_samples(tr_graph, tr_conf, mode, device, te_graph=None, te_c
         return x, y
     
 
-def generate_attack_samples_white_box(graph, ratio, device):
+def generate_attack_samples_white_box(graph, device):
 
     tr_mask = 'train_mask'
     te_mask = 'test_mask'
