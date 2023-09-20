@@ -80,6 +80,8 @@ def run_white_box(args, current_time, device):
             pred_grad.append(torch.nn.functional.sigmoid(grad_norm).item())
         pred_grad = torch.Tensor(pred_grad).to(device)
 
+        rprint(f"Min value of loss pred: {pred_loss.min()}, Max value of loss pred: {pred_loss.max()}")
+        rprint(f"Min value of grad pred: {pred_grad.min()}, Max value of grad pred: {pred_grad.max()}")
         auc_loss = metrics(pred_loss, y)
         auc_grad = metrics(pred_grad, y)
         rprint(f"Attack AUC on loss: {auc_loss.item()}, on grad: {auc_grad.item()}")    
