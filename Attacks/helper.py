@@ -116,7 +116,7 @@ def generate_attack_samples_white_box(graph, device):
     idx_te = nodes_id[idx][perm]
 
     num_tr = int(0.8 * idx_te.size(dim=0))
-    num_te = idx_te.dim(dim=0) - num_tr
+    num_te = idx_te.size(dim=0) - num_tr
 
     x_tr = torch.cat((idx_tr[:num_tr], idx_te[:num_tr]), dim=0)
     y_tr = torch.cat((torch.ones(num_tr), torch.zeros(num_tr)), dim=0)
