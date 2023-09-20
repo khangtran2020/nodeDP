@@ -7,7 +7,7 @@ from loguru import logger
 from rich import print as rprint
 from Attacks.node_attack import run_NMI
 from Attacks.link_attack import run_LinkTeller
-from Attacks.white_box_attack import run_white_box
+from Attacks.white_box_attack_grad_norm import run_white_box
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
