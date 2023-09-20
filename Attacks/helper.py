@@ -123,12 +123,12 @@ def generate_attack_samples_white_box(graph, device):
     x_te = torch.cat((idx_tr[num_tr:], idx_te[num_tr:]), dim=0)
     y_te = torch.cat((torch.ones(num_te), torch.zeros(num_te)), dim=0)
 
-    perm = torch.randperm(x_tr.size(dim=0), device=device)
-    x_tr = x_tr[perm]
-    y_tr = y_tr[perm]
+    # perm = torch.randperm(x_tr.size(dim=0), device=device)
+    # x_tr = x_tr[perm]
+    # y_tr = y_tr[perm]
 
-    perm = torch.randperm(x_te.size(dim=0), device=device)
-    x_te = x_te[perm]
-    y_te = y_te[perm]
+    # perm = torch.randperm(x_te.size(dim=0), device=device)
+    # x_te = x_te[perm]
+    # y_te = y_te[perm]
 
     return x_tr, x_te, y_tr, y_te
