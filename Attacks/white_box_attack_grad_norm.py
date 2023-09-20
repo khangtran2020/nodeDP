@@ -93,6 +93,7 @@ def run_white_box(args, current_time, device):
         # neg_grad_norm = torch.nn.functional.softmax(-1*neg_grad_norm)
 
         grad_pred = torch.cat((pos_grad_norm, neg_grad_norm), dim=0)
+        grad_pred = (grad_pred - grad_pred.mean()) / grad_pred.std()
         grad_pred = torch.nn.functional.softmax(-1*grad_pred)
         y = torch.cat((y_pos, y_neg), dim=0).to(device)
         auc = metrics(grad_pred, y)
