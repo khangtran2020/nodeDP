@@ -113,7 +113,7 @@ def generate_attack_samples_white_box(tr_g, te_g, device):
 
     te_node = te_g.nodes()
     perm = torch.randperm(num_te, device=device)[:num_half]
-    idx = get_index_by_value(a=te_g.ndata[tr_mask], val=1)
+    idx = get_index_by_value(a=te_g.ndata[te_mask], val=1)
     idx_te = te_node[idx]
     idx_te = idx_te[perm]
 
