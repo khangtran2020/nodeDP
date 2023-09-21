@@ -85,7 +85,7 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
     attack_model.to(device)
 
     # DEfining criterion
-    criterion = torch.nn.BCELoss()
+    criterion = torch.nn.BCELoss(reduction='mean')
     criterion.to(device)
 
     metrics = torchmetrics.classification.BinaryAUROC().to(device)
@@ -113,6 +113,7 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
 def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.to(device)
     model.train()
+    model.zero_grad()
     train_loss = 0
     num_data = 0.0
     for bi, d in enumerate(loader):
