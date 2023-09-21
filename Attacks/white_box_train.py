@@ -77,7 +77,7 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_tr_pos):
             pred = y_tr_pred[idx].clone()
             label = y_tr_label[idx].clone()
-            grad = torch.Tensor([])
+            grad = torch.Tensor([]).to(device)
             loss_tr[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
@@ -94,7 +94,7 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_tr_neg):
             pred = y_te_pred[idx].clone()
             label = y_te_label[idx].clone()
-            grad = torch.Tensor([])
+            grad = torch.Tensor([]).to(device)
             loss_te[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
@@ -111,7 +111,7 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_te_pos):
             pred = y_tr_pred[idx].clone()
             label = y_tr_label[idx].clone()
-            grad = torch.Tensor([])
+            grad = torch.Tensor([]).to(device)
             loss_tr[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
@@ -128,7 +128,7 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_te_neg):
             pred = y_te_pred[idx].clone()
             label = y_te_label[idx].clone()
-            grad = torch.Tensor([])
+            grad = torch.Tensor([]).to(device)
             loss_te[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
