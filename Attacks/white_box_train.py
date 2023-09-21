@@ -82,7 +82,7 @@ def run_white_box_train(args, current_time, device):
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
                     grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred, label, grad.sqrt()), dim = 0)
+            feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad.sqrt()), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_tr_pos_feat = feat
@@ -99,7 +99,7 @@ def run_white_box_train(args, current_time, device):
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
                     grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred, label, grad.sqrt()), dim = 0)
+            feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad.sqrt()), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_tr_neg_feat = feat
@@ -116,7 +116,7 @@ def run_white_box_train(args, current_time, device):
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
                     grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred, label, grad.sqrt()), dim = 0)
+            feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad.sqrt()), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_te_pos_feat = feat
@@ -133,7 +133,7 @@ def run_white_box_train(args, current_time, device):
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
                     grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred, label, grad.sqrt()), dim = 0)
+            feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad.sqrt()), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_te_neg_feat = feat
