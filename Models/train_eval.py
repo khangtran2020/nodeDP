@@ -367,7 +367,7 @@ def train_fn_grad_inspect(args, dataloader, model, criterion, optimizer, device,
             scheduler.step()
         metric.update(pred, target)
         num_data += pred.size(dim=0)
-        train_loss += loss.item()*pred.size(dim=0)
+        train_loss += loss.mean().item()*pred.size(dim=0)
         for i in range(args.num_class):
             grad_norm[f'label_{i}'].append(grad[f'label_{i}'])
         grad_norm['avg_grad'].append(grad['avg_grad'])
