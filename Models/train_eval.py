@@ -535,7 +535,7 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
         grad[f'label_{lab}'].append(g.sqrt().item())
         model.zero_grad()
 
-    for i in args.num_class:
+    for i in range(args.num_class):
         if len(grad[f'label_{i}']) > 0:
             grad[f'label_{i}'] = sum(grad[f'label_{i}'])/len(grad[f'label_{i}']) 
         else:
