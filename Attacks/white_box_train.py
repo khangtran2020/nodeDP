@@ -77,12 +77,12 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_tr_pos):
             pred = y_tr_pred[idx].clone()
             label = y_tr_label[idx].clone()
-            grad = 0
+            grad = torch.Tensor([])
             loss_tr[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
-                    grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), torch.unsqueeze(grad.sqrt(), dim=0)), dim = 0)
+                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_tr_pos_feat = feat
@@ -94,12 +94,12 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_tr_neg):
             pred = y_te_pred[idx].clone()
             label = y_te_label[idx].clone()
-            grad = 0
+            grad = torch.Tensor([])
             loss_te[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
-                    grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), torch.unsqueeze(grad.sqrt(), dim=0)), dim = 0)
+                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_tr_neg_feat = feat
@@ -111,12 +111,12 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_te_pos):
             pred = y_tr_pred[idx].clone()
             label = y_tr_label[idx].clone()
-            grad = 0
+            grad = torch.Tensor([])
             loss_tr[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
-                    grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), torch.unsqueeze(grad.sqrt(), dim=0)), dim = 0)
+                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_te_pos_feat = feat
@@ -128,12 +128,12 @@ def run_white_box_train(args, current_time, device):
         for i, idx in enumerate(x_te_neg):
             pred = y_te_pred[idx].clone()
             label = y_te_label[idx].clone()
-            grad = 0
+            grad = torch.Tensor([])
             loss_te[idx].backward(retain_graph=True)
             for name, p in tar_model.named_parameters():
                 if p.grad is not None:
-                    grad = grad + p.grad.detach().norm(p=2)**2
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), torch.unsqueeze(grad.sqrt(), dim=0)), dim = 0)
+                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
             feat = torch.unsqueeze(feat, dim = 0)
             if i == 0:
                 x_te_neg_feat = feat
@@ -178,7 +178,7 @@ def run_white_box_train(args, current_time, device):
 
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
                                                 pin_memory=False, drop_last=False)
-        attack_model = NN(input_dim=new_dim, hidden_dim=16, output_dim=1, n_layer=2)
+        attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
