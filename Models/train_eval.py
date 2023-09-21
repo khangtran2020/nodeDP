@@ -514,6 +514,7 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     labels = mfgs[-1].dstdata["label"]
     predictions = model(mfgs, inputs)
     loss = objective(predictions, labels)
+    print(loss.size())
 
     grad = {}
     for i in range(args.num_class):
