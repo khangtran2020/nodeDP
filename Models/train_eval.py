@@ -516,7 +516,7 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     loss = objective(predictions, labels)
 
     grad = {}
-    for i in args.num_class:
+    for i in range(args.num_class):
         grad[f'label_{i}'] = []
 
     saved_var = dict()
