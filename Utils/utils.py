@@ -83,6 +83,9 @@ def get_index_by_value(a, val):
 def get_index_by_list(arr, test_arr):
     return torch.isin(arr, test_arr).nonzero(as_tuple=True)[0]
 
+def get_index_by_not_list(arr, test_arr):
+    return (1 - torch.isin(arr, test_arr).int()).nonzero(as_tuple=True)[0]
+
 
 def get_index_bynot_value(a, val):
     return (a != val).nonzero(as_tuple=True)[0]

@@ -63,96 +63,9 @@ def run_white_box_train(args, current_time, device):
         train_g = train_g.to(device)
         test_g = test_g.to(device)
         criter = torch.nn.CrossEntropyLoss(reduction='none')
-        x_tr_pos, x_tr_neg, x_te_pos, x_te_neg, y_tr_pos, y_tr_neg, y_te_pos, y_te_neg = generate_attack_samples_white_box(tr_g=train_g, te_g=test_g, device=device)
+        x_tr, x_te, y_tr, y_te = generate_attack_samples_white_box(tr_g=train_g, te_g=test_g, model=tar_model,
+                                                                   criter=criter, device=device)
         
-        y_tr_pred = tar_model.full(g=train_g, x=train_g.ndata['feat'])
-        y_tr_label = train_g.ndata['label']
-        loss_tr = criter(y_tr_pred, y_tr_label)
-
-        y_te_pred = tar_model.full(g=test_g, x=test_g.ndata['feat'])
-        y_te_label = test_g.ndata['label']
-        loss_te = criter(y_te_pred, y_te_label)
-
-        x_tr_pos_feat = None        
-        for i, idx in enumerate(x_tr_pos):
-            pred = y_tr_pred[idx].clone()
-            label = y_tr_label[idx].clone()
-            grad = torch.Tensor([]).to(device)
-            loss_tr[idx].backward(retain_graph=True)
-            for name, p in tar_model.named_parameters():
-                if p.grad is not None:
-                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
-            feat = torch.unsqueeze(feat, dim = 0)
-            if i == 0:
-                x_tr_pos_feat = feat
-            else:
-                x_tr_pos_feat = torch.cat((x_tr_pos_feat, feat), dim=0)
-            tar_model.zero_grad()
-
-        x_tr_neg_feat = None        
-        for i, idx in enumerate(x_tr_neg):
-            pred = y_te_pred[idx].clone()
-            label = y_te_label[idx].clone()
-            grad = torch.Tensor([]).to(device)
-            loss_te[idx].backward(retain_graph=True)
-            for name, p in tar_model.named_parameters():
-                if p.grad is not None:
-                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
-            feat = torch.unsqueeze(feat, dim = 0)
-            if i == 0:
-                x_tr_neg_feat = feat
-            else:
-                x_tr_neg_feat = torch.cat((x_tr_neg_feat, feat), dim=0)
-            tar_model.zero_grad()
-
-        x_te_pos_feat = None        
-        for i, idx in enumerate(x_te_pos):
-            pred = y_tr_pred[idx].clone()
-            label = y_tr_label[idx].clone()
-            grad = torch.Tensor([]).to(device)
-            loss_tr[idx].backward(retain_graph=True)
-            for name, p in tar_model.named_parameters():
-                if p.grad is not None:
-                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
-            feat = torch.unsqueeze(feat, dim = 0)
-            if i == 0:
-                x_te_pos_feat = feat
-            else:
-                x_te_pos_feat = torch.cat((x_te_pos_feat, feat), dim=0)
-            tar_model.zero_grad()
-
-        x_te_neg_feat = None        
-        for i, idx in enumerate(x_te_neg):
-            pred = y_te_pred[idx].clone()
-            label = y_te_label[idx].clone()
-            grad = torch.Tensor([]).to(device)
-            loss_te[idx].backward(retain_graph=True)
-            for name, p in tar_model.named_parameters():
-                if p.grad is not None:
-                    grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-            feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
-            feat = torch.unsqueeze(feat, dim = 0)
-            if i == 0:
-                x_te_neg_feat = feat
-            else:
-                x_te_neg_feat = torch.cat((x_te_neg_feat, feat), dim=0)
-            tar_model.zero_grad()
-
-        x_tr = torch.cat((x_tr_pos_feat, x_tr_neg_feat), dim=0)
-        y_tr = torch.cat((y_tr_pos, y_tr_neg), dim = 0)
-        perm = torch.randperm(x_tr.size(dim=0), device=device)
-        x_tr = x_tr[perm]
-        y_tr = y_tr[perm]
-
-        x_te = torch.cat((x_te_pos_feat, x_te_neg_feat), dim=0)
-        y_te = torch.cat((y_te_pos, y_te_neg), dim = 0)
-        perm = torch.randperm(x_te.size(dim=0), device=device)
-        x_te = x_te[perm]
-        y_te = y_te[perm]
-
         new_dim = x_tr.size(dim=1)
         x_tr_id, x_va_id, _, _ = train_test_split(range(x_tr.size(dim=0)), y_tr.tolist(), test_size=0.16, stratify=y_tr.tolist())
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
-from Utils.utils import get_index_by_value
+from Utils.utils import get_index_by_value, get_index_by_not_list
 from torch.utils.data import Dataset
 
 class Data(Dataset):
@@ -97,7 +97,7 @@ def generate_attack_samples(tr_graph, tr_conf, mode, device, te_graph=None, te_c
         return x, y
     
 
-def generate_attack_samples_white_box(tr_g, te_g, device):
+def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
 
     tr_mask = 'train_mask'
     te_mask = 'test_mask'
@@ -106,33 +106,123 @@ def generate_attack_samples_white_box(tr_g, te_g, device):
     num_te = te_g.ndata[te_mask].sum()
     num_half = min(num_tr, num_te)
 
-    tr_node = tr_g.nodes()
-    perm = torch.randperm(num_tr, device=device)[:num_half]
-    idx = get_index_by_value(a=tr_g.ndata[tr_mask], val=1)
-    idx_tr = tr_node[idx][perm]
+    num_tr_att = int(0.8 * num_half)
+    num_te_att = num_half - num_tr_att
 
     te_node = te_g.nodes()
     perm = torch.randperm(num_te, device=device)[:num_half]
-    idx = get_index_by_value(a=te_g.ndata[te_mask], val=1)
-    idx_te = te_node[idx]
-    idx_te = idx_te[perm]
+    idx = get_index_by_value(a=te_g.ndata[tr_mask], val=1)
+    idx_te = te_node[idx][perm]
 
-    num_tr = int(0.8 * num_half)
-    num_te = num_half - num_tr
+    idx_neg_tr = idx_te[:num_tr_att]
+    idx_neg_te = idx_te[num_tr_att:]
 
-    x_tr_pos = idx_tr[:num_tr]
-    x_tr_neg = idx_te[:num_tr]
+    y_te_pred = model.full(g=te_g, x=te_g.ndata['feat'])
+    y_te_label = te_g.ndata['label']
+    loss_te = criter(y_te_pred, y_te_label)
 
-    x_te_pos = idx_tr[num_tr:]
-    x_te_neg = idx_te[num_tr:]
+    x_tr_neg_feat = None        
+    for i, idx in enumerate(idx_neg_tr):
+        pred = y_te_pred[idx].clone()
+        label = y_te_label[idx].clone()
+        grad = torch.Tensor([]).to(device)
+        loss_te[idx].backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            x_tr_neg_feat = feat
+        else:
+            x_tr_neg_feat = torch.cat((x_tr_neg_feat, feat), dim=0)
+        model.zero_grad()
 
-    y_tr_pos = torch.ones(num_tr)
-    y_tr_neg = torch.zeros(num_tr)
+    x_te_neg_feat = None        
+    for i, idx in enumerate(idx_neg_te):
+        pred = y_te_pred[idx].clone()
+        label = y_te_label[idx].clone()
+        grad = torch.Tensor([]).to(device)
+        loss_te[idx].backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            x_te_neg_feat = feat
+        else:
+            x_te_neg_feat = torch.cat((x_te_neg_feat, feat), dim=0)
+        model.zero_grad()
 
-    y_te_pos = torch.ones(num_te)
-    y_te_neg = torch.zeros(num_te)
+    tr_node = tr_g.nodes()
+    perm = torch.randperm(num_tr, device=device)[:num_tr_att]
+    idx = get_index_by_value(a=tr_g.ndata[tr_mask], val=1)
+    idx_tr = tr_node[idx][perm]
 
-    return x_tr_pos, x_tr_neg, x_te_pos, x_te_neg, y_tr_pos, y_tr_neg, y_te_pos, y_te_neg
+    g_sh = tr_g.subgraph(idx_tr)
+    y_sh_pred = model.full(g=g_sh, x=g_sh.ndata['feat'])
+    y_sh_label = g_sh.ndata['label']
+    loss_sh = criter(y_sh_pred, y_sh_label)
+
+    x_tr_pos_feat = None        
+    for i, idx in enumerate(g_sh.nodes()):
+        pred = y_sh_pred[idx].clone()
+        label = y_sh_label[idx].clone()
+        grad = torch.Tensor([]).to(device)
+        loss_sh[idx].backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            x_tr_pos_feat = feat
+        else:
+            x_tr_pos_feat = torch.cat((x_tr_pos_feat, feat), dim=0)
+        model.zero_grad()
+
+    idx_left = get_index_by_not_list(arr=tr_g.nodes(), test_arr=idx_tr)
+    g_un = tr_g.subgraph(idx_left)
+    perm = torch.randperm(g_un.nodes().size(dim=0), device=device)[:num_te_att]
+    idx_te_neg = g_un.nodes()[perm]
+
+    
+    y_un_pred = model.full(g=g_un, x=g_un.ndata['feat'])
+    y_un_label = g_un.ndata['label']
+    loss_un = criter(y_un_pred, y_un_label)
+
+    x_te_pos_feat = None        
+    for i, idx in enumerate(idx_te_neg):
+        pred = y_un_pred[idx].clone()
+        label = y_un_label[idx].clone()
+        grad = torch.Tensor([]).to(device)
+        loss_un[idx].backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            x_te_pos_feat = feat
+        else:
+            x_te_pos_feat = torch.cat((x_te_pos_feat, feat), dim=0)
+        model.zero_grad()
+
+    x_tr = torch.cat((x_tr_pos_feat, x_tr_neg_feat), dim=0)
+    y_tr = torch.cat((torch.ones(x_tr_pos_feat.size(dim=0)), torch.zeros(x_tr_neg_feat.size(dim=0))), dim=0)
+    perm = torch.randperm(x_tr.size(dim=0), device=device)
+    x_tr = x_tr[perm]
+    y_tr = y_tr[perm]
+
+
+    x_te = torch.cat((x_te_pos_feat, x_te_neg_feat), dim=0)
+    y_te = torch.cat((torch.ones(x_te_pos_feat.size(dim=0)), torch.zeros(x_te_neg_feat.size(dim=0))), dim=0)
+    perm = torch.randperm(x_te.size(dim=0), device=device)
+    x_te = x_te[perm]
+    y_te = y_te[perm]
+
+    return x_tr, x_te, y_tr, y_te
 
 
 def generate_attack_samples_white_box_grad(graph, device):
