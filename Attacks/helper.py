@@ -97,41 +97,41 @@ def generate_attack_samples(tr_graph, tr_conf, mode, device, te_graph=None, te_c
         return x, y
     
 
-def generate_attack_samples_white_box(graph, device):
+def generate_attack_samples_white_box(tr_g, te_g, device):
 
     tr_mask = 'train_mask'
     te_mask = 'test_mask'
-    num_train = graph.ndata[tr_mask].sum()
-    num_test = graph.ndata[te_mask].sum()
-    num_half = min(num_train, num_test)
 
-    nodes_id = graph.nodes()
+    num_tr = tr_g.ndata[tr_mask].sum()
+    num_te = te_g.ndata[te_mask].sum()
+    num_half = min(num_tr, num_te)
 
-    perm = torch.randperm(num_train, device=device)[:num_half]
-    idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
-    idx_tr = nodes_id[idx][perm]
+    tr_node = tr_g.nodes()
+    perm = torch.randperm(num_tr, device=device)[:num_half]
+    idx = get_index_by_value(a=tr_g.ndata[tr_mask], val=1)
+    idx_tr = tr_node[idx][perm]
 
-    perm = torch.randperm(num_test, device=device)[:num_half]
-    idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
-    idx_te = nodes_id[idx][perm]
+    te_node = te_g.nodes()
+    perm = torch.randperm(num_te, device=device)[:num_half]
+    idx = get_index_by_value(a=te_g.ndata[tr_mask], val=1)
+    idx_te = te_node[idx][perm]
 
-    num_tr = int(0.8 * idx_te.size(dim=0))
-    num_te = idx_te.size(dim=0) - num_tr
+    num_tr = int(0.8 * num_half)
+    num_te = num_half - num_tr
 
-    x_tr = torch.cat((idx_tr[:num_tr], idx_te[:num_tr]), dim=0)
-    y_tr = torch.cat((torch.ones(num_tr), torch.zeros(num_tr)), dim=0)
-    x_te = torch.cat((idx_tr[num_tr:], idx_te[num_tr:]), dim=0)
-    y_te = torch.cat((torch.ones(num_te), torch.zeros(num_te)), dim=0)
+    x_tr_pos = idx_tr[:num_tr]
+    x_tr_neg = idx_te[:num_tr]
 
-    # perm = torch.randperm(x_tr.size(dim=0), device=device)
-    # x_tr = x_tr[perm]
-    # y_tr = y_tr[perm]
+    x_te_pos = idx_tr[num_tr:]
+    x_te_neg = idx_te[num_tr:]
 
-    # perm = torch.randperm(x_te.size(dim=0), device=device)
-    # x_te = x_te[perm]
-    # y_te = y_te[perm]
+    y_tr_pos = torch.ones(num_tr)
+    y_tr_neg = torch.zeros(num_tr)
 
-    return x_tr, x_te, y_tr, y_te
+    y_te_pos = torch.ones(num_te)
+    y_te_neg = torch.zeros(num_te)
+
+    return x_tr_pos, x_tr_neg, x_te_pos, x_te_neg, y_tr_pos, y_tr_neg, y_te_pos, y_te_neg
 
 
 def generate_attack_samples_white_box_grad(graph, device):

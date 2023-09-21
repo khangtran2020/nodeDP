@@ -89,6 +89,7 @@ def run_white_box(args, current_time, device):
                 if tensor.grad is not None:
                     grad = grad + tensor.grad.detach().norm(p=2)**2
             neg_grad_norm.append(grad.sqrt().item())
+            tar_model.zero_grad()
         neg_grad_norm = torch.Tensor(neg_grad_norm).to(device)
 
         rprint(f"Mean pos grad: {pos_grad_norm.mean()}, Mean neg grad: {neg_grad_norm.mean()}")
