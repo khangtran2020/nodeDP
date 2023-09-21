@@ -514,7 +514,6 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     labels = mfgs[-1].dstdata["label"]
     predictions = model(mfgs, inputs)
     loss = objective(predictions, labels)
-    print(loss.size())
 
     grad = {}
     for i in range(args.num_class):
@@ -524,7 +523,7 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     for tensor_name, tensor in model.named_parameters():
         saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
-    for i, l in loss:
+    for i, l in enumerate(loss):
         l.backward(retain_graph=True)
         g = 0
         for tensor_name, tensor in model.named_parameters():
