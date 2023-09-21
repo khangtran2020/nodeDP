@@ -8,6 +8,7 @@ from rich import print as rprint
 from Attacks.node_attack import run_NMI
 from Attacks.link_attack import run_LinkTeller
 from Attacks.white_box_attack_grad_norm import run_white_box
+from Attacks.white_box_train import run_white_box_train
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
@@ -19,6 +20,8 @@ def run(args, current_time, device):
         run_NMI(args=args, current_time=current_time, device=device)
     elif args.attack_mode == 'white':
         run_white_box(args=args, current_time=current_time, device=device)
+    elif args.attack_mode == 'whitetrain':
+        run_white_box_train(args=args, current_time=current_time, device=device)
     else:
         run_LinkTeller(args=args, current_time=current_time, device=device)
 
