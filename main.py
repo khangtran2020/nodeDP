@@ -8,6 +8,7 @@ from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 from Runs.run_mlp import run as run_mlp
 from Runs.run_grad_inspect import run as run_grad_inspect
+from Runs.run_grad_clean import run as run_grad_clean
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
@@ -18,7 +19,7 @@ warnings.filterwarnings("ignore")
 
 def run(args, current_time, device):
 
-    if args.mode == 'clean':
+    if args.mode in ['clean', 'grad_clean']:
         history = init_history_clean()
     else:
         history = init_history_nodeDP()
@@ -46,7 +47,8 @@ def run(args, current_time, device):
         'clean': run_clean,
         'nodedp': run_nodedp,
         'mlp': run_mlp,
-        'grad': run_grad_inspect
+        'grad': run_grad_inspect,
+        'grad_clean': run_grad_clean
     }
     run_mode = run_dict[args.mode]
 

@@ -51,17 +51,22 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green',
                bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
+    
     history['time_one_step'] = []
     history['grad_diff_clean'] = []
-    history['clean_grad_norm'] = []
     history['grad_diff_clipped'] = []
+    history['grad_clean_avg'] = []
+    history['grad_clipped_avg'] = []
+    for i in range(args.num_class):
+        history[f'clean_grad_norm_label_{i}'] = []
+        history[f'clipped_grad_norm_label_{i}'] = []
     
     with timeit(logger=logger, task="training-process"):
         for epoch in tk0:
             states = model.state_dict()
             model_clean.load_state_dict(states)
             t0 = time.time()
-            tr_loss, tr_acc, diff, clean_grad, grad_diff_clipped = train_nodedp_grad_inspect(args=args, dataloader=tr_loader, model=model, 
+            tr_loss, tr_acc, diff, grad_diff_clipped, clean_grad, clipped_grad = train_nodedp_grad_inspect(args=args, dataloader=tr_loader, model=model, 
                                                                                             model_clean=model_clean, criterion_clean=criterion,
                                                                                             criterion=criter, optimizer=optimizer, device=device,
                                                                                             scheduler=None, g=graph, clip_grad=args.clip,
@@ -70,10 +75,14 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
                                                                                             metric=metrics)
             t1 = time.time()
             t = t1 - t0
+            for i in range(args.num_class):
+                history[f'clean_grad_norm_label_{i}'].append(clean_grad[f'label_{i}'])
+                history[f'clipped_grad_norm_label_{i}'].append(clipped_grad[f'label_{i}'])
             history['grad_diff_clean'].append(diff)
-            history['clean_grad_norm'].append(clean_grad)
             history['grad_diff_clipped'].append(grad_diff_clipped)
             history['time_one_step'].append(t)
+            history['grad_clean_avg'].append(clean_grad['clean_grad'])
+            history['grad_clipped_avg'].append(clipped_grad['clipped_grad'])
             # scheduler.step()
             va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                     metric=metrics, device=device)
