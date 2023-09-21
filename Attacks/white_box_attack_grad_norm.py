@@ -77,6 +77,7 @@ def run_white_box(args, current_time, device):
                 if tensor.grad is not None:
                     grad = grad + tensor.grad.detach().norm(p=2)**2
             pos_grad_norm.append(grad.sqrt().item())
+            tar_model.zero_grad()
 
         pos_grad_norm = torch.Tensor(pos_grad_norm).to(device)
         # pos_grad_norm = torch.nn.functional.softmax(-1*pos_grad_norm)
