@@ -113,8 +113,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     perm = torch.randperm(num_te, device=device)[:num_half]
     te_idx = te_idx[perm]
 
-    shadow_idx = torch.cat((tr_idx, te_idx), dim=0)
-    shadow_label = torch.cat((torch.ones(num_half), torch.zeros(num_half)), dim=0)
+    shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
 
     graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0))
     graph.ndata['shadow_label'] = torch.zeros(graph.nodes().size(dim=0))
