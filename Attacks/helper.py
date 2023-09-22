@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import numpy as np
 from Utils.utils import get_index_by_value, get_index_by_not_list
 from torch.utils.data import Dataset
+from sklearn.model_selection import train_test_split
 from rich import print as rprint
 
 class Data(Dataset):
@@ -125,139 +126,64 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     shadow_graph = graph.subgraph(shadow_idx)
     rprint(f'Shadow graph has: {shadow_graph.nodes().size(dim=0)} nodes, label counts: {shadow_graph.ndata["shadow_label"].unique(return_counts=True)}')
 
+    sh_node_id = shadow_graph.nodes().tolist()
+    sh_node_label = shadow_graph.ndata['shadow_label'].tolist()
 
+    id_tr, id_te, y_tr, y_te = train_test_split(sh_node_id, sh_node_label, stratify=sh_node_label, test_size=0.2)
+    id_va, id_va, y_tr, y_va = train_test_split(id_tr, y_tr, stratify=y_tr, test_size=0.16)
 
+    shadow_graph.ndata['train_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0))
+    shadow_graph.ndata['val_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0))
+    shadow_graph.ndata['test_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0))
 
+    shadow_graph.ndata['train_shadow_mask'][id_tr] += 1
+    shadow_graph.ndata['val_shadow_mask'][id_va] += 1
+    shadow_graph.ndata['test_shadow_mask'][id_te] += 1
 
+    y_pred = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
+    y_label = shadow_graph.ndata['label']
+    loss = criter(y_pred, y_label)
 
-
-
-
-
-
-
-
-
-    num_half = min(num_tr, num_te)
-
-    num_tr_att = int(0.7 * num_half)
-    num_te_att = num_half - num_tr_att
-
-    te_node = te_g.nodes()
-    perm = torch.randperm(num_te, device=device)
-    idx_te = te_node[perm]
-
-    idx_neg_tr = idx_te[:num_tr_att]
-    idx_neg_te = idx_te[num_tr_att:]
-
-    y_te_pred = model.full(g=te_g, x=te_g.ndata['feat'])
-    y_te_label = te_g.ndata['label']
-    loss_te = criter(y_te_pred, y_te_label)
-
-    x_tr_neg_feat = None        
-    for i, idx in enumerate(idx_neg_tr):
-        pred = y_te_pred[idx].detach().clone()
-        label = y_te_label[idx].detach().clone()
+    feature = None        
+    for i, los in enumerate(loss):
+        pred = y_pred[i].detach().clone()
+        label = y_label[i].detach().clone()
         grad = torch.Tensor([]).to(device)
-        loss_te[idx].backward(retain_graph=True)
+        los.backward(retain_graph=True)
         for name, p in model.named_parameters():
             if p.grad is not None:
                 grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
         feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
         feat = torch.unsqueeze(feat, dim = 0)
         if i == 0:
-            x_tr_neg_feat = feat
+            feature = feat
         else:
-            x_tr_neg_feat = torch.cat((x_tr_neg_feat, feat), dim=0)
-        model.zero_grad()
-
-    x_te_neg_feat = None        
-    for i, idx in enumerate(idx_neg_te):
-        pred = y_te_pred[idx].detach().clone()
-        label = y_te_label[idx].detach().clone()
-        grad = torch.Tensor([]).to(device)
-        loss_te[idx].backward(retain_graph=True)
-        for name, p in model.named_parameters():
-            if p.grad is not None:
-                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
-        feat = torch.unsqueeze(feat, dim = 0)
-        if i == 0:
-            x_te_neg_feat = feat
-        else:
-            x_te_neg_feat = torch.cat((x_te_neg_feat, feat), dim=0)
-        model.zero_grad()
-
-    rprint(f"Done generating feature for g_test: {x_tr_neg_feat.size()}, {x_te_neg_feat.size()}")    
-
-    tr_node = tr_g.nodes()
-    perm = torch.randperm(num_tr, device=device)
-    idx_tr = tr_node[perm[:num_half]]
-
-    g_sh = tr_g.subgraph(idx_tr)
-    y_sh_pred = model.full(g=g_sh, x=g_sh.ndata['feat'])
-    y_sh_label = g_sh.ndata['label']
-    loss_sh = criter(y_sh_pred, y_sh_label)
-
-    id_sh = g_sh.nodes()
-    perm = torch.randperm(id_sh.size(dim=0), device=device) 
-    id_sh_tr = id_sh[perm[:num_tr_att]]
-    id_sh_te = id_sh[perm[num_tr_att:]]
-
-    x_tr_pos_feat = None        
-    for i, idx in enumerate(id_sh_tr):
-        pred = y_sh_pred[idx].detach().clone()
-        label = y_sh_label[idx].detach().clone()
-        grad = torch.Tensor([]).to(device)
-        loss_sh[idx].backward(retain_graph=True)
-        for name, p in model.named_parameters():
-            if p.grad is not None:
-                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
-        feat = torch.unsqueeze(feat, dim = 0)
-        if i == 0:
-            x_tr_pos_feat = feat
-        else:
-            x_tr_pos_feat = torch.cat((x_tr_pos_feat, feat), dim=0)
-        model.zero_grad()
-
-    x_te_pos_feat = None        
-    for i, idx in enumerate(id_sh_te):
-        pred = y_sh_pred[idx].clone()
-        label = y_sh_label[idx].clone()
-        grad = torch.Tensor([]).to(device)
-        loss_sh[idx].backward(retain_graph=True)
-        for name, p in model.named_parameters():
-            if p.grad is not None:
-                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
-        feat = torch.unsqueeze(feat, dim = 0)
-        if i == 0:
-            x_te_pos_feat = feat
-        else:
-            x_te_pos_feat = torch.cat((x_te_pos_feat, feat), dim=0)
+            feature = torch.cat((feature, feat), dim=0)
         model.zero_grad()
 
     rprint(f"Done generating feature for g_train: {x_tr_pos_feat.size()}, {x_te_pos_feat.size()}")
 
-    x_pos_mean = torch.cat((x_tr_pos_feat, x_te_pos_feat), dim=0).mean(dim=0)
-    x_neg_mean = torch.cat((x_tr_neg_feat, x_te_neg_feat), dim=0).mean(dim=0)
+    id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
+    id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
+
+    x_pos_mean = feature[id_pos].mean(dim=0)
+    x_neg_mean = feature[id_neg].mean(dim=0)
 
     rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
 
 
-    x_tr = torch.cat((x_tr_pos_feat, x_tr_neg_feat), dim=0)
-    y_tr = torch.cat((torch.ones(x_tr_pos_feat.size(dim=0)), torch.zeros(x_tr_neg_feat.size(dim=0))), dim=0)
-    perm = torch.randperm(x_tr.size(dim=0), device=device)
-    x_tr = x_tr[perm]
-    y_tr = y_tr[perm]
+    # x_tr = torch.cat((x_tr_pos_feat, x_tr_neg_feat), dim=0)
+    # y_tr = torch.cat((torch.ones(x_tr_pos_feat.size(dim=0)), torch.zeros(x_tr_neg_feat.size(dim=0))), dim=0)
+    # perm = torch.randperm(x_tr.size(dim=0), device=device)
+    # x_tr = x_tr[perm]
+    # y_tr = y_tr[perm]
 
 
-    x_te = torch.cat((x_te_pos_feat, x_te_neg_feat), dim=0)
-    y_te = torch.cat((torch.ones(x_te_pos_feat.size(dim=0)), torch.zeros(x_te_neg_feat.size(dim=0))), dim=0)
-    perm = torch.randperm(x_te.size(dim=0), device=device)
-    x_te = x_te[perm]
-    y_te = y_te[perm]
+    # x_te = torch.cat((x_te_pos_feat, x_te_neg_feat), dim=0)
+    # y_te = torch.cat((torch.ones(x_te_pos_feat.size(dim=0)), torch.zeros(x_te_neg_feat.size(dim=0))), dim=0)
+    # perm = torch.randperm(x_te.size(dim=0), device=device)
+    # x_te = x_te[perm]
+    # y_te = y_te[perm]
 
     return x_tr, x_te, y_tr, y_te
 
