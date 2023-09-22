@@ -62,7 +62,7 @@ def run_white_box_train(args, current_time, device):
         tar_model.zero_grad()
         g = graph.to(device)
         criter = torch.nn.CrossEntropyLoss(reduction='none')
-        x_tr, x_te, y_tr, y_te = generate_attack_samples_white_box(graph=graph, model=tar_model,
+        x_tr, x_te, y_tr, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
                                                                    criter=criter, device=device)
         
         new_dim = x_tr.size(dim=1)
