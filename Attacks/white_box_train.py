@@ -62,21 +62,13 @@ def run_white_box_train(args, current_time, device):
         tar_model.zero_grad()
         g = graph.to(device)
         criter = torch.nn.CrossEntropyLoss(reduction='none')
-        x_tr, x_te, y_tr, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
+        x_tr, x_va, x_te, y_tr, y_va, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
                                                                    criter=criter, device=device)
         
         new_dim = x_tr.size(dim=1)
-        x_tr_id, x_va_id, _, _ = train_test_split(range(x_tr.size(dim=0)), y_tr.tolist(), test_size=0.16, stratify=y_tr.tolist())
 
-        x_tr_ = x_tr[x_tr_id]
-        x_va_ = x_tr[x_va_id]
-
-        y_tr_ = y_tr[x_tr_id]
-        y_va_ = y_tr[x_va_id]
-        # train test split
-
-        tr_data = Data(X=x_tr_, y=y_tr_)
-        va_data = Data(X=x_va_, y=y_va_)
+        tr_data = Data(X=x_tr, y=y_tr)
+        va_data = Data(X=x_va, y=y_va)
         te_data = Data(X=x_te, y=y_te)
 
     # device = torch.device('cpu')

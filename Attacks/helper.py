@@ -170,21 +170,11 @@ def generate_attack_samples_white_box(graph, model, criter, device):
 
     rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
 
+    x_tr, y_tr = feature[id_tr], shadow_graph.ndata['shadow_label'][id_tr]
+    x_va, y_va = feature[id_va], shadow_graph.ndata['shadow_label'][id_va]
+    x_te, y_te = feature[id_te], shadow_graph.ndata['shadow_label'][id_te]
 
-    # x_tr = torch.cat((x_tr_pos_feat, x_tr_neg_feat), dim=0)
-    # y_tr = torch.cat((torch.ones(x_tr_pos_feat.size(dim=0)), torch.zeros(x_tr_neg_feat.size(dim=0))), dim=0)
-    # perm = torch.randperm(x_tr.size(dim=0), device=device)
-    # x_tr = x_tr[perm]
-    # y_tr = y_tr[perm]
-
-
-    # x_te = torch.cat((x_te_pos_feat, x_te_neg_feat), dim=0)
-    # y_te = torch.cat((torch.ones(x_te_pos_feat.size(dim=0)), torch.zeros(x_te_neg_feat.size(dim=0))), dim=0)
-    # perm = torch.randperm(x_te.size(dim=0), device=device)
-    # x_te = x_te[perm]
-    # y_te = y_te[perm]
-
-    return x_tr, x_te, y_tr, y_te
+    return x_tr, x_va, x_te, y_tr, y_va, y_te
 
 
 def generate_attack_samples_white_box_grad(graph, device):
