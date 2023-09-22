@@ -115,8 +115,8 @@ def generate_attack_samples_white_box(graph, model, criter, device):
 
     shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
 
-    graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0))
-    graph.ndata['shadow_label'] = torch.zeros(graph.nodes().size(dim=0))
+    graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
+    graph.ndata['shadow_label'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
 
     graph.ndata['shadow_idx'][shadow_idx] += 1
     graph.ndata['shadow_label'][tr_idx] += 1
@@ -131,9 +131,9 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     id_tr, id_te, y_tr, y_te = train_test_split(sh_node_id, sh_node_label, stratify=sh_node_label, test_size=0.2)
     id_va, id_va, y_tr, y_va = train_test_split(id_tr, y_tr, stratify=y_tr, test_size=0.16)
 
-    shadow_graph.ndata['train_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0))
-    shadow_graph.ndata['val_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0))
-    shadow_graph.ndata['test_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0))
+    shadow_graph.ndata['train_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
+    shadow_graph.ndata['val_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
+    shadow_graph.ndata['test_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
 
     shadow_graph.ndata['train_shadow_mask'][id_tr] += 1
     shadow_graph.ndata['val_shadow_mask'][id_va] += 1
