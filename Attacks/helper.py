@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import numpy as np
 from Utils.utils import get_index_by_value, get_index_by_not_list
 from torch.utils.data import Dataset
+from rich import print as rprint
 
 class Data(Dataset):
     def __init__(self, X, y):
@@ -99,20 +100,17 @@ def generate_attack_samples(tr_graph, tr_conf, mode, device, te_graph=None, te_c
 
 def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
 
-    tr_mask = 'train_mask'
-    te_mask = 'test_mask'
 
-    num_tr = tr_g.ndata[tr_mask].sum()
-    num_te = te_g.ndata[te_mask].sum()
+    num_tr = tr_g.nodes().size(dim=0)
+    num_te = te_g.nodes().size(dim=0)
     num_half = min(num_tr, num_te)
 
-    num_tr_att = int(0.8 * num_half)
+    num_tr_att = int(0.7 * num_half)
     num_te_att = num_half - num_tr_att
 
     te_node = te_g.nodes()
-    perm = torch.randperm(num_te, device=device)[:num_half]
-    idx = get_index_by_value(a=te_g.ndata[te_mask], val=1)
-    idx_te = te_node[idx][perm]
+    perm = torch.randperm(num_te, device=device)
+    idx_te = te_node[perm]
 
     idx_neg_tr = idx_te[:num_tr_att]
     idx_neg_te = idx_te[num_tr_att:]
@@ -123,14 +121,14 @@ def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
 
     x_tr_neg_feat = None        
     for i, idx in enumerate(idx_neg_tr):
-        pred = y_te_pred[idx].clone()
-        label = y_te_label[idx].clone()
+        pred = y_te_pred[idx].detach().clone()
+        label = y_te_label[idx].detach().clone()
         grad = torch.Tensor([]).to(device)
         loss_te[idx].backward(retain_graph=True)
         for name, p in model.named_parameters():
             if p.grad is not None:
                 grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
+        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
         feat = torch.unsqueeze(feat, dim = 0)
         if i == 0:
             x_tr_neg_feat = feat
@@ -140,14 +138,14 @@ def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
 
     x_te_neg_feat = None        
     for i, idx in enumerate(idx_neg_te):
-        pred = y_te_pred[idx].clone()
-        label = y_te_label[idx].clone()
+        pred = y_te_pred[idx].detach().clone()
+        label = y_te_label[idx].detach().clone()
         grad = torch.Tensor([]).to(device)
         loss_te[idx].backward(retain_graph=True)
         for name, p in model.named_parameters():
             if p.grad is not None:
                 grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
+        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
         feat = torch.unsqueeze(feat, dim = 0)
         if i == 0:
             x_te_neg_feat = feat
@@ -155,18 +153,41 @@ def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
             x_te_neg_feat = torch.cat((x_te_neg_feat, feat), dim=0)
         model.zero_grad()
 
+    rprint(f"Done generating feature for g_test: {x_tr_neg_feat.size()}, {x_te_neg_feat.size()}")    
+
     tr_node = tr_g.nodes()
-    perm = torch.randperm(num_tr, device=device)[:num_tr_att]
-    idx = get_index_by_value(a=tr_g.ndata[tr_mask], val=1)
-    idx_tr = tr_node[idx][perm]
+    perm = torch.randperm(num_tr, device=device)
+    idx_tr = tr_node[perm[:num_half]]
 
     g_sh = tr_g.subgraph(idx_tr)
     y_sh_pred = model.full(g=g_sh, x=g_sh.ndata['feat'])
     y_sh_label = g_sh.ndata['label']
     loss_sh = criter(y_sh_pred, y_sh_label)
 
+    id_sh = g_sh.nodes()
+    perm = torch.randperm(id_sh.size(dim=0), device=device) 
+    id_sh_tr = id_sh[perm[:num_tr_att]]
+    id_sh_te = id_sh[perm[num_tr_att:]]
+
     x_tr_pos_feat = None        
-    for i, idx in enumerate(g_sh.nodes()):
+    for i, idx in enumerate(id_sh_tr):
+        pred = y_sh_pred[idx].detach().clone()
+        label = y_sh_label[idx].detach().clone()
+        grad = torch.Tensor([]).to(device)
+        loss_sh[idx].backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            x_tr_pos_feat = feat
+        else:
+            x_tr_pos_feat = torch.cat((x_tr_pos_feat, feat), dim=0)
+        model.zero_grad()
+
+    x_te_pos_feat = None        
+    for i, idx in enumerate(id_sh_te):
         pred = y_sh_pred[idx].clone()
         label = y_sh_label[idx].clone()
         grad = torch.Tensor([]).to(device)
@@ -177,37 +198,18 @@ def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
         feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
         feat = torch.unsqueeze(feat, dim = 0)
         if i == 0:
-            x_tr_pos_feat = feat
-        else:
-            x_tr_pos_feat = torch.cat((x_tr_pos_feat, feat), dim=0)
-        model.zero_grad()
-
-    idx_left = get_index_by_not_list(arr=tr_g.nodes(), test_arr=idx_tr)
-    g_un = tr_g.subgraph(idx_left)
-    perm = torch.randperm(g_un.nodes().size(dim=0), device=device)[:num_te_att]
-    idx_te_neg = g_un.nodes()[perm]
-
-    
-    y_un_pred = model.full(g=g_un, x=g_un.ndata['feat'])
-    y_un_label = g_un.ndata['label']
-    loss_un = criter(y_un_pred, y_un_label)
-
-    x_te_pos_feat = None        
-    for i, idx in enumerate(idx_te_neg):
-        pred = y_un_pred[idx].clone()
-        label = y_un_label[idx].clone()
-        grad = torch.Tensor([]).to(device)
-        loss_un[idx].backward(retain_graph=True)
-        for name, p in model.named_parameters():
-            if p.grad is not None:
-                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred.detach(), torch.unsqueeze(label.detach(), dim=0), grad), dim = 0)
-        feat = torch.unsqueeze(feat, dim = 0)
-        if i == 0:
             x_te_pos_feat = feat
         else:
             x_te_pos_feat = torch.cat((x_te_pos_feat, feat), dim=0)
         model.zero_grad()
+
+    rprint(f"Done generating feature for g_train: {x_tr_pos_feat.size()}, {x_te_pos_feat.size()}")
+
+    x_pos_mean = torch.cat((x_tr_pos_feat, x_te_pos_feat), dim=0).mean(dim=0)
+    x_neg_mean = torch.cat((x_tr_neg_feat, x_te_neg_feat), dim=0).mean(dim=0)
+
+    rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
+
 
     x_tr = torch.cat((x_tr_pos_feat, x_tr_neg_feat), dim=0)
     y_tr = torch.cat((torch.ones(x_tr_pos_feat.size(dim=0)), torch.zeros(x_tr_neg_feat.size(dim=0))), dim=0)
