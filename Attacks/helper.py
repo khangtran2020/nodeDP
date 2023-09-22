@@ -98,11 +98,46 @@ def generate_attack_samples(tr_graph, tr_conf, mode, device, te_graph=None, te_c
         return x, y
     
 
-def generate_attack_samples_white_box(tr_g, te_g, model, criter, device):
+def generate_attack_samples_white_box(graph, model, criter, device):
+    
+    num_tr = graph.ndata['train_mask'].sum().item()
+    num_te = graph.ndata['test_mask'].sum().item()
+    num_half = min(num_tr, num_te)
+
+    tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    perm = torch.randperm(num_tr, device=device)[:num_half]
+    tr_idx = tr_idx[perm]
+
+    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+    perm = torch.randperm(num_te, device=device)[:num_half]
+    te_idx = te_idx[perm]
+
+    shadow_idx = torch.cat((tr_idx, te_idx), dim=0)
+    shadow_label = torch.cat((torch.ones(num_half), torch.zeros(num_half)), dim=0)
+
+    graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0))
+    graph.ndata['shadow_label'] = torch.zeros(graph.nodes().size(dim=0))
+
+    graph.ndata['shadow_idx'][shadow_idx] += 1
+    graph.ndata['shadow_label'][tr_idx] += 1
+    graph.ndata['shadow_label'][te_idx] += -1
+
+    shadow_graph = graph.subgraph(shadow_idx)
+    rprint(f'Shadow graph has: {shadow_graph.nodes().size(dim=0)} nodes, label counts: {shadow_graph.ndata["shadow_label"].unique(return_counts=True)}')
 
 
-    num_tr = tr_g.nodes().size(dim=0)
-    num_te = te_g.nodes().size(dim=0)
+
+
+
+
+
+
+
+
+
+
+
+
     num_half = min(num_tr, num_te)
 
     num_tr_att = int(0.7 * num_half)

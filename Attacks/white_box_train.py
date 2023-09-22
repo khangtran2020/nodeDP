@@ -60,8 +60,7 @@ def run_white_box_train(args, current_time, device):
         
         tar_model.to(device)
         tar_model.zero_grad()
-        train_g = train_g.to(device)
-        test_g = test_g.to(device)
+        g = graph.to(device)
         criter = torch.nn.CrossEntropyLoss(reduction='none')
         x_tr, x_te, y_tr, y_te = generate_attack_samples_white_box(tr_g=train_g, te_g=test_g, model=tar_model,
                                                                    criter=criter, device=device)
