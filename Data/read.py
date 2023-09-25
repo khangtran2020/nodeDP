@@ -260,7 +260,7 @@ def filter_class_by_chosen_label(graph, chosen_label):
     graph.ndata['val_mask'] = graph.ndata['val_mask'] & mask
     graph.ndata['test_mask'] = graph.ndata['test_mask'] & mask
     graph.ndata['label_mask'] = mask
-    return index.tolist()
+    return range(len(chosen_label))
 
 
 def init_loader(args, device, train_g, test_g, val_g):
