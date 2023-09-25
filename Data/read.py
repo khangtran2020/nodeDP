@@ -85,7 +85,7 @@ def read_data(args, data_name, history):
         graph.ndata['test_mask'] = data.test_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
     if args.submode == 'choselab':
-        list_of_label = filter_class_by_chosen_label(graph=graph, chosen_label=[0, 1, 5])
+        list_of_label = filter_class_by_chosen_label(graph=graph, chosen_label=torch.LongTensor([0, 1, 5]))
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
