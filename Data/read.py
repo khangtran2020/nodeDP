@@ -86,6 +86,12 @@ def read_data(args, data_name, history):
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
     if args.submode == 'choselab':
         list_of_label = filter_class_by_chosen_label(graph=graph, chosen_label=torch.LongTensor([0, 1, 5]))
+        idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
+        graph = graph.subgraph(torch.LongTensor(idx))
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
