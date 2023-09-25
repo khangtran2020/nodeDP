@@ -257,6 +257,7 @@ def filter_class_by_chosen_label(graph, chosen_label):
     index = get_index_by_list(arr=target, test_arr=chosen_label)
     rprint("# node with the chosen labels:", index.size())
     label_dict = dict(zip(chosen_label, range(len(chosen_label))))
+    rprint("Label dict:", label_dict)
     mask = torch.zeros(target.size(dim=0))
     mask[index] += 1
     mask = mask.bool()
