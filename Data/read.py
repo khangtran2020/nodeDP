@@ -252,6 +252,7 @@ def filter_class_by_chosen_label(graph, chosen_label):
     rprint("# node with the chosen labels:", index.size())
     label_dict = dict(zip(chosen_label, range(len(chosen_label))))
     mask = target.apply_(lambda x: x in index.tolist())
+    rprint("# node in mask with the chosen labels:", mask.sum())
     graph.ndata['label'].apply_(lambda x: label_dict[x] if x in label_dict.keys() else -1)
     graph.ndata['train_mask'] = graph.ndata['train_mask'] & mask
     graph.ndata['val_mask'] = graph.ndata['val_mask'] & mask
