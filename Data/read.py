@@ -247,6 +247,7 @@ def filter_class_by_count(graph, min_count):
 
 def filter_class_by_chosen_label(graph, chosen_label):
     target = deepcopy(graph.ndata['label'])
+    rprint("Current label of the data:", target.unique())
     index = get_index_by_list(arr=target, test_arr=chosen_label)
     label_dict = dict(zip(chosen_label, range(len(chosen_label))))
     mask = target.apply_(lambda x: x in index.tolist())
