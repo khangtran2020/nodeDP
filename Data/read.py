@@ -84,6 +84,8 @@ def read_data(args, data_name, history):
         graph.ndata['val_mask'] = data.val_mask
         graph.ndata['test_mask'] = data.test_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
+    if args.submode == 'choselab':
+        list_of_label = filter_class_by_chosen_label(graph=graph, chosen_label=[0, 1, 5])
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
@@ -235,6 +237,18 @@ def filter_class_by_count(graph, min_count):
     index = get_index_by_value(a=counts, val=True)
     label_dict = dict(zip(index.tolist(), range(len(index))))
     # print("Label Dict:", label_dict)
+    mask = target.apply_(lambda x: x in index.tolist())
+    graph.ndata['label'].apply_(lambda x: label_dict[x] if x in label_dict.keys() else -1)
+    graph.ndata['train_mask'] = graph.ndata['train_mask'] & mask
+    graph.ndata['val_mask'] = graph.ndata['val_mask'] & mask
+    graph.ndata['test_mask'] = graph.ndata['test_mask'] & mask
+    graph.ndata['label_mask'] = mask
+    return index.tolist()
+
+def filter_class_by_chosen_label(graph, chosen_label):
+    target = deepcopy(graph.ndata['label'])
+    index = get_index_by_list(arr=target, test_arr=chosen_label)
+    label_dict = dict(zip(chosen_label, range(len(chosen_label))))
     mask = target.apply_(lambda x: x in index.tolist())
     graph.ndata['label'].apply_(lambda x: label_dict[x] if x in label_dict.keys() else -1)
     graph.ndata['train_mask'] = graph.ndata['train_mask'] & mask

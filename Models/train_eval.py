@@ -544,9 +544,10 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     clean_grad = 0
     for tensor_name, tensor in model.named_parameters():
         if tensor.grad is not None:
-            tensor.grad = saved_var[tensor_name].clone()
+            tensor.grad = saved_var[tensor_name].clone() / predictions.size(dim=0)
             clean_grad += saved_var[tensor_name].clone().detach().norm(p=2)**2
-    grad['avg_grad'] = clean_grad.sqrt().item()
+            
+    grad['avg_grad'] = clean_grad.sqrt().item() / predictions.size(dim=0)
 
     optimizer.step()
     return labels, predictions, loss, grad
