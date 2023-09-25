@@ -249,6 +249,7 @@ def filter_class_by_chosen_label(graph, chosen_label):
     target = deepcopy(graph.ndata['label'])
     rprint("Current label of the data:", target.unique())
     index = get_index_by_list(arr=target, test_arr=chosen_label)
+    rprint("# node with the chosen labels:", index.size())
     label_dict = dict(zip(chosen_label, range(len(chosen_label))))
     mask = target.apply_(lambda x: x in index.tolist())
     graph.ndata['label'].apply_(lambda x: label_dict[x] if x in label_dict.keys() else -1)
