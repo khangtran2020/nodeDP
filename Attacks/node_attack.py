@@ -143,5 +143,5 @@ def run_NMI(args, current_time, device):
     attack_model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_attack.pt"))
     te_loss, te_auc, topk_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
                                        metrics=torchmetrics.classification.BinaryAUROC().to(device),
-                                       criterion=torch.nn.BCELoss())
+                                       criterion=torch.nn.BCELoss(), rate=args.topk_rate)
     rprint(f"Attack AUC: {te_auc}, topk AUC {topk_auc}")

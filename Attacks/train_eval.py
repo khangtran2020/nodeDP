@@ -99,9 +99,9 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
         tr_loss, tr_acc = update_attack_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
                                              criterion=criterion, optimizer=optimizer)
         va_loss, va_acc, va_topk = eval_attack_step(model=attack_model, device=device, loader=va_loader, metrics=metrics,
-                                        criterion=criterion)
+                                        criterion=criterion, rate=args.topk_rate)
         te_loss, te_acc, te_topk = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
-                                           criterion=criterion)
+                                           criterion=criterion, rate=args.topk_rate)
         
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), VA_TOPK=va_topk.item(), Te_ACC=te_acc.item(), Te_TOPK=te_topk.item())
 
@@ -134,7 +134,7 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     return train_loss / num_data, performance
 
 
-def eval_attack_step(model, device, loader, metrics, criterion):
+def eval_attack_step(model, device, loader, metrics, criterion, rate):
     model.to(device)
     model.eval()
     val_loss = 0
@@ -159,7 +159,7 @@ def eval_attack_step(model, device, loader, metrics, criterion):
             val_loss += loss.item()*predictions.size(dim=0)
         performance = metrics.compute()
         metrics.reset()
-    val, indx = torch.topk(entr, int(0.01*entr.size(dim=0)), largest=False)
+    val, indx = torch.topk(entr, int(rate*entr.size(dim=0)), largest=False)
     pred_new = pred[indx]
     label_new = label[indx]
     performance_topk = metrics(pred_new, label_new)
