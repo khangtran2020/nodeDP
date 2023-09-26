@@ -1,4 +1,3 @@
-import sys
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -106,93 +105,76 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     num_te = graph.ndata['test_mask'].sum().item()
     num_half = min(num_tr, num_te)
 
-    # get confidence
-    y_pred = model.full(g=graph, x=graph.ndata['feat'])
-    log_y_pred = -1*torch.log(y_pred)
-    temp = y_pred*log_y_pred
-    entropy = temp.sum(dim=1)
-
-    rprint(f"Size of entropy {entropy.size()}, temp {temp.size()}")
     tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    perm = torch.randperm(num_tr, device=device)[:num_half]
+    tr_idx = tr_idx[perm]
+
     te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+    perm = torch.randperm(num_te, device=device)[:num_half]
+    te_idx = te_idx[perm]
 
-    entropy_of_train = entropy[tr_idx]
-    entropy_of_test = entropy[te_idx]
-    print(f"Size of train {tr_idx.size(dim=0)}, test {te_idx.size(dim=0)}")
-    print(f"Size of train entropy {entropy_of_train.size(dim=0)}, test entropy {entropy_of_test.size(dim=0)}")
-    print(f"The entropy on the training data {entropy_of_train.mean()}, on testing data {entropy_of_test.mean()}")
-    sys.exit()
-    return
-    # tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
-    # perm = torch.randperm(num_tr, device=device)[:num_half]
-    # tr_idx = tr_idx[perm]
+    shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
 
-    # te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-    # perm = torch.randperm(num_te, device=device)[:num_half]
-    # te_idx = te_idx[perm]
+    graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
+    graph.ndata['shadow_label'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
 
-    # shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
+    graph.ndata['shadow_idx'][shadow_idx] += 1
+    graph.ndata['shadow_label'][tr_idx] += 1
+    graph.ndata['shadow_label'][te_idx] += -1
 
-    # graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
-    # graph.ndata['shadow_label'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
+    shadow_graph = graph.subgraph(shadow_idx)
+    rprint(f'Shadow graph has: {shadow_graph.nodes().size(dim=0)} nodes, label counts: {shadow_graph.ndata["shadow_label"].unique(return_counts=True)}')
 
-    # graph.ndata['shadow_idx'][shadow_idx] += 1
-    # graph.ndata['shadow_label'][tr_idx] += 1
-    # graph.ndata['shadow_label'][te_idx] += -1
+    sh_node_id = shadow_graph.nodes().tolist()
+    sh_node_label = shadow_graph.ndata['shadow_label'].tolist()
 
-    # shadow_graph = graph.subgraph(shadow_idx)
-    # rprint(f'Shadow graph has: {shadow_graph.nodes().size(dim=0)} nodes, label counts: {shadow_graph.ndata["shadow_label"].unique(return_counts=True)}')
+    id_tr, id_te, y_tr, y_te = train_test_split(sh_node_id, sh_node_label, stratify=sh_node_label, test_size=0.2)
+    id_va, id_va, y_tr, y_va = train_test_split(id_tr, y_tr, stratify=y_tr, test_size=0.16)
 
-    # sh_node_id = shadow_graph.nodes().tolist()
-    # sh_node_label = shadow_graph.ndata['shadow_label'].tolist()
+    shadow_graph.ndata['train_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
+    shadow_graph.ndata['val_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
+    shadow_graph.ndata['test_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
 
-    # id_tr, id_te, y_tr, y_te = train_test_split(sh_node_id, sh_node_label, stratify=sh_node_label, test_size=0.2)
-    # id_va, id_va, y_tr, y_va = train_test_split(id_tr, y_tr, stratify=y_tr, test_size=0.16)
+    shadow_graph.ndata['train_shadow_mask'][id_tr] += 1
+    shadow_graph.ndata['val_shadow_mask'][id_va] += 1
+    shadow_graph.ndata['test_shadow_mask'][id_te] += 1
 
-    # shadow_graph.ndata['train_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
-    # shadow_graph.ndata['val_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
-    # shadow_graph.ndata['test_shadow_mask'] = torch.zeros(shadow_graph.nodes().size(dim=0)).to(device)
+    y_pred = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
+    y_label = shadow_graph.ndata['label']
+    loss = criter(y_pred, y_label)
 
-    # shadow_graph.ndata['train_shadow_mask'][id_tr] += 1
-    # shadow_graph.ndata['val_shadow_mask'][id_va] += 1
-    # shadow_graph.ndata['test_shadow_mask'][id_te] += 1
+    feature = None        
+    for i, los in enumerate(loss):
+        pred = y_pred[i].detach().clone()
+        label = y_label[i].detach().clone()
+        grad = torch.Tensor([]).to(device)
+        los.backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            feature = feat
+        else:
+            feature = torch.cat((feature, feat), dim=0)
+        model.zero_grad()
 
-    # y_pred = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
-    # y_label = shadow_graph.ndata['label']
-    # loss = criter(y_pred, y_label)
+    # rprint(f"Done generating feature for g_train: {x_tr_pos_feat.size()}, {x_te_pos_feat.size()}")
 
-    # feature = None        
-    # for i, los in enumerate(loss):
-    #     pred = y_pred[i].detach().clone()
-    #     label = y_label[i].detach().clone()
-    #     grad = torch.Tensor([]).to(device)
-    #     los.backward(retain_graph=True)
-    #     for name, p in model.named_parameters():
-    #         if p.grad is not None:
-    #             grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-    #     feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
-    #     feat = torch.unsqueeze(feat, dim = 0)
-    #     if i == 0:
-    #         feature = feat
-    #     else:
-    #         feature = torch.cat((feature, feat), dim=0)
-    #     model.zero_grad()
+    id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
+    id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
 
-    # # rprint(f"Done generating feature for g_train: {x_tr_pos_feat.size()}, {x_te_pos_feat.size()}")
+    x_pos_mean = feature[id_pos].mean(dim=0)
+    x_neg_mean = feature[id_neg].mean(dim=0)
 
-    # id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
-    # id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
+    rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
 
-    # x_pos_mean = feature[id_pos].mean(dim=0)
-    # x_neg_mean = feature[id_neg].mean(dim=0)
+    x_tr, y_tr = feature[id_tr], shadow_graph.ndata['shadow_label'][id_tr]
+    x_va, y_va = feature[id_va], shadow_graph.ndata['shadow_label'][id_va]
+    x_te, y_te = feature[id_te], shadow_graph.ndata['shadow_label'][id_te]
 
-    # rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
-
-    # x_tr, y_tr = feature[id_tr], shadow_graph.ndata['shadow_label'][id_tr]
-    # x_va, y_va = feature[id_va], shadow_graph.ndata['shadow_label'][id_va]
-    # x_te, y_te = feature[id_te], shadow_graph.ndata['shadow_label'][id_te]
-
-    # return x_tr, x_va, x_te, y_tr, y_va, y_te
+    return x_tr, x_va, x_te, y_tr, y_va, y_te
 
 
 def generate_attack_samples_white_box_grad(graph, device):

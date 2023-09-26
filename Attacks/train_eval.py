@@ -139,6 +139,9 @@ def eval_attack_step(model, device, loader, metrics, criterion):
     model.eval()
     val_loss = 0
     num_data = 0.0
+    pred = torch.Tensor([]).to(device)
+    label = torch.Tensor([]).to(device)
+    entr = torch.Tensor([]).to(device)
     with torch.no_grad():
         for bi, d in enumerate(loader):
             features, target = d
@@ -146,10 +149,24 @@ def eval_attack_step(model, device, loader, metrics, criterion):
             target = target.to(device)
             predictions = model(features)
             predictions = torch.squeeze(predictions, dim=-1)
+            entropy = get_entropy(pred=predictions)
+            pred = torch.cat((pred, predictions), dim = 0)
+            label = torch.cat((label, target), dim=0)
+            entr = torch.cat((entr, entropy), dim=0)
             loss = criterion(predictions, target.float())
             metrics.update(predictions, target)
             num_data += predictions.size(dim=0)
             val_loss += loss.item()*predictions.size(dim=0)
         performance = metrics.compute()
         metrics.reset()
-    return val_loss/num_data, performance
+    val, indx = torch.topk(entr, int(0.01*entr.size(dim=0)), largest=False)
+    pred_new = pred[indx]
+    label_new = label[indx]
+    performance_topk = metrics(pred_new, label_new)
+    return val_loss/num_data, performance, performance_topk
+
+
+def get_entropy(pred):
+    log_pred = torch.log2(pred)
+    temp = -1*pred*log_pred
+    return temp
