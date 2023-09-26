@@ -1,3 +1,4 @@
+import sys
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -120,7 +121,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     print(f"Size of train {tr_idx.size(dim=0)}, test {te_idx.size(dim=0)}")
     print(f"Size of train entropy {entropy_of_train.size(dim=0)}, test entropy {entropy_of_test.size(dim=0)}")
     print(f"The entropy on the training data {entropy_of_train.mean()}, on testing data {entropy_of_test.mean()}")
-
+    sys.exit()
     return
     # tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
     # perm = torch.randperm(num_tr, device=device)[:num_half]
