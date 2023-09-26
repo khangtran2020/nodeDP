@@ -111,8 +111,14 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     temp = y_pred*log_y_pred
     entropy = temp.sum(dim=1)
 
-    entropy_of_train = entropy*graph.ndata['train_mask']
-    entropy_of_test = entropy*graph.ndata['test_mask']
+    rprint(f"Size of entropy {entropy.size()}, temp {temp.size()}")
+    tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+
+    entropy_of_train = entropy[tr_idx]
+    entropy_of_test = entropy[te_idx]
+    print(f"Size of train {tr_idx.size(dim=0)}, test {te_idx.size(dim=0)}")
+    print(f"Size of train entropy {entropy_of_train.size(dim=0)}, test entropy {entropy_of_test.size(dim=0)}")
     print(f"The entropy on the training data {entropy_of_train.mean()}, on testing data {entropy_of_test.mean()}")
 
     return
