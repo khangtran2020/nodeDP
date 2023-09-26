@@ -120,6 +120,7 @@ def read_data(args, data_name, history):
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
     graph = drop_isolated_node(graph)
+    rprint(f"Original graph has: {graph.nodes().size(dim=0)} nodes and {int(graph.edges()[0].size(dim=0)/2)} edges")
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 
