@@ -390,6 +390,7 @@ def read_data_attack(args, data_name, history):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
+        num_node = graph.ndata['feat'].size(dim=0)
         tr_mask = torch.zeros(size=num_node)
         va_mask = torch.zeros(size=num_node)
         te_mask = torch.zeros(size=num_node)
@@ -411,6 +412,7 @@ def read_data_attack(args, data_name, history):
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        num_node = graph.ndata['feat'].size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
         tr_mask = torch.zeros(size=num_node)
@@ -434,6 +436,7 @@ def read_data_attack(args, data_name, history):
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        num_node = graph.ndata['feat'].size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
         tr_mask = torch.zeros(size=num_node)
@@ -449,7 +452,6 @@ def read_data_attack(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    num_node = graph.ndata['feat'].size(dim=0)
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph

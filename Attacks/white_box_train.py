@@ -68,11 +68,12 @@ def run_white_box_train(args, current_time, device):
     """
 
     history = init_history(args=args)
-    model_name_trained = get_model_name(history=history, mode='target', state='trained')
     data_name = get_data_name(history=history)
-    
-    model_path_trained = args.save_path + model_name_trained
     data_path = args.save_path + data_name
+    
+    model_name_trained = get_model_name(history=history, mode='target', state='trained')
+    model_path_trained = args.save_path + model_name_trained
+
 
     with timeit(logger=logger, task='init-target-model'):
 
@@ -123,14 +124,16 @@ def run_white_box_train(args, current_time, device):
 
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
                                                 pin_memory=False, drop_last=False)
+        
         attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
+        attack_model_name = get_model_name(history=history, mode='attack', state='trained')
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
                                     attack_model=attack_model, epochs=args.attack_epochs, optimizer=attack_optimizer,
-                                    name=tar_history['name'], device=device)
+                                    name=attack_model_name, device=device)
 
-    attack_model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_attack.pt"))
+    attack_model.load_state_dict(torch.load(args.save_path + attack_model_name))
     te_loss, te_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
                                        metrics=torchmetrics.classification.BinaryAUROC().to(device),
                                        criterion=torch.nn.BCELoss())

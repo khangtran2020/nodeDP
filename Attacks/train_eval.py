@@ -80,9 +80,9 @@ def eval_step(model, device, loader, metrics, criterion):
 
 
 def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, optimizer, name, device):
-    model_name = '{}_attack.pt'.format(name)
 
     attack_model.to(device)
+    model_name = name
 
     # DEfining criterion
     criterion = torch.nn.BCELoss(reduction='mean')
