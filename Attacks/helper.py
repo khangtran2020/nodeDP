@@ -111,6 +111,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     with torch.no_grad():
         pred_full = model.full(g=graph, x=graph.ndata['feat']).detach()
         entr = -1*pred_full*torch.log(pred_full)
+        print("Entropy:", entr)
         entr = entr.sum(dim=-1)
         tr_conf = entr[tr_idx]
         te_conf = entr[te_idx]
