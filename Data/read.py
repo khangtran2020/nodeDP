@@ -397,9 +397,9 @@ def read_data_attack(args, data_name, history):
         tr_mask[history['tr_id']] += 1
         va_mask[history['va_id']] += 1
         te_mask[history['te_id']] += 1
-        graph.ndata['train_mask'] = tr_mask
-        graph.ndata['val_mask'] = va_mask
-        graph.ndata['test_mask'] = te_mask
+        graph.ndata['train_mask'] = tr_mask.bool()
+        graph.ndata['val_mask'] = va_mask.bool()
+        graph.ndata['test_mask'] = te_mask.bool()
         list_of_label = filter_class_by_count(graph=graph, min_count=10000)
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
@@ -421,9 +421,9 @@ def read_data_attack(args, data_name, history):
         tr_mask[history['tr_id']] += 1
         va_mask[history['va_id']] += 1
         te_mask[history['te_id']] += 1
-        graph.ndata['train_mask'] = tr_mask
-        graph.ndata['val_mask'] = va_mask
-        graph.ndata['test_mask'] = te_mask
+        graph.ndata['train_mask'] = tr_mask.bool()
+        graph.ndata['val_mask'] = va_mask.bool()
+        graph.ndata['test_mask'] = te_mask.bool()
         list_of_label = filter_class_by_count(graph=graph, min_count=1000)
         # sys.exit()
     elif data_name == 'amazon':
@@ -445,9 +445,9 @@ def read_data_attack(args, data_name, history):
         tr_mask[history['tr_id']] += 1
         va_mask[history['va_id']] += 1
         te_mask[history['te_id']] += 1
-        graph.ndata['train_mask'] = tr_mask
-        graph.ndata['val_mask'] = va_mask
-        graph.ndata['test_mask'] = te_mask
+        graph.ndata['train_mask'] = tr_mask.bool()
+        graph.ndata['val_mask'] = va_mask.bool()
+        graph.ndata['test_mask'] = te_mask.bool()
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
