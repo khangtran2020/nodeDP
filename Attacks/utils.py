@@ -44,7 +44,7 @@ def get_model_name(history, mode='target', state='trained'):
             for k in tar_model_key:
                 model_name += f"{k}_{history['target_model'][k]}_"
             for k in history['dp_keys']:
-                model_name += f"{k}_{history['target_model'][k]}_"
+                model_name += f"{k}_{history['dp'][k]}_"
         else:
             model_name = ''
             for k in tar_model_key:
