@@ -13,11 +13,16 @@ from loguru import logger
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 
-def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history):
+def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history, mode='normal'):
     _, tr_loader = tr_info
     va_loader = va_info
     _, te_loader = te_info
-    model_name = '{}.pt'.format(name)
+    
+    if mode == 'normal':
+        model_name = '{}.pt'.format(name)
+    else:
+        model_name = name
+    model_path = args.save_path + model_name
     model.to(device)
 
     # DEfining criterion
@@ -36,7 +41,8 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
         metrics = None
 
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False)
+    if mode == 'normal':
+        es = EarlyStopping(patience=args.patience, verbose=False)
 
     with timeit(logger=logger, task="training-process"):
         # THE ENGINE LOOP
@@ -59,12 +65,14 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
             history['val_history_acc'].append(va_acc.item())
             history['test_history_loss'].append(te_loss)
             history['test_history_acc'].append(te_acc.item())
-            es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
-            # if es.early_stop:
-            #     break
+            if mode == 'normal':
+                es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=model_path)
+            else:
+                torch.save(model.state_dict(), model_path)
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, te_acc = eval_fn(te_loader, model, criterion, metric=metrics, device=device)
     history['best_test'] = te_acc.item()
-    save_res(name=name, args=args, dct=history)
+    if mode == 'normal':
+        save_res(name=name, args=args, dct=history)
     return model, history

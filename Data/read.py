@@ -95,9 +95,9 @@ def read_data(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
-    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
-    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
+    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0).tolist()
+    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0).tolist()
+    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0).tolist()
     if args.submode == 'density':
         if args.density <= 1.0:
             graph = reduce_desity(g=graph, dens_reduction=args.density)
@@ -427,15 +427,13 @@ def read_data_attack(args, data_name, history):
     tr_mask = torch.zeros(size=num_node)
     va_mask = torch.zeros(size=num_node)
     te_mask = torch.zeros(size=num_node)
-    tr_mask[history['tr_id']] = 1
-    va_mask[history['va_id']] = 1
-    te_mask[history['te_id']] = 1
+    tr_mask[history['tr_id']] += 1
+    va_mask[history['va_id']] += 1
+    te_mask[history['te_id']] += 1
     graph.ndata['train_mask'] = tr_mask
     graph.ndata['val_mask'] = va_mask
     graph.ndata['test_mask'] = te_mask
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
-    if args.submode == 'density':
-        g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 

@@ -1,10 +1,13 @@
+import sys
+import os
 import torch
+import pickle
 import torchmetrics
-from Data.read import *
+from Data.read import read_data_attack, read_data, init_loader
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
-from Utils.utils import *
+from Attacks.utils import timeit, init_history, get_model_name, get_data_name, read_pickel
 from loguru import logger
 from rich import print as rprint
 from Attacks.train_eval import train_attack, eval_attack_step
@@ -23,11 +26,24 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
            f"Src edges device: {train_g.edges()[0].device}, Dst edges device: {train_g.edges()[1].device}")
     tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
                                                   val_g=val_g)
+    
+    """
+        Initialize model and optimizer
+    """
 
+    model_name_init = get_model_name(history=history, mode='target', state='init')
+    model_path_init = args.save_path + model_name_init
     model = init_model(args=args)
+    if os.path.exists(path=model_path_init):
+        model.load_state_dict(torch.load(model_path_init))
+        rprint("Loaded previous model initialization")
+    else:
+        torch.save(model.state_dict(), model_path_init)
+        rprint("Saved model initialization")
+
     optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
-    tar_name = get_name(args=args, current_date=current_time)
-    history['name'] = tar_name
+    
+
     tr_info = (train_g, tr_loader)
     va_info = va_loader
     te_info = (test_g, te_loader)
@@ -37,29 +53,54 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
     else:
         run_mode = run_nodedp
 
-    tar_model, tar_history = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
-                                      optimizer=optimizer, name=tar_name, device=device, history=history)
-    return tar_model, tar_history
+    model_name_trained = get_model_name(history=history, mode='target', state='trained')
+    tar_model, _ = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, 
+                                      model=model, optimizer=optimizer, name=model_name_trained, 
+                                      device=device, history=history, mode='attack')
+    rprint("Finished retraining")
+    return tar_model
 
 
 def run_white_box_train(args, current_time, device):
+
+    """
+        Loading target model
+    """
+
+    history = init_history(args=args)
+    model_name_trained = get_model_name(history=history, mode='target', state='trained')
+    data_name = get_data_name(history=history)
+    
+    model_path_trained = args.save_path + model_name_trained
+    data_path = args.save_path + data_name
+
     with timeit(logger=logger, task='init-target-model'):
-        if args.retrain_tar:
-            history = init_history_attack()
-            train_g, val_g, test_g, graph = read_data(args=args, data_name=args.dataset, history=history)
-            tar_model, tar_history = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g,
-                                             current_time=current_time, history=history, device=device)
-        else:
-            tar_history = read_pickel(args.res_path + f'{args.tar_name}.pkl')
-            train_g, val_g, test_g, graph = read_data_attack(args=args, data_name=args.dataset, history=tar_history)
+
+        if os.path.exists(path=model_path_trained) & os.path.exists(path=data_path):
+            data_dict = read_pickel(file=data_path)
+            train_g, val_g, test_g, graph = read_data_attack(args=args, data_name=args.dataset, history=data_dict)
+            rprint("Loaded data separation")
             tar_model = init_model(args=args)
-            tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
-        # device = torch.device('cpu')
+            tar_model.load_state_dict(torch.load(model_path_trained))
+            rprint("Loaded targeted model")
+
+        else:
+            train_g, val_g, test_g, graph = read_data(args=args, data_name=args.dataset, history=history)
+            data_dict = {}
+            data_dict['tr_id'] = history['tr_id']
+            data_dict['va_id'] = history['va_id']
+            data_dict['te_id'] = history['te_id']
+            with open(data_path, 'wb') as f:
+                pickle.dump(data_dict, f)
+            rprint("Saved data separation")
+
+
+            tar_model, tar_history = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, 
+                                             current_time=current_time, history=history, device=device)
         
     with timeit(logger=logger, task='preparing-attack-data'):
         
         tar_model.to(device)
-        tar_model.zero_grad()
         g = graph.to(device)
         criter = torch.nn.CrossEntropyLoss(reduction='none')
         x_tr, x_va, x_te, y_tr, y_va, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
