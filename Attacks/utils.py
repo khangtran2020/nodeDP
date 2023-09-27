@@ -81,7 +81,7 @@ def get_his_name(args, current_date):
 def init_history(args):
 
     general_keys = ['mode', 'seed']
-    target_model_keys = ['model_type', 'n_layers', 'hid_dim']
+    target_model_keys = ['model_type', 'n_layers', 'hid_dim', 'epochs', 'lr']
     dp_keys = ['ns', 'clip', 'clip_node', 'trim_rule', 'sampling_rate']
     attack_model_keys = ['attack_mode', 'attack_model_type', 'attack_n_layers', 'attack_hid_dim']
 
