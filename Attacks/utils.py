@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from rich import print as rprint
 from rich.pretty import pretty_repr
 from hashlib import md5
+from copy import deepcopy
 
 @contextmanager
 def timeit(logger, task):
@@ -31,15 +32,22 @@ def get_model_name(history, mode='target', state='trained'):
     model_name = ''
     for k in history['general_keys']:
         model_name += f"{k}_{history['general'][k]}_"
+
+    tar_model_key = deepcopy(history['target_model_keys'])
+    
+    if state == 'init':
+        tar_model_key.remove('epochs')
+        tar_model_key.remove('lr')
+
     if mode == 'target':
         if 'dp' in history.keys():
-            for k in history['target_model_keys']:
+            for k in tar_model_key:
                 model_name += f"{k}_{history['target_model'][k]}_"
             for k in history['dp_keys']:
                 model_name += f"{k}_{history['target_model'][k]}_"
         else:
             model_name = ''
-            for k in history['target_model_keys']:
+            for k in tar_model_key:
                 model_name += f"{k}_{history['target_model'][k]}_"
     else:
         for k in history['attack_model_keys']:
