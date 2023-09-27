@@ -175,7 +175,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
         model.zero_grad()
 
     with torch.no_grad():
-        pred_full = model.full(g=shadow_graph, x=grashadow_graphph.ndata['feat']).detach()
+        pred_full = model.full(g=shadow_graph, x=shadow_graph.ndata['feat']).detach()
         entr = -1*pred_full*torch.log(pred_full+1e-12)
         entr = entr.sum(dim=-1)
         id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
