@@ -390,7 +390,15 @@ def read_data_attack(args, data_name, history):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
-        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        tr_mask = torch.zeros(size=num_node)
+        va_mask = torch.zeros(size=num_node)
+        te_mask = torch.zeros(size=num_node)
+        tr_mask[history['tr_id']] += 1
+        va_mask[history['va_id']] += 1
+        te_mask[history['te_id']] += 1
+        graph.ndata['train_mask'] = tr_mask
+        graph.ndata['val_mask'] = va_mask
+        graph.ndata['test_mask'] = te_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=10000)
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
@@ -405,6 +413,15 @@ def read_data_attack(args, data_name, history):
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
+        tr_mask = torch.zeros(size=num_node)
+        va_mask = torch.zeros(size=num_node)
+        te_mask = torch.zeros(size=num_node)
+        tr_mask[history['tr_id']] += 1
+        va_mask[history['va_id']] += 1
+        te_mask[history['te_id']] += 1
+        graph.ndata['train_mask'] = tr_mask
+        graph.ndata['val_mask'] = va_mask
+        graph.ndata['test_mask'] = te_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=1000)
         # sys.exit()
     elif data_name == 'amazon':
@@ -419,20 +436,20 @@ def read_data_attack(args, data_name, history):
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
+        tr_mask = torch.zeros(size=num_node)
+        va_mask = torch.zeros(size=num_node)
+        te_mask = torch.zeros(size=num_node)
+        tr_mask[history['tr_id']] += 1
+        va_mask[history['va_id']] += 1
+        te_mask[history['te_id']] += 1
+        graph.ndata['train_mask'] = tr_mask
+        graph.ndata['val_mask'] = va_mask
+        graph.ndata['test_mask'] = te_mask
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
     num_node = graph.ndata['feat'].size(dim=0)
-    tr_mask = torch.zeros(size=num_node)
-    va_mask = torch.zeros(size=num_node)
-    te_mask = torch.zeros(size=num_node)
-    tr_mask[history['tr_id']] += 1
-    va_mask[history['va_id']] += 1
-    te_mask[history['te_id']] += 1
-    graph.ndata['train_mask'] = tr_mask
-    graph.ndata['val_mask'] = va_mask
-    graph.ndata['test_mask'] = te_mask
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
