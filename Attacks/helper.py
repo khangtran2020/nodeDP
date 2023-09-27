@@ -133,7 +133,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
     rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
 
-    sys.exit()
+    # sys.exit()
     shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
 
     graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
