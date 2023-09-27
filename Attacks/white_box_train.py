@@ -137,4 +137,8 @@ def run_white_box_train(args, current_time, device):
     te_loss, te_auc, top_k = eval_attack_step(model=attack_model, device=device, loader=te_loader,
                                        metrics=torchmetrics.classification.BinaryAUROC().to(device),
                                        criterion=torch.nn.BCELoss(), rate=args.topk_rate)
+    te_loss, te_precision, top_k_pre = eval_attack_step(model=attack_model, device=device, loader=te_loader,
+                                       metrics=torchmetrics.classification.BinaryPrecision().to(device),
+                                       criterion=torch.nn.BCELoss(), rate=args.topk_rate)
     rprint(f"Attack AUC: {te_auc}, top k AUC: {top_k}")
+    rprint(f"Attack Precision: {te_precision}, top k Precision: {top_k_pre}")
