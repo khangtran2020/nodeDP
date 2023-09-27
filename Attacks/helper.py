@@ -117,8 +117,8 @@ def generate_attack_samples_white_box(graph, model, criter, device):
         tr_conf = entr[tr_idx]
         te_conf = entr[te_idx]
 
-        rprint(f"Top entropy train has size {tr_conf.size()}, test has size {tr_conf.size()}")
-        rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {tr_conf.mean()}")
+        rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
+        rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
 
         num_tr = tr_idx.size(dim=0)
         num_te = te_idx.size(dim=0)
