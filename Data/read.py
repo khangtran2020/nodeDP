@@ -390,7 +390,7 @@ def read_data_attack(args, data_name, history):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
-        num_node = graph.ndata['feat'].size(dim=0)
+        num_node = graph.nodes().size(dim=0)
         tr_mask = torch.zeros(size=num_node)
         va_mask = torch.zeros(size=num_node)
         te_mask = torch.zeros(size=num_node)
@@ -412,7 +412,7 @@ def read_data_attack(args, data_name, history):
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
-        num_node = graph.ndata['feat'].size(dim=0)
+        num_node = graph.nodes().size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
         tr_mask = torch.zeros(size=num_node)
@@ -436,7 +436,7 @@ def read_data_attack(args, data_name, history):
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
-        num_node = graph.ndata['feat'].size(dim=0)
+        num_node = graph.nodes().size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
         tr_mask = torch.zeros(size=num_node)
