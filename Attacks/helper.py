@@ -1,3 +1,4 @@
+import sys
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -116,18 +117,13 @@ def generate_attack_samples_white_box(graph, model, criter, device):
         tr_conf = entr[tr_idx]
         te_conf = entr[te_idx]
 
-        top_conf_tr, tr_idx_conf = torch.topk(tr_conf, num_half, largest=False)
-        top_conf_te, te_idx_conf = torch.topk(te_conf, num_half, largest=False)
-
-        rprint(f"Top entropy train has size {top_conf_tr.size()}, test has size {top_conf_te.size()}")
-        rprint(f"Mean entropy train {top_conf_tr.mean()}, mean entropy test {top_conf_te.mean()}")
-
-        tr_idx = tr_idx[tr_idx_conf]
-        te_idx = te_idx[te_idx_conf]
+        rprint(f"Top entropy train has size {tr_conf.size()}, test has size {tr_conf.size()}")
+        rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {tr_conf.mean()}")
 
         num_tr = tr_idx.size(dim=0)
         num_te = te_idx.size(dim=0)
     
+    sys.exit()
     perm = torch.randperm(num_tr, device=device)
     tr_idx = tr_idx[perm]
 
