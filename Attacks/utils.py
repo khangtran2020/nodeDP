@@ -88,7 +88,7 @@ def init_history(args):
     general_setting = dict(zip(general_keys,[None for i in range(len(general_keys))]))
     target_model_setting = dict(zip(target_model_keys,[None for i in range(len(target_model_keys))]))
     dp_setting = dict(zip(dp_keys, [None for i in range(len(dp_keys))]))
-    attack_model_setting = dict(zip(attack_model_keys, [None for i in range(attack_model_keys)]))
+    attack_model_setting = dict(zip(attack_model_keys, [None for i in range(len(attack_model_keys))]))
 
     for key in general_keys: general_setting[key] = getattr(args, key)
     for key in target_model_keys: target_model_setting[key] = getattr(args, key)
