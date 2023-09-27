@@ -105,18 +105,32 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     num_te = graph.ndata['test_mask'].sum().item()
     num_half = min(num_tr, num_te)
 
+    tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+
     with torch.no_grad():
         pred_full = model.full(g=graph, x=graph.ndata['feat']).detach()
         entr = -1*pred_full*torch.log(pred_full)
         entr = entr.sum(dim=-1)
+        tr_conf = entr[tr_idx]
+        te_conf = entr[te_idx]
 
+        top_conf_tr, tr_idx_conf = torch.topk(tr_conf, num_half, largest=False)
+        top_conf_te, te_idx_conf = torch.topk(te_conf, num_half, largest=False)
 
-    tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
-    perm = torch.randperm(num_tr, device=device)[:num_half]
+        rprint(f"Top entropy train has size {top_conf_tr.size()}, test has size {top_conf_te.size()}")
+        rprint(f"Mean entropy train {top_conf_tr.mean()}, mean entropy test {top_conf_te.mean()}")
+
+        tr_idx = tr_idx[tr_idx_conf]
+        te_idx = te_idx[te_idx_conf]
+
+        num_tr = tr_idx.size(dim=0)
+        num_te = te_idx.size(dim=0)
+    
+    perm = torch.randperm(num_tr, device=device)
     tr_idx = tr_idx[perm]
 
-    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-    perm = torch.randperm(num_te, device=device)[:num_half]
+    perm = torch.randperm(num_te, device=device)
     te_idx = te_idx[perm]
 
     shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
