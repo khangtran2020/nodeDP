@@ -7,7 +7,7 @@ import pickle
 from contextlib import contextmanager
 from rich import print as rprint
 from rich.pretty import pretty_repr
-from hashlib import md5
+from hashlib import sha256
 from copy import deepcopy
 
 @contextmanager
@@ -53,7 +53,7 @@ def get_model_name(history, mode='target', state='trained'):
         for k in history['attack_model_keys']:
             model_name += f"{k}_{history['attack_model'][k]}_"
     model_name = model_name + state
-    hashed = md5(model_name.encode()).hexdigest()
+    hashed = sha256(model_name.encode()).hexdigest()
     return f'{hashed}.pt'
 
 
@@ -61,7 +61,7 @@ def get_data_name(history):
     data_name = ''
     for k in history['general_keys']:
         data_name += f"{k}_{history['general'][k]}_"
-    hashed = md5(data_name.encode()).hexdigest()
+    hashed = sha256(data_name.encode()).hexdigest()
     return f'{hashed}.pkl'
 
 def get_his_name(args, current_date):
