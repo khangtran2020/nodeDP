@@ -105,6 +105,12 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     num_te = graph.ndata['test_mask'].sum().item()
     num_half = min(num_tr, num_te)
 
+    with torch.no_grad():
+        pred_full = model.full(g=graph, x=graph.ndata['feat']).detach()
+        entr = -1*pred_full*torch.log(pred_full)
+        entr = entr.sum(dim=-1)
+
+
     tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
     perm = torch.randperm(num_tr, device=device)[:num_half]
     tr_idx = tr_idx[perm]
@@ -160,7 +166,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
             feature = torch.cat((feature, feat), dim=0)
         model.zero_grad()
 
-
+    rprint(f"Feature as follow: {feature}")
     shadow_graph.ndata['shadow_label'] = ((shadow_graph.ndata['shadow_label']+1)/2).int()
     rprint(f"Shadow label: {shadow_graph.ndata['shadow_label'].unique(return_counts=True)}")
     # shadow_graph.ndata['shadow_label']

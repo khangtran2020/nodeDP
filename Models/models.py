@@ -118,7 +118,7 @@ class NN(nn.Module):
         else:
             self.out_layer = nn.Linear(in_features=input_dim, out_features=output_dim)
         
-        self.activation = torch.nn.SELU()
+        self.activation = torch.nn.ReLU()
         self.last_activation = torch.nn.Softmax(dim=1) if output_dim > 1 else torch.nn.Sigmoid()
         self.dropout = nn.Dropout(dropout) if dropout is not None else None
 
