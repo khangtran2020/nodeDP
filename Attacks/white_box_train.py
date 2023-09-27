@@ -136,5 +136,5 @@ def run_white_box_train(args, current_time, device):
     attack_model.load_state_dict(torch.load(args.save_path + attack_model_name))
     te_loss, te_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
                                        metrics=torchmetrics.classification.BinaryAUROC().to(device),
-                                       criterion=torch.nn.BCELoss())
+                                       criterion=torch.nn.BCELoss(), rate=args.topk_rate)
     rprint(f"Attack AUC: {te_auc}")
