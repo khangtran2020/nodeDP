@@ -170,7 +170,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     rprint(f"Shadow label: {shadow_graph.ndata['shadow_label'].unique(return_counts=True)}")
     # shadow_graph.ndata['shadow_label']
     id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
-    id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=0)
+    id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
 
     x_pos_mean = feature[id_pos].mean(dim=0)
     x_neg_mean = feature[id_neg].mean(dim=0)
