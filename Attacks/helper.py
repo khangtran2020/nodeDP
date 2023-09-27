@@ -164,15 +164,20 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     y_label = shadow_graph.ndata['label']
     loss = criter(y_pred, y_label)
 
-    feature = torch.Tensor([]).to(device)        
-    for i, los in enumerate(loss):
-        grad = torch.Tensor([]).to(device)
-        los.backward(retain_graph=True)
-        for name, p in model.named_parameters():
-            if p.grad is not None:
-                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feature = torch.cat((feature, torch.unsqueeze(grad, dim = 0)), dim=0)
-        model.zero_grad()
+    # feature = torch.Tensor([]).to(device)        
+    # for i, los in enumerate(loss):
+    #     grad = torch.Tensor([]).to(device)
+    #     los.backward(retain_graph=True)
+    #     for name, p in model.named_parameters():
+    #         if p.grad is not None:
+    #             grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+    #     feature = torch.cat((feature, torch.unsqueeze(grad, dim = 0)), dim=0)
+    #     model.zero_grad()
+
+# F.one_hot(, num_classes=5)
+    # feature = torch.cat((feature, y_pred.detach()), dim=-1)
+    feature = torch.cat((y_pred.detach(), F.one_hot(y_label.detach())), dim=-1)
+    
 
     with torch.no_grad():
         pred_full = model.full(g=shadow_graph, x=shadow_graph.ndata['feat']).detach()
@@ -187,10 +192,6 @@ def generate_attack_samples_white_box(graph, model, criter, device):
         rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
         rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
 
-
-# F.one_hot(, num_classes=5)
-    feature = torch.cat((feature, y_pred.detach()), dim=-1)
-    feature = torch.cat((feature, F.one_hot(y_label.detach())), dim=-1)
 
     rprint(f"Shadow label: {shadow_graph.ndata['shadow_label'].unique(return_counts=True)}")
     # shadow_graph.ndata['shadow_label']
