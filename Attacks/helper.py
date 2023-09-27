@@ -163,23 +163,18 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     y_label = shadow_graph.ndata['label']
     loss = criter(y_pred, y_label)
 
-    feature = None        
+    feature = torch.Tensor([]).to(device)        
     for i, los in enumerate(loss):
-        pred = y_pred[i].detach().clone()
-        label = y_label[i].detach().clone()
         grad = torch.Tensor([]).to(device)
         los.backward(retain_graph=True)
         for name, p in model.named_parameters():
             if p.grad is not None:
                 grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
-        feat = torch.unsqueeze(feat, dim = 0)
-        if i == 0:
-            feature = feat
-        else:
-            feature = torch.cat((feature, feat), dim=0)
+        feature = torch.cat((feature, torch.unsqueeze(grad, dim = 0)), dim=0)
         model.zero_grad()
-
+# F.one_hot(, num_classes=5)
+    feature = torch.cat((feature, y_pred.detach()), dim=-1)
+    feature = torch.cat((feature, F.one_hot(y_label.detach())), dim=-1)
 
     rprint(f"Shadow label: {shadow_graph.ndata['shadow_label'].unique(return_counts=True)}")
     # shadow_graph.ndata['shadow_label']
