@@ -173,6 +173,21 @@ def generate_attack_samples_white_box(graph, model, criter, device):
                 grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
         feature = torch.cat((feature, torch.unsqueeze(grad, dim = 0)), dim=0)
         model.zero_grad()
+
+    with torch.no_grad():
+        pred_full = model.full(g=shadow_graph, x=grashadow_graphph.ndata['feat']).detach()
+        entr = -1*pred_full*torch.log(pred_full+1e-12)
+        entr = entr.sum(dim=-1)
+        id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
+        id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
+
+        tr_conf = entr[id_pos]
+        te_conf = entr[id_neg]
+
+        rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
+        rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
+
+
 # F.one_hot(, num_classes=5)
     feature = torch.cat((feature, y_pred.detach()), dim=-1)
     feature = torch.cat((feature, F.one_hot(y_label.detach())), dim=-1)
