@@ -1,3 +1,4 @@
+import gc
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -105,8 +106,10 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     num_te = graph.ndata['test_mask'].sum().item()
     num_half = min(num_tr, num_te)
 
-    y_pred = model.full(g=graph, x=graph.ndata['feat'])
-    entr = get_entropy(pred=y_pred)
+    with torch.no_grad():
+        y_pred = model.full(g=graph, x=graph.ndata['feat'])
+        entr = get_entropy(pred=y_pred)
+
     _, indx = torch.topk(entr, num_half, largest=False)
 
     tr_idx = get_index_by_value(a=graph.ndata['train_mask'][indx], val=1)
@@ -149,6 +152,9 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     shadow_graph.ndata['train_shadow_mask'][id_tr] += 1
     shadow_graph.ndata['val_shadow_mask'][id_va] += 1
     shadow_graph.ndata['test_shadow_mask'][id_te] += 1
+
+    del y_pred
+    gc.collect()
 
     y_pred = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
     y_label = shadow_graph.ndata['label']
