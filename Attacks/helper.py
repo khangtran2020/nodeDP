@@ -137,7 +137,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     graph.ndata['shadow_label'][te_idx] += -1
 
     shadow_graph = graph.subgraph(shadow_idx)
-
+    rprint(f'Shadow graph has: {shadow_graph.nodes().size()} nodes')
 
     sh_node_id = shadow_graph.nodes().tolist()
     sh_node_label = shadow_graph.ndata['shadow_label'].tolist()
