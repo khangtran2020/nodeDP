@@ -166,18 +166,17 @@ def generate_attack_samples_white_box(graph, model, criter, device):
             feature = torch.cat((feature, feat), dim=0)
         model.zero_grad()
 
-    rprint(f"Feature as follow: {feature}")
-    shadow_graph.ndata['shadow_label'] = ((shadow_graph.ndata['shadow_label']+1)/2).int()
+
     rprint(f"Shadow label: {shadow_graph.ndata['shadow_label'].unique(return_counts=True)}")
     # shadow_graph.ndata['shadow_label']
     id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
-    id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
+    id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=0)
 
     x_pos_mean = feature[id_pos].mean(dim=0)
     x_neg_mean = feature[id_neg].mean(dim=0)
 
     rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
-
+    shadow_graph.ndata['shadow_label'] = ((shadow_graph.ndata['shadow_label']+1)/2).int()
     x_tr, y_tr = feature[id_tr], shadow_graph.ndata['shadow_label'][id_tr]
     x_va, y_va = feature[id_va], shadow_graph.ndata['shadow_label'][id_va]
     x_te, y_te = feature[id_te], shadow_graph.ndata['shadow_label'][id_te]
