@@ -95,8 +95,8 @@ def run_white_box_train(args, current_time, device):
             rprint("Saved data separation")
 
 
-            tar_model, tar_history = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, 
-                                             current_time=current_time, history=history, device=device)
+            tar_model = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g,
+                                current_time=current_time, history=history, device=device)
         
     with timeit(logger=logger, task='preparing-attack-data'):
         
