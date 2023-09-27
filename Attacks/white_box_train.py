@@ -125,7 +125,7 @@ def run_white_box_train(args, current_time, device):
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
                                                 pin_memory=False, drop_last=False)
         
-        attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
+        attack_model = NN(input_dim=new_dim, hidden_dim=16, output_dim=1, n_layer=2)
         attack_model_name = get_model_name(history=history, mode='attack', state='trained')
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 
