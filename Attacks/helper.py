@@ -105,13 +105,24 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     num_te = graph.ndata['test_mask'].sum().item()
     num_half = min(num_tr, num_te)
 
-    tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
-    perm = torch.randperm(num_tr, device=device)[:num_half]
+    y_pred = model.full(g=graph, x=graph.ndata['feat'])
+    entr = get_entropy(pred=y_pred)
+    _, indx = torch.topk(entr, num_half, largest=False)
+
+    tr_idx = get_index_by_value(a=graph.ndata['train_mask'][indx], val=1)
+    perm = torch.randperm(tr_idx.size(dim=0), device=device)
     tr_idx = tr_idx[perm]
 
-    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-    perm = torch.randperm(num_te, device=device)[:num_half]
+
+    _, indx = torch.topk(entr, num_half, largest=True)
+
+
+    te_idx = get_index_by_value(a=graph.ndata['test_mask'][indx], val=1)
+    perm = torch.randperm(te_idx.size(dim=0), device=device)
     te_idx = te_idx[perm]
+
+    rprint(f'Train index has: {tr_idx.size(dim=0)} nodes, Test index has: {te_idx.size(dim=0)} nodes')
+
 
     shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
 
@@ -123,7 +134,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     graph.ndata['shadow_label'][te_idx] += -1
 
     shadow_graph = graph.subgraph(shadow_idx)
-    rprint(f'Shadow graph has: {shadow_graph.nodes().size(dim=0)} nodes, label counts: {shadow_graph.ndata["shadow_label"].unique(return_counts=True)}')
+
 
     sh_node_id = shadow_graph.nodes().tolist()
     sh_node_label = shadow_graph.ndata['shadow_label'].tolist()
@@ -201,3 +212,10 @@ def generate_attack_samples_white_box_grad(graph, device):
     y_neg = torch.zeros(num_half)
 
     return idx_pos, idx_neg, y_pos, y_neg
+
+
+
+def get_entropy(pred):
+    log_pred = torch.log2(pred)
+    temp = -1*pred*log_pred
+    return temp.sum(dim=-1)
