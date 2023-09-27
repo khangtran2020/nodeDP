@@ -159,6 +159,8 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     y_pred = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
     y_label = shadow_graph.ndata['label']
     loss = criter(y_pred, y_label)
+    
+    print(f"Average loss: {loss.mean(dim=0)}")
 
     feature = torch.Tensor([]).to(device)
     for i, los in enumerate(loss):
