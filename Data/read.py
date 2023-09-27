@@ -391,9 +391,9 @@ def read_data_attack(args, data_name, history):
         data = dgl.data.RedditDataset()
         graph = data[0]
         num_node = graph.nodes().size(dim=0)
-        tr_mask = torch.zeros(size=num_node)
-        va_mask = torch.zeros(size=num_node)
-        te_mask = torch.zeros(size=num_node)
+        tr_mask = torch.zeros(num_node)
+        va_mask = torch.zeros(num_node)
+        te_mask = torch.zeros(num_node)
         tr_mask[history['tr_id']] += 1
         va_mask[history['va_id']] += 1
         te_mask[history['te_id']] += 1
@@ -415,9 +415,9 @@ def read_data_attack(args, data_name, history):
         num_node = graph.nodes().size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
-        tr_mask = torch.zeros(size=num_node)
-        va_mask = torch.zeros(size=num_node)
-        te_mask = torch.zeros(size=num_node)
+        tr_mask = torch.zeros(num_node)
+        va_mask = torch.zeros(num_node)
+        te_mask = torch.zeros(num_node)
         tr_mask[history['tr_id']] += 1
         va_mask[history['va_id']] += 1
         te_mask[history['te_id']] += 1
@@ -439,9 +439,9 @@ def read_data_attack(args, data_name, history):
         num_node = graph.nodes().size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
-        tr_mask = torch.zeros(size=num_node)
-        va_mask = torch.zeros(size=num_node)
-        te_mask = torch.zeros(size=num_node)
+        tr_mask = torch.zeros(num_node)
+        va_mask = torch.zeros(num_node)
+        te_mask = torch.zeros(num_node)
         tr_mask[history['tr_id']] += 1
         va_mask[history['va_id']] += 1
         te_mask[history['te_id']] += 1
