@@ -90,6 +90,7 @@ def run(args, current_date, device):
     with timeit(logger=logger, task='preparing-shadow-model'):
         
         shadow_nohop_graph = generate_nohop_graph(graph=shadow_graph)
+
         shadow_graph = shadow_graph.to(device)
         shadow_nohop_graph = shadow_nohop_graph.to(device)
         tar_model.to(device)
@@ -128,13 +129,19 @@ def run(args, current_date, device):
             shadow_model_nohop.to(device)
     
             shadow_conf = shadow_model_hops.full(shadow_graph, shadow_graph.ndata['feat'])
+            shadow_conf_nohop = shadow_model_nohop.full(shadow_nohop_graph, shadow_nohop_graph.ndata['feat'])
+
             shadow_graph.ndata['shadow_conf'] = shadow_conf
+            shadow_nohop_graph.ndata['shadow_conf'] = shadow_conf_nohop
 
             remain_graph = remain_graph.to(device)
-            remain_conf = tar_model.full(remain_graph, remain_graph.ndata['feat'])
+            remain_graph_nohop = generate_nohop_graph(graph=remain_graph)
 
-            x, y = generate_attack_samples(graph=shadow_graph, conf=shadow_conf, mode='shadow', num_class=args.num_class, device=device)
-            x_test, y_test = generate_attack_samples(graph=remain_graph, conf=remain_conf, num_class=args.num_class, mode='target', device=device)
+            remain_conf = tar_model.full(remain_graph, remain_graph.ndata['feat'])
+            remain_conf_nohop = tar_model.full(remain_graph_nohop, remain_graph_nohop.ndata['feat'])
+
+            x, y = generate_attack_samples(graph=shadow_nohop_graph, conf=shadow_conf_nohop, mode='shadow', num_class=args.num_class, device=device)
+            x_test, y_test = generate_attack_samples(graph=remain_graph_nohop, conf=remain_conf_nohop, num_class=args.num_class, mode='target', device=device)
 
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
