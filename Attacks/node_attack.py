@@ -53,7 +53,7 @@ def run(args, current_date, device):
 
     remain_graph, shadow_graph = read_data(args=args, history=history, hist_exist=hist_exist)
     if hist_exist == False:
-        save_dict(path=history_path, dict=history)
+        save_dict(path=history_path, dct=history)
 
     tar_model = init_model(args=args)
 
