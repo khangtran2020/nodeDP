@@ -55,13 +55,7 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     # shadow separation
     org_node = graph.nodes()
     num_node = org_node.size(dim=0)
-    num_node_sh = int(num_node / 2)
-    num_pt_per_class = int(num_node_sh / num_label)
-
-    rprint(f"The current setting: Org node {num_node}, Shadow node {num_node_sh}, Num node per class {num_pt_per_class}")
-
-    perm = torch.randperm(num_node)[:num_node_sh]
-    sh_nodes = org_node[perm]
+    sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
 
     graph.ndata['shadow_graph'] = torch.zeros(num_node)
     graph.ndata['remain_graph'] = torch.ones(num_node)
@@ -178,7 +172,7 @@ def generate_khop_neighbor(graph, nodes, num_hops, num_neigh_per_hop):
 
     return temp
         
-def sampling_shadow_nodes_by_label(graph, num_node_per_class):
+def sampling_shadow_nodes_by_label(graph):
 
     y = graph.ndata['label']
     num_classes = y.max().item() + 1
@@ -187,9 +181,9 @@ def sampling_shadow_nodes_by_label(graph, num_node_per_class):
     for c in range(num_classes):
         idx = (y == c).nonzero(as_tuple=False).view(-1)
         num_nodes = idx.size(0)
-        if num_nodes >= num_node_per_class:
-            idx = idx[torch.randperm(idx.size(0))][:num_node_per_class]
-            shadow_mask[idx[:num_node_per_class]] = 1
+        num_sh = int(num_nodes/2)
+        idx = idx[torch.randperm(idx.size(0))][:num_sh]
+        shadow_mask[idx[:num_sh]] = 1
 
     rprint(f"Size of the shadow mask: {shadow_mask.sum()}")
     graph.ndata['shadow_mask'] = shadow_mask
@@ -320,10 +314,10 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        # top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
 
         labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
-        samples = torch.cat([top_k_conf, labels], dim=1).to(device)
+        samples = torch.cat([conf, labels], dim=1).to(device)
 
         perm = torch.randperm(num_train, device=device)[:num_half]
         idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
@@ -357,10 +351,10 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        # top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
 
         labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
-        samples = torch.cat([top_k_conf, labels], dim=1).to(device)
+        samples = torch.cat([conf, labels], dim=1).to(device)
 
         # samples = torch.cat((tr_samples, te_samples), dim=0).to(device)
 
