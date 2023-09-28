@@ -68,6 +68,8 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     num_node_sh = int(num_node / (2 * num_neigh_per_node))
     num_pt_per_class = int(num_node_sh / num_label)
 
+    rprint(f"The current setting: Org node {num_node}, Shadow node {num_node_sh}, Num node per class {num_pt_per_class}")
+
     sh_nodes = sampling_shadow_nodes_by_label(graph=graph, num_node_per_class=num_pt_per_class)
     sh_khop_subg = generate_khop_neighbor(graph=graph, nodes=sh_nodes, num_hops=n_layers, num_neigh_per_hop=n_neighbor)
 
