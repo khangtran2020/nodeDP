@@ -114,6 +114,7 @@ def run(args, current_date, device):
             shadow_conf = shadow_model.full(shadow_graph, shadow_graph.ndata['feat'])
             shadow_graph.ndata['shadow_conf'] = shadow_conf
 
+            remain_graph = remain_graph.to(device)
             remain_conf = tar_model.full(remain_graph, remain_graph.ndata['feat'])
 
             x, y = generate_attack_samples(graph=shadow_graph, conf=shadow_conf, mode='shadow', device=device)
