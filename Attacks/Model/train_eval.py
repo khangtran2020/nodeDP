@@ -166,11 +166,11 @@ def eval_attack_step(model, device, loader, metrics, criterion, rate):
     return val_loss/num_data, performance, performance_topk
 
 def get_entropy(pred):
-    log_pred = torch.log2(pred)
+    log_pred = torch.log2(pred+1e-12)
     temp = -1*pred*log_pred
     return temp.sum(dim=-1)
 
 def get_binary_entropy(pred):
-    log_pred = torch.log2(pred)
+    log_pred = torch.log2(pred+1e-12)
     temp = -1*pred*log_pred
     return temp
