@@ -64,7 +64,7 @@ def run(args, current_date, device):
 
         rprint(f"History is exist: {hist_exist}, are we retraining {args.retrain_tar}")
 
-        if args.retrain_tar == 0 & hist_exist == True:
+        if (args.retrain_tar == 0) & (hist_exist == True):
             tar_model_trained_path = args.save_path + name['tar_model_trained']
             if os.path.exists(tar_model_trained_path):
                 tar_model.load_state_dict(torch.load(tar_model_trained_path))
@@ -107,7 +107,7 @@ def run(args, current_date, device):
     with timeit(logger=logger, task='preparing-attack-data'): 
 
         with torch.no_grad():
-
+            
             shadow_model.load_state_dict(torch.load(args.save_path + f"{name['name']}_shadow.pt"))
             shadow_model.to(device)
     
