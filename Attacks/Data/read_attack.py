@@ -323,7 +323,7 @@ def generate_attack_samples(graph, conf, mode, device):
     te_mask = 'test_mask' if mode == 'target' else 'sha_test_mask'
 
     if mode != 'target':
-        num_classes = graph.size(1)
+        num_classes = graph.ndata['label'].size(1)
         rprint(f"Existing label: {graph.ndata['label'].unique()}, # class: {num_classes}")
         num_train = graph.ndata[tr_mask].sum()
         num_test = graph.ndata[te_mask].sum()
