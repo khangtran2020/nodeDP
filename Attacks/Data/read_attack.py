@@ -209,6 +209,7 @@ def sampling_shadow_nodes_by_label(graph, num_node_per_class):
             idx = idx[torch.randperm(idx.size(0))][:num_node_per_class]
             shadow_mask[idx[:num_node_per_class]] = 1
 
+    rprint(f"Size of the shadow mask: {shadow_mask.sum()}")
     graph.ndata['shadow_mask'] = shadow_mask
     idx = get_index_by_value(a = shadow_mask, val=1)
     shadow_nodes = graph.nodes()[idx]
