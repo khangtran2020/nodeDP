@@ -139,8 +139,8 @@ def run(args, current_date, device):
             remain_conf = tar_model.full(remain_graph, remain_graph.ndata['feat'])
             remain_conf_nohop = tar_model.full(remain_graph_nohop, remain_graph_nohop.ndata['feat'])
 
-            x, y = generate_attack_samples(graph=shadow_nohop_graph, conf=shadow_conf_nohop, mode='shadow', num_class=args.num_class, device=device)
-            x_test, y_test = generate_attack_samples(graph=remain_graph_nohop, conf=remain_conf_nohop, num_class=args.num_class, mode='target', device=device)
+            x, y = generate_attack_samples(graph=shadow_nohop_graph, conf=shadow_conf, mode='shadow', num_class=args.num_class, device=device)
+            x_test, y_test = generate_attack_samples(graph=remain_graph_nohop, conf=remain_conf, num_class=args.num_class, mode='target', device=device)
 
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
