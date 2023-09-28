@@ -106,12 +106,12 @@ def run(args, current_date, device):
         shadow_model_hops = init_model(args=args)
         shadow_model_nohop = init_model(args=args)
 
-        shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model, lr=args.lr)
+        shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model_hops, lr=args.lr)
         shadow_nohop_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model_nohop, lr=args.lr)
 
         tr_sh_loader, va_sh_loader = init_shadow_loader(args=args, device=device, graph=shadow_graph)
 
-        shadow_model = train_shadow(args=args, tr_loader=tr_sh_loader, va_loader=va_sh_loader, shadow_model=shadow_model,
+        shadow_model_hops = train_shadow(args=args, tr_loader=tr_sh_loader, va_loader=va_sh_loader, shadow_model=shadow_model_hops,
                                     epochs=args.sha_epochs, optimizer=shadow_optimizer, name=f"{name['name']}_hops", device=device, mode='hops')
         
         shadow_model_nohop = train_shadow(args=args, tr_loader=tr_sh_loader, va_loader=va_sh_loader, shadow_model=shadow_model_nohop,
@@ -121,13 +121,13 @@ def run(args, current_date, device):
 
         with torch.no_grad():
             
-            shadow_model.load_state_dict(torch.load(args.save_path + f"{name['name']}_hops_shadow.pt"))
+            shadow_model_hops.load_state_dict(torch.load(args.save_path + f"{name['name']}_hops_shadow.pt"))
             shadow_model_nohop.load_state_dict(torch.load(args.save_path + f"{name['name']}_nohops_shadow.pt"))
 
-            shadow_model.to(device)
+            shadow_model_hops.to(device)
             shadow_model_nohop.to(device)
     
-            shadow_conf = shadow_model.full(shadow_graph, shadow_graph.ndata['feat'])
+            shadow_conf = shadow_model_hops.full(shadow_graph, shadow_graph.ndata['feat'])
             shadow_graph.ndata['shadow_conf'] = shadow_conf
 
             remain_graph = remain_graph.to(device)
