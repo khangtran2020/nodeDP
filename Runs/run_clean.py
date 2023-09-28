@@ -22,6 +22,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
         model_name = '{}.pt'.format(name)
     else:
         model_name = name
+
     model_path = args.save_path + model_name
     model.to(device)
 
@@ -65,6 +66,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
             history['val_history_acc'].append(va_acc.item())
             history['test_history_loss'].append(te_loss)
             history['test_history_acc'].append(te_acc.item())
+            
             if mode == 'normal':
                 es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=model_path)
             else:

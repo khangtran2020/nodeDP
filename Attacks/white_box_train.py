@@ -7,7 +7,7 @@ from Data.read import read_data_attack, read_data, init_loader
 from Models.init import init_model, init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
-from Attacks.utils import timeit, init_history, get_model_name, get_data_name, read_pickel
+from Attacks.Utils.utils import timeit, init_history, get_model_name, get_data_name, read_pickel
 from loguru import logger
 from rich import print as rprint
 from Attacks.train_eval import train_attack, eval_attack_step

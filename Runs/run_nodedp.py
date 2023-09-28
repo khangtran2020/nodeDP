@@ -24,6 +24,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
     else:
         model_name = name
     model_path = args.save_path + model_name
+    
     model.to(device)
     # DEfining criterion
 
