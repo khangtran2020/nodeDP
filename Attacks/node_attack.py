@@ -90,7 +90,7 @@ def run(args, current_date, device):
     with timeit(logger=logger, task='preparing-shadow-model'):
         
         shadow_graph = shadow_graph.to(device)
-
+        tar_model.to(device)
         with torch.no_grad():
             tar_conf = tar_model.full(shadow_graph, shadow_graph.ndata['feat'])
             shadow_graph.ndata['tar_conf'] = tar_conf
