@@ -8,7 +8,7 @@ from Runs.run_nodedp import run as run_nodedp
 from loguru import logger
 from rich import print as rprint
 from Attacks.Data.read_attack import read_data, graph_split, init_shadow_loader, generate_attack_samples, init_loader
-from Attacks.Utils.utils import save_dict, generate_name, read_pickel, init_history, timeit
+from Attacks.Utils.utils import save_dict, generate_name, read_pickel, init_history, timeit, generate_nohop_graph
 from Attacks.Model.train_eval import train_shadow, train_attack, eval_attack_step
 from Attacks.Data.dataset import Data
 from Models.models import NN
@@ -89,27 +89,43 @@ def run(args, current_date, device):
 
     with timeit(logger=logger, task='preparing-shadow-model'):
         
+        shadow_nohop_graph = generate_nohop_graph(graph=shadow_graph)
         shadow_graph = shadow_graph.to(device)
+        shadow_nohop_graph = shadow_nohop_graph.to(device)
         tar_model.to(device)
+
         with torch.no_grad():
             tar_conf = tar_model.full(shadow_graph, shadow_graph.ndata['feat'])
+            tar_conf_nohop = tar_model.full(shadow_nohop_graph, shadow_nohop_graph.ndata['feat'])
+
             shadow_graph.ndata['tar_conf'] = tar_conf
+            shadow_graph.ndata['tar_conf_nohop'] = tar_conf_nohop
 
         rprint(f"Shadow confidence: {tar_conf.size()}")
         
-        shadow_model = init_model(args=args)
+        shadow_model_hops = init_model(args=args)
+        shadow_model_nohop = init_model(args=args)
+
         shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model, lr=args.lr)
+        shadow_nohop_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model_nohop, lr=args.lr)
+
         tr_sh_loader, va_sh_loader = init_shadow_loader(args=args, device=device, graph=shadow_graph)
 
         shadow_model = train_shadow(args=args, tr_loader=tr_sh_loader, va_loader=va_sh_loader, shadow_model=shadow_model,
-                                    epochs=args.sha_epochs, optimizer=shadow_optimizer, name=name['name'], device=device)
+                                    epochs=args.sha_epochs, optimizer=shadow_optimizer, name=f"{name['name']}_hops", device=device, mode='hops')
+        
+        shadow_model_nohop = train_shadow(args=args, tr_loader=tr_sh_loader, va_loader=va_sh_loader, shadow_model=shadow_model_nohop,
+                                    epochs=args.sha_epochs, optimizer=shadow_nohop_optimizer, name=f"{name['name']}_nohops", device=device, mode='nohops')
 
     with timeit(logger=logger, task='preparing-attack-data'): 
 
         with torch.no_grad():
             
-            shadow_model.load_state_dict(torch.load(args.save_path + f"{name['name']}_shadow.pt"))
+            shadow_model.load_state_dict(torch.load(args.save_path + f"{name['name']}_hops_shadow.pt"))
+            shadow_model_nohop.load_state_dict(torch.load(args.save_path + f"{name['name']}_nohops_shadow.pt"))
+
             shadow_model.to(device)
+            shadow_model_nohop.to(device)
     
             shadow_conf = shadow_model.full(shadow_graph, shadow_graph.ndata['feat'])
             shadow_graph.ndata['shadow_conf'] = shadow_conf

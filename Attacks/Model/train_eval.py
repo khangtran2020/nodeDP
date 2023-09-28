@@ -8,7 +8,7 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 
 
-def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, name, device):
+def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, name, device, mode="hops"):
     
     model_name = '{}_shadow.pt'.format(name)
     shadow_model.to(device)
@@ -27,9 +27,9 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
     for epoch in tk0:
 
         tr_loss, tr_acc = update_step(model=shadow_model, device=device, loader=tr_loader, metrics=metrics,
-                                      criterion=criterion, optimizer=optimizer)
+                                      criterion=criterion, optimizer=optimizer, mode=mode)
         va_loss, va_acc = eval_step(model=shadow_model, device=device, loader=va_loader, metrics=metrics,
-                                    criterion=criterion)
+                                    criterion=criterion, mode=mode)
 
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item())
 
@@ -37,7 +37,7 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
 
     return shadow_model
 
-def update_step(model, device, loader, metrics, criterion, optimizer):
+def update_step(model, device, loader, metrics, criterion, optimizer, mode):
     
     model.to(device)
     model.train()
@@ -48,7 +48,10 @@ def update_step(model, device, loader, metrics, criterion, optimizer):
         optimizer.zero_grad()
         input_nodes, output_nodes, mfgs = d
         inputs = mfgs[0].srcdata["feat"]
-        labels = mfgs[-1].dstdata["tar_conf"]
+        if mode == 'hops':
+            labels = mfgs[-1].dstdata["tar_conf"]
+        else:
+            labels = mfgs[-1].dstdata["tar_conf_nohop"]
         predictions = model(mfgs, inputs)
         loss = criterion(predictions, labels)
         loss.backward()
@@ -62,7 +65,7 @@ def update_step(model, device, loader, metrics, criterion, optimizer):
 
     return train_loss / num_data, performance
 
-def eval_step(model, device, loader, metrics, criterion):
+def eval_step(model, device, loader, metrics, criterion, mode):
     model.to(device)
     model.eval()
     val_loss = 0
@@ -71,7 +74,10 @@ def eval_step(model, device, loader, metrics, criterion):
         for bi, d in enumerate(loader):
             input_nodes, output_nodes, mfgs = d
             inputs = mfgs[0].srcdata["feat"]
-            labels = mfgs[-1].dstdata["tar_conf"]
+            if mode == 'hops':
+                labels = mfgs[-1].dstdata["tar_conf"]
+            else:
+                labels = mfgs[-1].dstdata["tar_conf_nohop"]
             predictions = model(mfgs, inputs)
             loss = criterion(predictions, labels)
             metrics.update(predictions.argmax(dim=1), labels.argmax(dim=1))

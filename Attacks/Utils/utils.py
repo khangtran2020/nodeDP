@@ -2,6 +2,7 @@ import random
 import os
 import numpy as np
 import torch
+import dgl
 import time
 import pickle
 from contextlib import contextmanager
@@ -152,3 +153,16 @@ def read_pickel(file):
     with open(file, 'rb') as f:
         res = pickle.load(f)
     return res
+
+def generate_nohop_graph(graph):
+
+    nodes = graph.nodes()
+    num_node = nodes.size(dim=0)
+
+    g = dgl.graph((nodes.tolist(), nodes.tolist()), num_nodes=num_node)
+    for key in graph.ndata.keys():
+        g.ndata[key] = graph.ndata[key].clone()
+
+    return g
+
+
