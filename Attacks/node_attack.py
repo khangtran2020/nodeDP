@@ -70,6 +70,8 @@ def run(args, current_date, device):
             else:
                 rprint(f"Pretrained model does not exist, have to re-train")
                 args.retrain_tar = 1
+        else:
+            args.retrain_tar = 1
     
         if args.retrain_tar == 1:
             tar_model_init_path = args.save_path + name['tar_model_init']
