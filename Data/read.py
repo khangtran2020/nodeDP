@@ -500,6 +500,8 @@ def randomsplit(graph, num_node_per_class, train_ratio=0.7, test_ratio=0.2):
     graph.ndata['sva_mask'] = val_mask
     graph.ndata['ste_mask'] = test_mask
 
+    rprint(f"Num node for shadow train {train_mask.sum()}, valid {val_mask.sum()}, test {test_mask.sum()}")
+
 
 def read_pair_file(args, file_path='Data/wpair/', nodes=None):
     temp = None
