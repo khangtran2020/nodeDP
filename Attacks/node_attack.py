@@ -117,8 +117,8 @@ def run(args, current_date, device):
             remain_graph = remain_graph.to(device)
             remain_conf = tar_model.full(remain_graph, remain_graph.ndata['feat'])
 
-            x, y = generate_attack_samples(graph=shadow_graph, conf=shadow_conf, mode='shadow', device=device)
-            x_test, y_test = generate_attack_samples(graph=remain_graph, conf=remain_conf, mode='target', device=device)
+            x, y = generate_attack_samples(graph=shadow_graph, conf=shadow_conf, mode='shadow', num_class=args.num_class, device=device)
+            x_test, y_test = generate_attack_samples(graph=remain_graph, conf=remain_conf, num_class=args.num_class, mode='target', device=device)
 
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)

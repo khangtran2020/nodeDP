@@ -308,19 +308,19 @@ def init_shadow_loader(args, device, graph):
                                            num_workers=args.num_worker)
     return tr_loader, va_loader
 
-def generate_attack_samples(graph, conf, mode, device):
+def generate_attack_samples(graph, conf, num_class, mode, device):
 
     tr_mask = 'train_mask' if mode == 'target' else 'sha_train_mask'
     te_mask = 'test_mask' if mode == 'target' else 'sha_test_mask'
 
     if mode != 'target':
-        num_classes = graph.ndata['label'].max().item() + 1
-        rprint(f"Existing label: {graph.ndata['label'].unique()}, # class: {num_classes}")
+
+        rprint(f"Existing label: {graph.ndata['label'].unique()}, # class: {num_class}")
         num_train = int(graph.ndata[tr_mask].sum().item())
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        labels = F.one_hot(graph.ndata['label'], num_classes).float().to(device)
+        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
         samples = torch.cat([conf, labels], dim=1).to(device)
 
         perm = torch.randperm(num_train, device=device)[:num_half]
@@ -331,8 +331,8 @@ def generate_attack_samples(graph, conf, mode, device):
         idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
         neg_samples = samples[idx][perm]
 
-        pos_entropy = get_entropy(pred=pos_samples[:, :num_classes]).mean()
-        neg_entropy = get_entropy(pred=neg_samples[:, :num_classes]).mean()
+        pos_entropy = get_entropy(pred=pos_samples[:, :num_class]).mean()
+        neg_entropy = get_entropy(pred=neg_samples[:, :num_class]).mean()
         rprint(f'On graph {mode}, pos_entropy: {pos_entropy:.4f}, neg_entropy: {neg_entropy:.4f}')
 
         x = torch.cat([neg_samples, pos_samples], dim=0)
@@ -348,17 +348,17 @@ def generate_attack_samples(graph, conf, mode, device):
         return x, y
 
     else:
-        num_classes = graph.ndata['label'].max().item() + 1
-        rprint(f"Existing label: {graph.ndata['label'].unique()}, # class: {num_classes}")
+
+        rprint(f"Existing label: {graph.ndata['label'].unique()}, # class: {num_class}")
 
         num_train = int(graph.ndata[tr_mask].sum().item())
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        labels = F.one_hot(graph.ndata['label'], num_classes).float().to(device)
+        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
         tr_samples = torch.cat([conf, labels], dim=1).to(device)
 
-        labels = F.one_hot(graph.ndata['label'], num_classes).float().to(device)
+        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
         te_samples = torch.cat([conf, labels], dim=1).to(device)
 
         # samples = torch.cat((tr_samples, te_samples), dim=0).to(device)
@@ -371,8 +371,8 @@ def generate_attack_samples(graph, conf, mode, device):
         idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
         neg_samples = te_samples[idx][perm]
 
-        pos_entropy = get_entropy(pred=pos_samples[:, :num_classes]).mean()
-        neg_entropy = get_entropy(pred=neg_samples[:, :num_classes]).mean()
+        pos_entropy = get_entropy(pred=pos_samples[:, :num_class]).mean()
+        neg_entropy = get_entropy(pred=neg_samples[:, :num_class]).mean()
 
         rprint(f'On graph {mode}, pos_entropy: {pos_entropy:.4f}, neg_entropy: {neg_entropy:.4f}')
 
