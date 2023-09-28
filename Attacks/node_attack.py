@@ -138,7 +138,7 @@ def run_NMI(args, current_time, device):
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
                                     attack_model=attack_model, epochs=args.attack_epochs, optimizer=attack_optimizer,
-                                    name=tar_history['name'], device=device)
+                                    name=tar_history['name'] + '_attack.pt', device=device)
 
     attack_model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_attack.pt"))
     te_loss, te_auc, topk_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
