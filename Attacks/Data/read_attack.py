@@ -323,7 +323,8 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
 
         labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
-        samples = torch.cat([top_k_conf, labels], dim=1).to(device)
+        # samples = torch.cat([top_k_conf, labels], dim=1).to(device)
+        samples = top_k_conf.to(device)
 
         perm = torch.randperm(num_train, device=device)[:num_half]
         idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
@@ -360,8 +361,9 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
 
         labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
-        samples = torch.cat([top_k_conf, labels], dim=1).to(device)
-
+        # samples = torch.cat([top_k_conf, labels], dim=1).to(device)
+        samples = top_k_conf.to(device)
+        
         # samples = torch.cat((tr_samples, te_samples), dim=0).to(device)
 
         perm = torch.randperm(num_train, device=device)[:num_half]
