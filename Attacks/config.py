@@ -26,6 +26,7 @@ def add_model_group(group):
     group.add_argument("--patience", type=int, default=20)
     group.add_argument("--num_head", type=int, default=8)
     group.add_argument("--epochs", type=int, default=100, help='training step')
+    group.add_argument("--aggregator_type", type=str, default='mean')
 
 
 def add_dp_group(group):
