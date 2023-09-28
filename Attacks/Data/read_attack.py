@@ -126,21 +126,13 @@ def read_graph(data_name):
     elif data_name == 'cora':
         data = CoraGraphDataset()
         graph = data[0]
-        # del(graph.ndata['train_mask'])
-        # del(graph.ndata['val_mask'])
-        # del(graph.ndata['test_mask'])
     elif data_name == 'citeseer':
         data = CiteseerGraphDataset()
         graph = data[0]
-        del(graph.ndata['train_mask'])
-        del(graph.ndata['val_mask'])
-        del(graph.ndata['test_mask'])
+
     elif data_name == 'pubmed':
         data = PubmedGraphDataset()
         graph = data[0]
-        del(graph.ndata['train_mask'])
-        del(graph.ndata['val_mask'])
-        del(graph.ndata['test_mask'])
 
     del(graph.ndata['train_mask'])
     del(graph.ndata['val_mask'])
