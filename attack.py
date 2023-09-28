@@ -19,7 +19,7 @@ warnings.filterwarnings("ignore")
 def run(args, current_time, device):
 
     if args.att_mode == 'node':
-        run_node(args=args, current_time=current_time, device=device)
+        run_node(args=args, current_date=current_time, device=device)
 
 
 
