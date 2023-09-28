@@ -38,6 +38,7 @@ def add_dp_group(group):
     group.add_argument('--sampling_rate', type=float, default=0.08, help="batch size for training process")
 
 def add_model_attack_group(group):
+    group.add_argument('--sha_n_neighbor', type=int, default=4, help="# of neighbor each layer")
     group.add_argument("--retrain_tar", type=int, default=0)
     group.add_argument("--topk_rate", type=float, default=0.1)
     group.add_argument("--att_mode", type=str, default='node', help="Model type")

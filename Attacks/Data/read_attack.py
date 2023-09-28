@@ -28,7 +28,7 @@ def read_data(args, history, hist_exist):
     if hist_exist == False:
 
         idx_remain_nodes, idx_sh_nodes, remain_graph, shadow_graph = preprocessing_graph(graph=graph, data_name=args.dataset, 
-                                                                                        n_neighbor=args.n_neighbor, n_layers=args.n_layers)
+                                                                                        n_neighbor=args.sha_n_neighbor, n_layers=args.n_layers)
         history['shadow_id'] = idx_sh_nodes.tolist()
         history['remain_id'] = idx_remain_nodes.tolist()
     else:
