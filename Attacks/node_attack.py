@@ -45,7 +45,7 @@ def run(args, current_date, device):
     history_path = args.res_path + name['history']
     hist_exist = False
 
-    if os.path.exit(history_path):
+    if os.path.exists(history_path):
         history = read_pickel(file=history_path)
         hist_exist = True
     else:
