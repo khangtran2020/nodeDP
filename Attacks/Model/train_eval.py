@@ -147,7 +147,7 @@ def eval_attack_step(model, device, loader, metrics, criterion, rate):
             target = target.to(device)
             predictions = model(features)
             predictions = torch.squeeze(predictions, dim=-1)
-            entropy = get_entropy(pred=predictions)
+            entropy = get_binary_entropy(pred=predictions)
             pred = torch.cat((pred, predictions), dim = 0)
             label = torch.cat((label, target), dim=0)
             entr = torch.cat((entr, entropy), dim=0)
