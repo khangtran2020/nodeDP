@@ -239,7 +239,7 @@ def node_split(graph, val_size, test_size, mode='remain'):
 
     else:
 
-        node_id = get_index_by_value(a=graph.ndata['shadow_mask'], val=1)
+        node_id = graph.nodes()
         num_node = node_id.size(dim=0)
         num_te = int(test_size * num_node)
         num_va = int(val_size * num_node)
