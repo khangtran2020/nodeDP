@@ -20,7 +20,7 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
     metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
 
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=True)
+    es = EarlyStopping(patience=args.patience, verbose=False)
 
     # THE ENGINE LOOP
     tk0 = tqdm(range(epochs), total=epochs)
@@ -34,6 +34,8 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item())
 
         es(epoch=epoch, epoch_score=va_acc.item(), model=shadow_model, model_path=args.save_path + model_name)
+
+    return shadow_model
 
 def update_step(model, device, loader, metrics, criterion, optimizer):
     

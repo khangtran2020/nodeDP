@@ -62,6 +62,8 @@ def run(args, current_date, device):
 
     with timeit(logger=logger, task='init-target-model'):
 
+        rprint(f"History is exist: {hist_exist}, are we retraining {args.retrain_tar}")
+
         if args.retrain_tar == 0 & hist_exist == True:
             tar_model_trained_path = args.save_path + name['tar_model_trained']
             if os.path.exists(tar_model_trained_path):
