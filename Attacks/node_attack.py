@@ -175,9 +175,9 @@ def run(args, current_date, device):
 
         attack_model.load_state_dict(torch.load(args.save_path + f"{name['name']}_attack.pt"))
         te_loss, te_auc, topk_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
-                                        metrics=torchmetrics.classification.BinaryAccuracy().to(device),
+                                        metrics=torchmetrics.classification.BinaryAUROC().to(device),
                                         criterion=torch.nn.BCELoss(), rate=args.topk_rate)
-        rprint(f"Attack ACC: {te_auc}, topk ACC {topk_auc}")
+        rprint(f"Attack AUC: {te_auc}, topk AUC {topk_auc}")
 
         date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
         save_dict(path=f"{args.res_path}{name['human']}_{date_str}.pkl", dct=history)

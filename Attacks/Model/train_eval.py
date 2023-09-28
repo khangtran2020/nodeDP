@@ -96,7 +96,7 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
     criterion = torch.nn.BCELoss(reduction='mean')
     criterion.to(device)
 
-    metrics = torchmetrics.classification.BinaryAccuracy().to(device)
+    metrics = torchmetrics.classification.BinaryAUROC().to(device)
 
     # DEfining Early Stopping Object
     es = EarlyStopping(patience=args.patience, verbose=False)
