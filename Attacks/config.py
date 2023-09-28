@@ -8,7 +8,7 @@ def add_general_group(group):
     group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp']")
     group.add_argument("--device", type=str, default='cpu', help="")
     group.add_argument("--debug", type=int, default=1)
-    group.add_argument("--num_worker", type=int, default=4)
+    group.add_argument("--num_worker", type=int, default=0)
     group.add_argument("--performance_metric", type=str, default='acc', help="Metrics of performance")
 
 def add_data_group(group):
