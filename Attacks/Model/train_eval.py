@@ -20,7 +20,7 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
     metrics = torchmetrics.classification.Accuracy(task="multiclass", num_classes=args.num_class).to(device)
 
     # DEfining Early Stopping Object
-    es = EarlyStopping(patience=args.patience, verbose=False)
+    es = EarlyStopping(patience=args.patience, verbose=True)
 
     # THE ENGINE LOOP
     tk0 = tqdm(range(epochs), total=epochs)
