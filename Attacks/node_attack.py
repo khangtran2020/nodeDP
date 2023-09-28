@@ -89,9 +89,8 @@ def run(args, current_date, device):
 
     with timeit(logger=logger, task='preparing-shadow-model'):
         
-        shadow_nohop_graph = generate_nohop_graph(graph=shadow_graph)
-
         shadow_graph = shadow_graph.to(device)
+        shadow_nohop_graph = generate_nohop_graph(graph=shadow_graph, device=device)
         shadow_nohop_graph = shadow_nohop_graph.to(device)
         tar_model.to(device)
 
@@ -135,7 +134,7 @@ def run(args, current_date, device):
             shadow_nohop_graph.ndata['shadow_conf'] = shadow_conf_nohop
 
             remain_graph = remain_graph.to(device)
-            remain_graph_nohop = generate_nohop_graph(graph=remain_graph)
+            remain_graph_nohop = generate_nohop_graph(graph=remain_graph, device=device)
 
             remain_conf = tar_model.full(remain_graph, remain_graph.ndata['feat'])
             remain_conf_nohop = tar_model.full(remain_graph_nohop, remain_graph_nohop.ndata['feat'])

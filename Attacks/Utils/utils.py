@@ -154,12 +154,12 @@ def read_pickel(file):
         res = pickle.load(f)
     return res
 
-def generate_nohop_graph(graph):
+def generate_nohop_graph(graph, device):
 
     nodes = graph.nodes()
     num_node = nodes.size(dim=0)
 
-    g = dgl.graph((nodes.tolist(), nodes.tolist()), num_nodes=num_node)
+    g = dgl.graph((nodes.tolist(), nodes.tolist()), num_nodes=num_node).to(device)
     for key in graph.ndata.keys():
         g.ndata[key] = graph.ndata[key].clone()
 
