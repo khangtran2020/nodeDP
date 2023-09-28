@@ -92,6 +92,8 @@ def run(args, current_date, device):
         with torch.no_grad():
             tar_conf = tar_model.full(shadow_graph, shadow_graph.ndata['feat'])
             shadow_graph.ndata['tar_conf'] = tar_conf
+
+        rprint(f"Shadow confidence: {tar_conf.size()}")
         
         shadow_model = init_model(args=args)
         shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model, lr=args.lr)
