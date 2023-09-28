@@ -77,7 +77,7 @@ def run_NMI(args, current_time, device):
             te_conf = model(test_g, test_g.ndata['feat'])
             test_g.ndata['tar_conf'] = te_conf
 
-            randomsplit(graph=train_g, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
+            randomsplit(graph=train_g, num_node_per_class=100, train_ratio=0.4, test_ratio=0.4)
 
     with timeit(logger=logger, task='training-shadow-model'):
         # init shadow model
