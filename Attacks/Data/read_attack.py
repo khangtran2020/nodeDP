@@ -357,11 +357,11 @@ def generate_attack_samples(graph, conf, mode, device):
         return x, y
 
     else:
-        num_classes = graph.size(1)
+        num_classes = graph.ndata['label'].max().item() + 1
         rprint(f"Existing label: {graph.ndata['label'].unique()}, # class: {num_classes}")
 
-        num_train = graph.ndata[tr_mask].sum()
-        num_test = graph.ndata[te_mask].sum()
+        num_train = int(graph.ndata[tr_mask].sum().item())
+        num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
         labels = F.one_hot(graph.ndata['label'], num_classes).float().to(device)
