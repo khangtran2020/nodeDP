@@ -46,6 +46,9 @@ def read_data(args, history, hist_exist):
     else:
         remain_graph, shadow_graph = init_graph_from_hist(graph=graph, history=history)
 
+    args.num_feat = remain_graph.ndata['feat'].size(dim=1)
+    args.num_class = remain_graph.ndata['label'].max().item()+1
+
     return remain_graph, shadow_graph
 
 def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
