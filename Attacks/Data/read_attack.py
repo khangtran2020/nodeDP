@@ -31,18 +31,6 @@ def read_data(args, history, hist_exist):
                                                                                         n_neighbor=args.n_neighbor, n_layers=args.n_layers)
         history['shadow_id'] = idx_sh_nodes.tolist()
         history['remain_id'] = idx_remain_nodes.tolist()
-        history['remain_graph'] = {
-            'train_id': get_index_by_value(a=remain_graph.ndata['train_mask'], val=1).tolist(),
-            'val_id': get_index_by_value(a=remain_graph.ndata['val_mask'], val=1).tolist(),
-            'test_id': get_index_by_value(a=remain_graph.ndata['test_mask'], val=1).tolist()
-        }
-
-        history['shadow_graph'] = {
-            'train_id': get_index_by_value(a=shadow_graph.ndata['sha_train_mask'], val=1).tolist(),
-            'val_id': get_index_by_value(a=shadow_graph.ndata['sha_val_mask'], val=1).tolist(),
-            'test_id': get_index_by_value(a=shadow_graph.ndata['sha_test_mask'], val=1).tolist()
-        }
-    
     else:
         remain_graph, shadow_graph = init_graph_from_hist(graph=graph, history=history)
 
@@ -282,13 +270,8 @@ def init_graph_from_hist(graph, history):
     shadow_graph = graph.subgraph(shadow_id)
     remain_graph = graph.subgraph(remain_id)
 
-    remain_graph.ndata['train_mask'] = torch.LongTensor(history['remain_graph']['train_id'])
-    remain_graph.ndata['val_mask'] = torch.LongTensor(history['remain_graph']['val_id'])
-    remain_graph.ndata['test_mask'] = torch.LongTensor(history['remain_graph']['test_id'])
-
-    shadow_graph.ndata['sha_train_mask'] = torch.LongTensor(history['shadow_graph']['train_id'])
-    shadow_graph.ndata['sha_val_mask'] = torch.LongTensor(history['shadow_graph']['val_id'])
-    shadow_graph.ndata['sha_test_mask'] = torch.LongTensor(history['shadow_graph']['test_id'])
+    node_split(graph=remain_graph, val_size=0.1, test_size=0.15, mode='remain')
+    node_split(graph=shadow_graph, val_size=0.1, test_size=0.4, mode='shadow')
 
     return remain_graph, shadow_graph
 
