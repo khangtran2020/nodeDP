@@ -58,6 +58,7 @@ def run(args, current_date, device):
     tar_model = init_model(args=args)
 
     train_g, val_g, test_g = graph_split(graph=remain_graph, drop=True)
+    rprint(f"History is exist: {hist_exist}")
 
     with timeit(logger=logger, task='init-target-model'):
 
