@@ -55,20 +55,19 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     # shadow separation
     org_node = graph.nodes()
     num_node = org_node.size(dim=0)
-    num_neigh_per_node = (n_neighbor**(n_layers+1) - 1) / (n_neighbor - 1)
-    num_node_sh = int(num_node / (2 * num_neigh_per_node))
+    num_node_sh = int(num_node / 2)
     num_pt_per_class = int(num_node_sh / num_label)
 
     rprint(f"The current setting: Org node {num_node}, Shadow node {num_node_sh}, Num node per class {num_pt_per_class}")
 
     sh_nodes = sampling_shadow_nodes_by_label(graph=graph, num_node_per_class=num_pt_per_class)
-    sh_khop_subg = generate_khop_neighbor(graph=graph, nodes=sh_nodes, num_hops=n_layers, num_neigh_per_hop=n_neighbor)
+    # sh_khop_subg = generate_khop_neighbor(graph=graph, nodes=sh_nodes, num_hops=n_layers, num_neigh_per_hop=n_neighbor)
 
     graph.ndata['shadow_graph'] = torch.zeros(num_node)
     graph.ndata['remain_graph'] = torch.ones(num_node)
 
-    graph.ndata['shadow_graph'][sh_khop_subg] = 1
-    graph.ndata['remain_graph'][sh_khop_subg] = 0
+    graph.ndata['shadow_graph'][sh_nodes] = 1
+    graph.ndata['remain_graph'][sh_nodes] = 0
 
     idx_sh_nodes = get_index_by_value(a=graph.ndata['shadow_graph'], val=1)
     idx_remain_nodes = get_index_by_value(a=graph.ndata['remain_graph'], val=1)
