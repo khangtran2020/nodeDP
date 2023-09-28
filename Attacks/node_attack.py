@@ -145,7 +145,7 @@ def run(args, current_date, device):
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.att_lr)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
-                                    attack_model=attack_model, epochs=args.att_epocs, optimizer=attack_optimizer,
+                                    attack_model=attack_model, epochs=args.att_epochs, optimizer=attack_optimizer,
                                     name=f"{name['name'] }_attack.pt", device=device)
 
         attack_model.load_state_dict(torch.load(args.save_path + f"{name['name']}_attack.pt"))
