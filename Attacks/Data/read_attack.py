@@ -32,7 +32,7 @@ def read_data(args, history, hist_exist):
         history['shadow_id'] = idx_sh_nodes.tolist()
         history['remain_id'] = idx_remain_nodes.tolist()
     else:
-        remain_graph, shadow_graph = init_graph_from_hist(graph=graph, history=history)
+        remain_graph, shadow_graph = init_graph_from_hist(graph=graph, data_name=args.dataset, history=history)
 
     args.num_feat = remain_graph.ndata['feat'].size(dim=1)
     args.num_class = remain_graph.ndata['label'].max().item()+1
@@ -261,7 +261,17 @@ def node_split(graph, val_size, test_size, mode='remain'):
 
     rprint(f"Done splitting for {mode} graph: train {num_tr} nodes, val {num_va} nodes, test {num_te} nodes")
        
-def init_graph_from_hist(graph, history):
+def init_graph_from_hist(graph, data_name, history):
+
+    min_cnt = min_count[data_name] if data_name in min_count.keys() else 0
+    label_list = filter_class_by_count(graph=graph, min_count=min_cnt)
+    num_label = len(label_list)
+    idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
+    graph = graph.subgraph(torch.LongTensor(idx))
+
+    # drop isolated node & self loop
+    graph = drop_isolated_node(graph)
+    graph = dgl.remove_self_loop(graph)
 
     num_node = graph.nodes().size(dim=0)
 
@@ -270,6 +280,8 @@ def init_graph_from_hist(graph, history):
 
     shadow_graph = graph.subgraph(shadow_id)
     remain_graph = graph.subgraph(remain_id)
+
+
 
     node_split(graph=remain_graph, val_size=0.1, test_size=0.15, mode='remain')
     node_split(graph=shadow_graph, val_size=0.1, test_size=0.4, mode='shadow')
