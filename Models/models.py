@@ -112,7 +112,7 @@ class NN(nn.Module):
             self.layers.append(nn.Linear(in_features=input_dim, out_features=hidden_dim))
             for i in range(self.n_hid):
                 layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
-                nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
+                # nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
                 self.layers.append(layer)
             self.layers.append(nn.Linear(in_features=hidden_dim, out_features=output_dim))
         else:
