@@ -449,7 +449,6 @@ def sample_org_graph(graph, num_node_totake):
 
         if new_node_idx.size(dim=0) > 0:
 
-            print("We do have new nodes")
             if chosen_nodes.size(dim=0) + new_node_idx.size(dim=0) < num_node_totake:
                 
                 new_node = node_of_g[new_node_idx]
@@ -457,11 +456,13 @@ def sample_org_graph(graph, num_node_totake):
                 curr = new_node.clone()
             
             else:
+
                 num_remain = num_node_totake - chosen_nodes.size(dim=0)
                 num_new_node = new_node.size(dim=0)
                 perm = torch.randperm(num_new_node)
                 new_node = node_of_g[new_node_idx[perm[:num_remain]]]
-        
+                chosen_nodes = torch.cat((chosen_nodes, new_node), dim=0)
+                
         else:
 
             curr = torch.Tensor([])
