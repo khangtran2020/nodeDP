@@ -49,8 +49,8 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     graph = graph.subgraph(torch.LongTensor(idx))
 
     # drop isolated node & self loop
-    graph = drop_isolated_node(graph)
-    graph = dgl.remove_self_loop(graph)
+    # graph = drop_isolated_node(graph)
+    # graph = dgl.remove_self_loop(graph)
 
     # shadow separation
     org_node = graph.nodes()
