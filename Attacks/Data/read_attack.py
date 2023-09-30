@@ -55,25 +55,21 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     # shadow separation
     org_node = graph.nodes()
     num_node = org_node.size(dim=0)
-    # sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
+    rm_nodes = sampling_shadow_nodes_by_label(graph=graph)
+    # rm_nodes, sh_nodes = sample_org_graph(graph=graph, num_node_totake=int(num_node/2))
+    # rprint(f"Done spliting remain and shadow. Remain graph has: {rm_nodes.size(dim=0)}. Shadow graph has: {sh_nodes.size(dim=0)}")
 
-    rm_nodes, sh_nodes = sample_org_graph(graph=graph, num_node_totake=int(num_node/2))
-    rprint(f"Done spliting remain and shadow. Remain graph has: {rm_nodes.size(dim=0)}. Shadow graph has: {sh_nodes.size(dim=0)}")
-
-    graph.ndata['shadow_graph'] = torch.zeros(num_node)
-    graph.ndata['remain_graph'] = torch.ones(num_node)
-
-    graph.ndata['shadow_graph'][sh_nodes] = 1
-    graph.ndata['remain_graph'][sh_nodes] = 0
+    graph.ndata['remain_graph'] = torch.zeros(num_node)
+    graph.ndata['remain_graph'][rm_nodes] = 0
 
     idx_sh_nodes = get_index_by_value(a=graph.ndata['shadow_graph'], val=1)
-    idx_remain_nodes = get_index_by_value(a=graph.ndata['remain_graph'], val=1)
+    idx_remain_nodes = graph.nodes()
 
     shadow_nodes = org_node[idx_sh_nodes]
     remain_nodes = org_node[idx_remain_nodes]
 
-    shadow_graph = graph.subgraph(shadow_nodes)
     remain_graph = graph.subgraph(remain_nodes)
+    shadow_graph = graph.clone()
 
     rprint(f"Finished shadow separation: shadow graph has {shadow_graph.nodes().size(dim=0)} nodes, and remain graph has {remain_graph.nodes().size(dim=0)}")
     
