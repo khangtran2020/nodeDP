@@ -422,8 +422,11 @@ def sample_org_graph(graph, num_node_totake):
     chosen_nodes = torch.Tensor([])
     curr = torch.Tensor([])
 
+    step = 0
+
     while chosen_nodes.size(dim=0) < num_node:
         
+        rprint(f"At step {step}, chosen {chosen_nodes.size(dim=0)} nodes ({chosen_nodes.size(dim=0)*100 / num_node_totake} %)")
         remain_nodes_idx = get_index_by_not_list(arr=nodes, test_arr=chosen_nodes)
        
         if curr.size(dim=0) == 0:
@@ -459,6 +462,7 @@ def sample_org_graph(graph, num_node_totake):
         else:
 
             curr = torch.Tensor([])
+        step += 1
 
     shadow_nodes_idx = get_index_by_not_list(arr=nodes, test_arr=chosen_nodes)
     shadow_nodes = nodes[shadow_nodes_idx]
