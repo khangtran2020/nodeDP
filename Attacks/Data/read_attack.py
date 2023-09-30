@@ -62,11 +62,11 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     graph.ndata['remain_graph'] = torch.zeros(num_node)
     graph.ndata['remain_graph'][rm_nodes] = 0
 
-    idx_sh_nodes = get_index_by_value(a=graph.ndata['shadow_graph'], val=1)
-    idx_remain_nodes = graph.nodes()
+    idx_rm_nodes = get_index_by_value(a=graph.ndata['remain_graph'], val=1)
+    idx_sh_nodes = graph.nodes()
 
     shadow_nodes = org_node[idx_sh_nodes]
-    remain_nodes = org_node[idx_remain_nodes]
+    remain_nodes = org_node[idx_rm_nodes]
 
     remain_graph = graph.subgraph(remain_nodes)
     shadow_graph = graph.clone()
@@ -77,7 +77,7 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     node_split(graph=remain_graph, val_size=0.1, test_size=0.15, mode='remain')
     node_split(graph=shadow_graph, val_size=0.1, test_size=0.4, mode='shadow')
 
-    return idx_remain_nodes, idx_sh_nodes, remain_graph, shadow_graph
+    return idx_rm_nodes, idx_sh_nodes, remain_graph, shadow_graph
 
 def read_graph(data_name):
 
