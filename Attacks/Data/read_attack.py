@@ -55,7 +55,9 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     # shadow separation
     org_node = graph.nodes()
     num_node = org_node.size(dim=0)
-    sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
+    # sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
+
+    rm_nodes, sh_nodes = sample_org_graph(graph=graph, num_node_totake=int(num_node/2))
 
     graph.ndata['shadow_graph'] = torch.zeros(num_node)
     graph.ndata['remain_graph'] = torch.ones(num_node)
@@ -411,5 +413,53 @@ def init_loader(args, device, train_g, test_g, val_g):
                                              num_workers=args.num_worker)
     return train_loader, val_loader, test_loader
 
+def sample_org_graph(graph, num_node_totake):
+    
+    nodes = graph.nodes()
+    num_node = nodes.size(dim=0)
 
+    chosen_nodes = torch.Tensor([])
+    curr = torch.Tensor([])
 
+    while chosen_nodes.size(dim=0) < num_node:
+        
+        remain_nodes_idx = get_index_by_not_list(arr=nodes, test_arr=chosen_nodes)
+       
+        if curr.size(dim=0) == 0:
+            
+            mask = torch.zeros(num_node)
+            num_node_rm = remain_nodes_idx.size(dim=0)
+            perm = torch.randperm(num_node_rm)
+            curr = torch.cat((curr, nodes[remain_nodes_idx[perm[0]]]), dim=0)
+        
+        mask = torch.zeros(num_node)
+        g = dgl.sampling.sample_neighbors(graph, curr, -1)
+        src, dst = g.edges()
+        mask[src.unique()] = 1
+        mask[dst.unique()] = 1
+        index = get_index_by_value(a=mask, val=1)
+        node_of_g = g.nodes()[index]
+        new_node_idx = get_index_by_not_list(arr=node_of_g, test_arr=chosen_nodes)
+
+        if new_node_idx.size(dim=0) > 0:
+
+            if chosen_nodes.size(dim=0) + new_node_idx.size(dim=0) < num_node_totake:
+                
+                new_node = node_of_g[new_node_idx]
+                chosen_nodes = torch.cat((chosen_nodes, new_node), dim=0)
+                curr = new_node.clone()
+            
+            else:
+                num_remain = num_node_totake - chosen_nodes.size(dim=0)
+                num_new_node = new_node.size(dim=0)
+                perm = torch.randperm(num_new_node)
+                new_node = node_of_g[new_node_idx[perm[:num_remain]]]
+        
+        else:
+
+            curr = torch.Tensor([])
+
+    shadow_nodes_idx = get_index_by_not_list(arr=nodes, test_arr=chosen_nodes)
+    shadow_nodes = nodes[shadow_nodes_idx]
+
+    return chosen_nodes, shadow_nodes
