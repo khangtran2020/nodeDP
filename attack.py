@@ -9,7 +9,7 @@ from Attacks.Utils.utils import print_args, seed_everything, generate_name, read
 from Models.init import init_model, init_optimizer
 from loguru import logger
 from rich import print as rprint
-from Attacks.node_attack import run as run_node
+from Attacks.Runs.node_attack import run as run_node
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
