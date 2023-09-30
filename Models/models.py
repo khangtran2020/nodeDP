@@ -122,18 +122,46 @@ class NN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, n_layer, dropout=None):
         super(NN, self).__init__()
         self.n_layers = n_layer
-        if self.n_layers > 1:
-            self.n_hid = n_layer - 2
-            self.layers = nn.ModuleList()
-            self.layers.append(nn.Linear(in_features=input_dim, out_features=hidden_dim))
-            for i in range(self.n_hid):
-                layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
-                # nn.init.kaiming_uniform_(layer.weight, nonlinearity="relu")
-                self.layers.append(layer)
-            self.layers.append(nn.Linear(in_features=hidden_dim, out_features=output_dim))
-        else:
-            self.out_layer = nn.Linear(in_features=input_dim, out_features=output_dim)
+        self.block_1 = nn.ModuleList()
+        self.block_2 = nn.ModuleList()
         
+        if self.n_layers > 1:
+            
+            self.n_hid = n_layer - 1
+            self.block_1.append(nn.Linear(in_features=input_dim, out_features=hidden_dim))
+            self.block_2.append(nn.Linear(in_features=input_dim, out_features=hidden_dim))
+
+            for i in range(self.n_hid):
+
+                layer_1 = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+                layer_2 = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+
+                self.block_1.append(layer_1)
+                self.block_2.append(layer_2)
+
+        else:
+            self.layer_1 = nn.Linear(in_features=input_dim, out_features=hidden_dim)
+            self.layer_2 = nn.Linear(in_features=input_dim, out_features=hidden_dim)
+        
+        self.final_block = nn.ModuleList()
+
+        if self.n_layers > 1:
+            
+            self.n_hid_final = n_layer - 2
+            fin_layer = nn.Linear(in_features=int(2*hidden_dim), out_features=hidden_dim)
+            self.final_block.append(fin_layer)
+
+            for i in range(self.n_hid_final):
+                fin_layer = nn.Linear(in_features=hidden_dim, out_features=hidden_dim)
+                self.final_block.append(fin_layer)
+
+            fin_layer = nn.Linear(in_features=hidden_dim, out_features=output_dim)
+            self.final_block.append(fin_layer)
+
+        else:
+            self.final_layer = nn.Linear(in_features=int(2*hidden_dim), out_features=output_dim)
+            # self.layer_2 = nn.Linear(in_features=input_dim, out_features=hidden_dim)
+
         self.activation = torch.nn.ReLU()
         self.last_activation = torch.nn.Softmax(dim=1) if output_dim > 1 else torch.nn.Sigmoid()
         self.dropout = nn.Dropout(dropout) if dropout is not None else None
@@ -141,16 +169,31 @@ class NN(nn.Module):
 
     def forward(self, x):
         if self.n_layers > 1:
-            h = x
+            h1 = x[:, :2]
+            h2 = x[:, :2]
+
+            for i in range(0, self.n_layers):
+                h1 = self.block_1[i](h1)
+                h2 = self.block_2[i](h2)
+                h1 = self.activation(h1)
+                h2 = self.activation(h2)
+
+            h = torch.cat((h1,h2), dim=-1)
             for i in range(0, self.n_layers-1):
-                h = self.layers[i](h)
+                h = self.final_block[i](h)
                 h = self.activation(h)
-            h = self.layers[-1](h)
+            h = self.final_block[-1](h)
             h = self.last_activation(h)
             return h
         else:
-            h = x
-            h = self.out_layer(h)
+            h1 = x[:, :2]
+            h2 = x[:, :2]
+            h1 = self.layer_1(h1)
+            h2 = self.layer_2(h2)
+            h1 = self.activation(h1)
+            h2 = self.activation(h2)
+            h = torch.cat((h1,h2), dim=-1)
+            h = self.final_layer(h)
             h = self.last_activation(h)
             return h
 

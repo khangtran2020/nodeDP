@@ -166,7 +166,7 @@ def run(args, current_date, device):
 
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.att_bs, num_workers=0, shuffle=False, pin_memory=False, drop_last=False)
         
-        attack_model = NN(input_dim=new_dim, hidden_dim=128, output_dim=1, n_layer=2)
+        attack_model = NN(input_dim=2, hidden_dim=128, output_dim=1, n_layer=3)
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.att_lr)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,

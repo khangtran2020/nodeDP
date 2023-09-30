@@ -317,10 +317,12 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        # top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
 
-        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
-        samples = torch.cat([conf, labels], dim=1).to(device)
+        # labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
+        # samples = torch.cat([conf, labels], dim=1).to(device)
+
+        samples = top_k_conf.clone().to(device)
 
         perm = torch.randperm(num_train, device=device)[:num_half]
         idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
@@ -330,8 +332,8 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
         neg_samples = samples[idx][perm]
 
-        pos_entropy = get_entropy(pred=pos_samples[:, :num_class]).mean()
-        neg_entropy = get_entropy(pred=neg_samples[:, :num_class]).mean()
+        pos_entropy = get_entropy(pred=pos_samples).mean()
+        neg_entropy = get_entropy(pred=neg_samples).mean()
         rprint(f'On graph {mode}, pos_entropy: {pos_entropy:.4f}, neg_entropy: {neg_entropy:.4f}')
 
         x = torch.cat([neg_samples, pos_samples], dim=0)
@@ -354,12 +356,12 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        # top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
 
-        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
-        samples = torch.cat([conf, labels], dim=1).to(device)
+        # labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
+        # samples = torch.cat([conf, labels], dim=1).to(device)
 
-        # samples = torch.cat((tr_samples, te_samples), dim=0).to(device)
+        samples = top_k_conf.clone().to(device)
 
         perm = torch.randperm(num_train, device=device)[:num_half]
         idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
@@ -369,8 +371,8 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         idx = get_index_by_value(a=graph.ndata[te_mask], val=1)
         neg_samples = samples[idx][perm]
 
-        pos_entropy = get_entropy(pred=pos_samples[:, :num_class]).mean()
-        neg_entropy = get_entropy(pred=neg_samples[:, :num_class]).mean()
+        pos_entropy = get_entropy(pred=pos_samples).mean()
+        neg_entropy = get_entropy(pred=neg_samples).mean()
 
         rprint(f'On graph {mode}, pos_entropy: {pos_entropy:.4f}, neg_entropy: {neg_entropy:.4f}')
 
