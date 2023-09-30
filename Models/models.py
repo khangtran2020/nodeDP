@@ -100,6 +100,22 @@ class GAT(nn.Module):
             h = h.mean(dim=(1, 2))
             h = self.last_activation(self.classification_layer(h))
             return h
+        
+    def full(self, g, x):
+        if self.n_layers > 1:
+            h = x
+            for i in range(0, self.n_layers):
+                h = self.layers[i](g, h)
+                h = self.activation(h)
+            h = h.mean(dim=tuple([i for i in range(1, self.n_layers+1)]))
+            h = self.last_activation(self.classification_layer(h))
+            return h
+        else:
+            h = x
+            h = self.activation(self.layer(g, h))
+            h = h.mean(dim=(1, 2))
+            h = self.last_activation(self.classification_layer(h))
+            return h
 
 
 class NN(nn.Module):
