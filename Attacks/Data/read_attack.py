@@ -424,7 +424,7 @@ def sample_org_graph(graph, num_node_totake):
 
     step = 0
 
-    while chosen_nodes.size(dim=0) < num_node:
+    while chosen_nodes.size(dim=0) < num_node_totake:
         
         
         remain_nodes_idx = get_index_by_not_list(arr=nodes, test_arr=chosen_nodes)
