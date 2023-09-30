@@ -462,7 +462,8 @@ def sample_org_graph(graph, num_node_totake):
                 perm = torch.randperm(num_new_node)
                 new_node = node_of_g[new_node_idx[perm[:num_remain]]]
                 chosen_nodes = torch.cat((chosen_nodes, new_node), dim=0)
-                
+                curr = new_node.clone()
+
         else:
 
             curr = torch.Tensor([])
