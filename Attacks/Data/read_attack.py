@@ -60,7 +60,7 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     # rprint(f"Done spliting remain and shadow. Remain graph has: {rm_nodes.size(dim=0)}. Shadow graph has: {sh_nodes.size(dim=0)}")
 
     graph.ndata['remain_graph'] = torch.zeros(num_node)
-    graph.ndata['remain_graph'][rm_nodes] = 0
+    graph.ndata['remain_graph'][rm_nodes] = 1
 
     idx_rm_nodes = get_index_by_value(a=graph.ndata['remain_graph'], val=1)
     idx_sh_nodes = graph.nodes()
