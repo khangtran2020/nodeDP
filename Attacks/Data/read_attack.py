@@ -57,8 +57,8 @@ def preprocessing_graph(graph, data_name, n_neighbor, n_layers):
     num_node = org_node.size(dim=0)
     # sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
 
-    rm_nodes, sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
-    rprint(f"Done spliting remain and shadow. Remain graph has: {rm_nodes.size(dim=0)}. Shadow graph has: {sh_nodes.size(dim=0)}")
+    sh_nodes = sampling_shadow_nodes_by_label(graph=graph)
+    rprint(f"Done spliting remain and shadow. Shadow graph has: {sh_nodes.size(dim=0)}")
 
     graph.ndata['shadow_graph'] = torch.zeros(num_node)
     graph.ndata['remain_graph'] = torch.ones(num_node)
