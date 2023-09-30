@@ -428,8 +428,8 @@ def sample_org_graph(graph, num_node_totake):
         
         
         remain_nodes_idx = get_index_by_not_list(arr=nodes, test_arr=chosen_nodes)
-        rprint(f"At step {step}, chosen {chosen_nodes.size(dim=0)} nodes ({chosen_nodes.size(dim=0)*100 / num_node_totake} %), \
-               remain {remain_nodes_idx.size(dim=0)}, current nodes {curr.size(dim=0)}")
+        rprint(f"At step {step}, chosen {chosen_nodes.size(dim=0)} nodes ({chosen_nodes.size(dim=0)*100 / num_node_totake} %)",
+               f"remain {remain_nodes_idx.size(dim=0)}, current nodes {curr.size(dim=0)}")
 
         if curr.size(dim=0) == 0:
             
@@ -449,6 +449,7 @@ def sample_org_graph(graph, num_node_totake):
 
         if new_node_idx.size(dim=0) > 0:
 
+            print("We do have new nodes")
             if chosen_nodes.size(dim=0) + new_node_idx.size(dim=0) < num_node_totake:
                 
                 new_node = node_of_g[new_node_idx]
