@@ -431,7 +431,7 @@ def sample_org_graph(graph, num_node_totake):
             mask = torch.zeros(num_node)
             num_node_rm = remain_nodes_idx.size(dim=0)
             perm = torch.randperm(num_node_rm)
-            curr = torch.cat((curr, nodes[remain_nodes_idx[perm[0]]]), dim=0)
+            curr = nodes[remain_nodes_idx[perm[0]]]
         
         mask = torch.zeros(num_node)
         g = dgl.sampling.sample_neighbors(graph, curr, -1)
