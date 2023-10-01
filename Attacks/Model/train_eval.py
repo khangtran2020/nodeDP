@@ -123,6 +123,7 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.zero_grad()
     train_loss = 0
     num_data = 0.0
+
     for bi, d in enumerate(loader):
         optimizer.zero_grad()
         features, target = d
@@ -135,7 +136,8 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
         optimizer.step()
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
-        train_loss += loss.item()
+        train_loss += loss.item()*features.size(dim=0)
+        
     performance = metrics.compute()
     metrics.reset()
     return train_loss / num_data, performance

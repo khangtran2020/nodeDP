@@ -172,7 +172,7 @@ def run(args, current_date, device):
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.att_bs, num_workers=0, shuffle=False, pin_memory=False, drop_last=False)
         
         attack_model = NN(input_dim=2, hidden_dim=64, output_dim=1, n_layer=2)
-        attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.att_lr)
+        attack_optimizer = torch.optim.Adam(attack_model.parameters(), lr=args.att_lr, weight_decay=0.001)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
                                     attack_model=attack_model, epochs=args.att_epochs, optimizer=attack_optimizer,
@@ -182,7 +182,20 @@ def run(args, current_date, device):
         te_loss, te_auc, topk_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
                                         metrics=torchmetrics.classification.BinaryAUROC().to(device),
                                         criterion=torch.nn.BCELoss(), rate=args.topk_rate)
-        rprint(f"Attack AUC: {te_auc}, topk AUC {topk_auc}")
+        
+        metrics = ['auc', 'acc', 'pre', 'rec', 'f1']
+        metric_dict = {
+            'auc': torchmetrics.classification.BinaryAUROC().to(device),
+            'acc': torchmetrics.classification.BinaryAccuracy().to(device),
+            'pre': torchmetrics.classification.BinaryPrecision().to(device),
+            'rec': torchmetrics.classification.BinaryRecall().to(device),
+            'f1': torchmetrics.classification.BinaryF1Score().to(device)
+        }
+        for met in metrics:
+            te_loss, te_auc, topk_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
+                                        metrics=metric_dict[met],
+                                        criterion=torch.nn.BCELoss(), rate=args.topk_rate)
+            rprint(f"Attack {met}: {te_auc}, topk {met}: {topk_auc}")
 
         date_str = f'{current_date.day}-{current_date.month}-{current_date.year}_{current_date.hour}-{current_date.minute}'
         save_dict(path=f"{args.res_path}{name['human']}_{date_str}.pkl", dct=history)
