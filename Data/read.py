@@ -95,9 +95,9 @@ def read_data(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0).tolist()
-    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0).tolist()
-    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0).tolist()
+    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
+    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
+    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
     if args.submode == 'density':
         if args.density <= 1.0:
             graph = reduce_desity(g=graph, dens_reduction=args.density)
@@ -120,7 +120,6 @@ def read_data(args, data_name, history):
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
     graph = drop_isolated_node(graph)
-    rprint(f"Original graph has: {graph.nodes().size(dim=0)} nodes and {int(graph.edges()[0].size(dim=0)/2)} edges")
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 
@@ -390,16 +389,7 @@ def read_data_attack(args, data_name, history):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
-        num_node = graph.nodes().size(dim=0)
-        tr_mask = torch.zeros(num_node)
-        va_mask = torch.zeros(num_node)
-        te_mask = torch.zeros(num_node)
-        tr_mask[history['tr_id']] += 1
-        va_mask[history['va_id']] += 1
-        te_mask[history['te_id']] += 1
-        graph.ndata['train_mask'] = tr_mask.bool()
-        graph.ndata['val_mask'] = va_mask.bool()
-        graph.ndata['test_mask'] = te_mask.bool()
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
         list_of_label = filter_class_by_count(graph=graph, min_count=10000)
     elif data_name == 'facebook':
         load_data = partial(Facebook, name='UIllinois20', target='year',
@@ -412,18 +402,8 @@ def read_data_attack(args, data_name, history):
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
-        num_node = graph.nodes().size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
-        tr_mask = torch.zeros(num_node)
-        va_mask = torch.zeros(num_node)
-        te_mask = torch.zeros(num_node)
-        tr_mask[history['tr_id']] += 1
-        va_mask[history['va_id']] += 1
-        te_mask[history['te_id']] += 1
-        graph.ndata['train_mask'] = tr_mask.bool()
-        graph.ndata['val_mask'] = va_mask.bool()
-        graph.ndata['test_mask'] = te_mask.bool()
         list_of_label = filter_class_by_count(graph=graph, min_count=1000)
         # sys.exit()
     elif data_name == 'amazon':
@@ -436,23 +416,25 @@ def read_data_attack(args, data_name, history):
         src_edge = data.edge_index[0]
         dst_edge = data.edge_index[1]
         graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
-        num_node = graph.nodes().size(dim=0)
         graph.ndata['feat'] = data.x
         graph.ndata['label'] = data.y
-        tr_mask = torch.zeros(num_node)
-        va_mask = torch.zeros(num_node)
-        te_mask = torch.zeros(num_node)
-        tr_mask[history['tr_id']] += 1
-        va_mask[history['va_id']] += 1
-        te_mask[history['te_id']] += 1
-        graph.ndata['train_mask'] = tr_mask.bool()
-        graph.ndata['val_mask'] = va_mask.bool()
-        graph.ndata['test_mask'] = te_mask.bool()
         list_of_label = filter_class_by_count(graph=graph, min_count=6000)
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
+    num_node = graph.ndata['feat'].size(dim=0)
+    tr_mask = torch.zeros(size=num_node)
+    va_mask = torch.zeros(size=num_node)
+    te_mask = torch.zeros(size=num_node)
+    tr_mask[history['tr_id']] = 1
+    va_mask[history['va_id']] = 1
+    te_mask[history['te_id']] = 1
+    graph.ndata['train_mask'] = tr_mask
+    graph.ndata['val_mask'] = va_mask
+    graph.ndata['test_mask'] = te_mask
     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    if args.submode == 'density':
+        g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 
@@ -499,8 +481,6 @@ def randomsplit(graph, num_node_per_class, train_ratio=0.7, test_ratio=0.2):
     graph.ndata['str_mask'] = train_mask
     graph.ndata['sva_mask'] = val_mask
     graph.ndata['ste_mask'] = test_mask
-
-    rprint(f"Num node for shadow train {train_mask.sum()}, valid {val_mask.sum()}, test {test_mask.sum()}")
 
 
 def read_pair_file(args, file_path='Data/wpair/', nodes=None):

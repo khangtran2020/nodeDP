@@ -13,18 +13,12 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 # args, tr_info, va_info, te_info, model, optimizer, name, device
 
-def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history, mode='normal'):
+def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history):
     print(f'Data has {args.num_feat} features and {args.num_class} classes')
     graph, tr_loader = tr_info
     va_loader = va_info
     _, te_loader = te_info
-
-    if mode == 'normal':
-        model_name = '{}.pt'.format(name)
-    else:
-        model_name = name
-    model_path = args.save_path + model_name
-    
+    model_name = '{}.pt'.format(name)
     model.to(device)
     # DEfining criterion
 
@@ -44,6 +38,11 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
         metrics = torchmetrics.classification.AUROC(task="multiclass", num_classes=args.num_class).to(device)
     else:
         metrics = None
+
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, min_lr=1e-3, factor=0.9, patience=30)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
 
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green',
@@ -78,14 +77,14 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
             history['val_history_acc'].append(va_acc.item())
             history['test_history_loss'].append(te_loss)
             history['test_history_acc'].append(te_acc.item())
-
-            torch.save(model.state_dict(), model_path)
+            es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
+            # torch.save(model.state_dict(), args.save_path + model_name)
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, te_acc = eval_fn(te_loader, model, criterion, metric=metrics, device=device)
     history['best_test'] = te_acc.item()
     if args.debug:
         rprint(pretty_repr(history))
-    if mode == 'normal':
-        save_res(name=name, args=args, dct=history)
+    save_res(name=name, args=args, dct=history)
+
     return model, history

@@ -87,7 +87,6 @@ def add_model_attack_group(group):
     group.add_argument("--tar_clean", type=int, default=1)
     group.add_argument("--tar_dp_eps", type=float, default=0.1)
     group.add_argument("--epochs", type=int, default=100, help='training step')
-    group.add_argument("--topk_rate", type=float, default=0.1)
 
     group.add_argument("--attack_mode", type=str, default='node', help="Model type")
     group.add_argument("--attack_model_type", type=str, default='mlp', help="Model type")

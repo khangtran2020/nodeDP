@@ -1,4 +1,3 @@
-import sys
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -107,33 +106,13 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     num_half = min(num_tr, num_te)
 
     tr_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
-    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-
-    with torch.no_grad():
-        pred_full = model.full(g=graph, x=graph.ndata['feat']).detach()
-        entr = -1*pred_full*torch.log(pred_full+1e-12)
-        print("Entropy:", entr)
-        entr = entr.sum(dim=-1)
-        tr_conf = entr[tr_idx]
-        te_conf = entr[te_idx]
-
-        rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
-        rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
-
-
     perm = torch.randperm(num_tr, device=device)[:num_half]
     tr_idx = tr_idx[perm]
 
+    te_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
     perm = torch.randperm(num_te, device=device)[:num_half]
     te_idx = te_idx[perm]
 
-    tr_conf = entr[tr_idx]
-    te_conf = entr[te_idx]
-
-    rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
-    rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
-
-    # sys.exit()
     shadow_idx = torch.cat((tr_idx, te_idx), dim=0).to(device)
 
     graph.ndata['shadow_idx'] = torch.zeros(graph.nodes().size(dim=0)).to(device)
@@ -164,37 +143,25 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     y_label = shadow_graph.ndata['label']
     loss = criter(y_pred, y_label)
 
-    # feature = torch.Tensor([]).to(device)        
-    # for i, los in enumerate(loss):
-    #     grad = torch.Tensor([]).to(device)
-    #     los.backward(retain_graph=True)
-    #     for name, p in model.named_parameters():
-    #         if p.grad is not None:
-    #             grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
-    #     feature = torch.cat((feature, torch.unsqueeze(grad, dim = 0)), dim=0)
-    #     model.zero_grad()
+    feature = None        
+    for i, los in enumerate(loss):
+        pred = y_pred[i].detach().clone()
+        label = y_label[i].detach().clone()
+        grad = torch.Tensor([]).to(device)
+        los.backward(retain_graph=True)
+        for name, p in model.named_parameters():
+            if p.grad is not None:
+                grad = torch.cat((grad, p.grad.detach().flatten()), dim = 0)
+        feat = torch.cat((pred, torch.unsqueeze(label, dim=0), grad), dim = 0)
+        feat = torch.unsqueeze(feat, dim = 0)
+        if i == 0:
+            feature = feat
+        else:
+            feature = torch.cat((feature, feat), dim=0)
+        model.zero_grad()
 
-# F.one_hot(, num_classes=5)
-    # feature = torch.cat((feature, y_pred.detach()), dim=-1)
-    feature = torch.cat((y_pred.detach(), F.one_hot(y_label.detach())), dim=-1)
-    
+    # rprint(f"Done generating feature for g_train: {x_tr_pos_feat.size()}, {x_te_pos_feat.size()}")
 
-    with torch.no_grad():
-        pred_full = model.full(g=shadow_graph, x=shadow_graph.ndata['feat']).detach()
-        entr = -1*pred_full*torch.log(pred_full+1e-12)
-        entr = entr.sum(dim=-1)
-        id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
-        id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
-
-        tr_conf = entr[id_pos]
-        te_conf = entr[id_neg]
-
-        rprint(f"Top entropy train has size {tr_conf.size()}, test has size {te_conf.size()}")
-        rprint(f"Mean entropy train {tr_conf.mean()}, mean entropy test {te_conf.mean()}")
-
-
-    rprint(f"Shadow label: {shadow_graph.ndata['shadow_label'].unique(return_counts=True)}")
-    # shadow_graph.ndata['shadow_label']
     id_pos = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=1)
     id_neg = get_index_by_value(a = shadow_graph.ndata['shadow_label'], val=-1)
 
@@ -202,7 +169,7 @@ def generate_attack_samples_white_box(graph, model, criter, device):
     x_neg_mean = feature[id_neg].mean(dim=0)
 
     rprint(f"Difference in mean of the features: {(x_pos_mean - x_neg_mean).norm(p=2).item()}")
-    shadow_graph.ndata['shadow_label'] = ((shadow_graph.ndata['shadow_label']+1)/2).int()
+
     x_tr, y_tr = feature[id_tr], shadow_graph.ndata['shadow_label'][id_tr]
     x_va, y_va = feature[id_va], shadow_graph.ndata['shadow_label'][id_va]
     x_te, y_te = feature[id_te], shadow_graph.ndata['shadow_label'][id_te]

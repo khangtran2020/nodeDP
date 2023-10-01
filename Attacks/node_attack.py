@@ -7,10 +7,9 @@ from Runs.run_nodedp import run as run_nodedp
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
-from Attacks.train_eval import train_attack, eval_attack_step
-from Attacks.helper import generate_attack_samples_white_box, Data
-from Models.models import NN
-from sklearn.model_selection import train_test_split
+from Attacks.train_eval import train_shadow, train_attack, eval_attack_step
+from Attacks.helper import generate_attack_samples, Data
+from Models.models import NN, GraphSageFull, GATFull
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -42,7 +41,7 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
     return tar_model, tar_history
 
 
-def run_white_box_train(args, current_time, device):
+def run_NMI(args, current_time, device):
     with timeit(logger=logger, task='init-target-model'):
         if args.retrain_tar:
             history = init_history_attack()
@@ -54,22 +53,74 @@ def run_white_box_train(args, current_time, device):
             train_g, val_g, test_g, graph = read_data_attack(args=args, data_name=args.dataset, history=tar_history)
             tar_model = init_model(args=args)
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
-        # device = torch.device('cpu')
-        
-    with timeit(logger=logger, task='preparing-attack-data'):
-        
-        tar_model.to(device)
-        tar_model.zero_grad()
-        g = graph.to(device)
-        criter = torch.nn.CrossEntropyLoss(reduction='none')
-        x_tr, x_va, x_te, y_tr, y_va, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
-                                                                   criter=criter, device=device)
-        
-        new_dim = x_tr.size(dim=1)
 
-        tr_data = Data(X=x_tr, y=y_tr)
-        va_data = Data(X=x_va, y=y_va)
-        te_data = Data(X=x_te, y=y_te)
+    with torch.no_grad():
+        if args.model_type == 'sage':
+            model = GraphSageFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                                  n_layers=args.n_layers, dropout=args.dropout, aggregator_type=args.aggregator_type)
+            model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
+        else:
+            model = GATFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                            n_layers=args.n_layers, num_head=args.num_head, dropout=args.dropout)
+            model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}.pt"))
+
+        # device = torch.device('cpu')
+        with timeit(logger=logger, task='preparing-shadow-data'):
+            # split shadow data
+            train_g = train_g.to(device)
+            test_g = test_g.to(device)
+            model.to(device)
+
+            tr_conf = model(train_g, train_g.ndata['feat'])
+            train_g.ndata['tar_conf'] = tr_conf
+
+            te_conf = model(test_g, test_g.ndata['feat'])
+            test_g.ndata['tar_conf'] = te_conf
+
+            randomsplit(graph=train_g, num_node_per_class=1000, train_ratio=0.4, test_ratio=0.4)
+
+    with timeit(logger=logger, task='training-shadow-model'):
+        # init shadow model
+        shadow_model = init_model(args=args)
+        shadow_optimizer = init_optimizer(optimizer_name=args.optimizer, model=shadow_model, lr=args.lr)
+
+        # init loader
+        tr_loader, va_loader, te_loader = init_shadow_loader(args=args, device=device, graph=train_g)
+
+        # train shadow model
+        shadow_model = train_shadow(args=args, tr_loader=tr_loader, va_loader=va_loader, shadow_model=shadow_model,
+                                    epochs=args.shaddow_epochs, optimizer=shadow_optimizer, name=tar_history['name'],
+                                    device=device)
+    with torch.no_grad():
+        if args.model_type == 'sage':
+            model_shadow = GraphSageFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                                         n_layers=args.n_layers, dropout=args.dropout,
+                                         aggregator_type=args.aggregator_type)
+            model_shadow.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_shadow.pt"))
+        else:
+            model_shadow = GATFull(in_feats=args.num_feat, n_hidden=args.hid_dim, n_classes=args.num_class,
+                                   n_layers=args.n_layers, num_head=args.num_head, dropout=args.dropout)
+            model_shadow.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_shadow.pt"))
+
+        with timeit(logger=logger, task='preparing-attack-data'):
+            model_shadow.to(device)
+            shadow_conf = model_shadow(train_g, train_g.ndata['feat'])
+            train_g.ndata['shadow_conf'] = shadow_conf
+
+            x, y = generate_attack_samples(tr_graph=train_g, tr_conf=shadow_conf, mode='shadow', device=device)
+            x_test, y_test = generate_attack_samples(tr_graph=train_g, tr_conf=tr_conf, mode='target', device=device,
+                                                     te_graph=test_g, te_conf=te_conf)
+            x = torch.cat([x, x_test], dim=0)
+            y = torch.cat([y, y_test], dim=0)
+            num_test = x_test.size(0)
+            num_train = int((x.size(0) - num_test) * 0.8)
+
+            new_dim = x.size(dim=1)
+            # train test split
+
+            tr_data = Data(X=x[:num_train], y=y[:num_train])
+            va_data = Data(X=x[num_train:-num_test], y=y[num_train:-num_test])
+            te_data = Data(X=x[-num_test:], y=y[-num_test:])
 
     # device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):

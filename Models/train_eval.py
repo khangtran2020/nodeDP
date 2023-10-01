@@ -47,7 +47,10 @@ class EarlyStopping:
         if epoch_score not in [-np.inf, np.inf, -np.nan, np.nan]:
             if self.verbose:
                 print('Validation score improved ({} --> {}). Saving model!'.format(self.val_score, epoch_score))
-            torch.save(model.state_dict(), model_path)
+            if self.run_mode != 'func':
+                torch.save(model.state_dict(), model_path)
+            else:
+                torch.save(model, model_path)
         self.val_score = epoch_score
 
 

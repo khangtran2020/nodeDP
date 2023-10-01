@@ -8,9 +8,9 @@ from Utils.utils import get_name, save_res
 from dgl.dataloading import NeighborSampler
 
 
-def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, name, device, mode="hops"):
-    
+def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, name, device):
     model_name = '{}_shadow.pt'.format(name)
+
     shadow_model.to(device)
 
     # DEfining criterion
@@ -25,11 +25,10 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
     # THE ENGINE LOOP
     tk0 = tqdm(range(epochs), total=epochs)
     for epoch in tk0:
-
         tr_loss, tr_acc = update_step(model=shadow_model, device=device, loader=tr_loader, metrics=metrics,
-                                      criterion=criterion, optimizer=optimizer, mode=mode)
+                                      criterion=criterion, optimizer=optimizer)
         va_loss, va_acc = eval_step(model=shadow_model, device=device, loader=va_loader, metrics=metrics,
-                                    criterion=criterion, mode=mode)
+                                    criterion=criterion)
 
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item())
 
@@ -37,21 +36,17 @@ def train_shadow(args, tr_loader, va_loader, shadow_model, epochs, optimizer, na
 
     return shadow_model
 
-def update_step(model, device, loader, metrics, criterion, optimizer, mode):
-    
+
+def update_step(model, device, loader, metrics, criterion, optimizer):
     model.to(device)
     model.train()
     train_loss = 0
     num_data = 0.0
-
     for bi, d in enumerate(loader):
         optimizer.zero_grad()
         input_nodes, output_nodes, mfgs = d
         inputs = mfgs[0].srcdata["feat"]
-        if mode == 'hops':
-            labels = mfgs[-1].dstdata["tar_conf"]
-        else:
-            labels = mfgs[-1].dstdata["tar_conf_nohop"]
+        labels = mfgs[-1].dstdata["tar_conf"]
         predictions = model(mfgs, inputs)
         loss = criterion(predictions, labels)
         loss.backward()
@@ -59,13 +54,12 @@ def update_step(model, device, loader, metrics, criterion, optimizer, mode):
         metrics.update(predictions.argmax(dim=1), labels.argmax(dim=1))
         num_data += predictions.size(dim=0)
         train_loss += loss.item()*predictions.size(dim=0)
-
     performance = metrics.compute()
     metrics.reset()
-
     return train_loss / num_data, performance
 
-def eval_step(model, device, loader, metrics, criterion, mode):
+
+def eval_step(model, device, loader, metrics, criterion):
     model.to(device)
     model.eval()
     val_loss = 0
@@ -74,10 +68,7 @@ def eval_step(model, device, loader, metrics, criterion, mode):
         for bi, d in enumerate(loader):
             input_nodes, output_nodes, mfgs = d
             inputs = mfgs[0].srcdata["feat"]
-            if mode == 'hops':
-                labels = mfgs[-1].dstdata["tar_conf"]
-            else:
-                labels = mfgs[-1].dstdata["tar_conf_nohop"]
+            labels = mfgs[-1].dstdata["tar_conf"]
             predictions = model(mfgs, inputs)
             loss = criterion(predictions, labels)
             metrics.update(predictions.argmax(dim=1), labels.argmax(dim=1))
@@ -87,10 +78,11 @@ def eval_step(model, device, loader, metrics, criterion, mode):
         metrics.reset()
     return val_loss / num_data, performance
 
+
 def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, optimizer, name, device):
+    model_name = '{}_attack.pt'.format(name)
 
     attack_model.to(device)
-    model_name = name
 
     # DEfining criterion
     criterion = torch.nn.BCELoss(reduction='mean')
@@ -106,16 +98,17 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
     for epoch in tk0:
         tr_loss, tr_acc = update_attack_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
                                              criterion=criterion, optimizer=optimizer)
-        va_loss, va_acc, va_topk = eval_attack_step(model=attack_model, device=device, loader=va_loader, metrics=metrics,
-                                        criterion=criterion, rate=args.topk_rate)
-        te_loss, te_acc, te_topk = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
-                                           criterion=criterion, rate=args.topk_rate)
+        va_loss, va_acc = eval_attack_step(model=attack_model, device=device, loader=va_loader, metrics=metrics,
+                                        criterion=criterion)
+        te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
+                                           criterion=criterion)
         
-        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), VA_TOPK=va_topk.item(), Te_ACC=te_acc.item(), Te_TOPK=te_topk.item())
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
         es(epoch=epoch, epoch_score=va_acc.item(), model=attack_model, model_path=args.save_path + model_name)
 
     return attack_model
+
 
 def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.to(device)
@@ -123,7 +116,6 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.zero_grad()
     train_loss = 0
     num_data = 0.0
-
     for bi, d in enumerate(loader):
         optimizer.zero_grad()
         features, target = d
@@ -136,20 +128,17 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
         optimizer.step()
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
-        train_loss += loss.item()*features.size(dim=0)
-        
+        train_loss += loss.item()
     performance = metrics.compute()
     metrics.reset()
     return train_loss / num_data, performance
 
-def eval_attack_step(model, device, loader, metrics, criterion, rate):
+
+def eval_attack_step(model, device, loader, metrics, criterion):
     model.to(device)
     model.eval()
     val_loss = 0
     num_data = 0.0
-    pred = torch.Tensor([]).to(device)
-    label = torch.Tensor([]).to(device)
-    entr = torch.Tensor([]).to(device)
     with torch.no_grad():
         for bi, d in enumerate(loader):
             features, target = d
@@ -157,28 +146,10 @@ def eval_attack_step(model, device, loader, metrics, criterion, rate):
             target = target.to(device)
             predictions = model(features)
             predictions = torch.squeeze(predictions, dim=-1)
-            entropy = get_binary_entropy(pred=predictions)
-            pred = torch.cat((pred, predictions), dim = 0)
-            label = torch.cat((label, target), dim=0)
-            entr = torch.cat((entr, entropy), dim=0)
             loss = criterion(predictions, target.float())
             metrics.update(predictions, target)
             num_data += predictions.size(dim=0)
             val_loss += loss.item()*predictions.size(dim=0)
         performance = metrics.compute()
         metrics.reset()
-    val, indx = torch.topk(entr, int(rate*entr.size(dim=0)), largest=False)
-    pred_new = pred[indx]
-    label_new = label[indx]
-    performance_topk = metrics(pred_new, label_new)
-    return val_loss/num_data, performance, performance_topk
-
-def get_entropy(pred):
-    log_pred = torch.log2(pred+1e-12)
-    temp = -1*pred*log_pred
-    return temp.sum(dim=-1)
-
-def get_binary_entropy(pred):
-    log_pred = torch.log2(pred+1e-12)
-    temp = -1*pred*log_pred
-    return temp
+    return val_loss/num_data, performance
