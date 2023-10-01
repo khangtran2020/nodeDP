@@ -317,11 +317,12 @@ def generate_attack_samples(graph, conf, conf_nohop, num_class, mode, device):
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
-        top_k_conf_nohop, _ = torch.topk(input=conf_nohop, k=2, dim=-1, largest=True)
-        samples = torch.cat((top_k_conf, top_k_conf_nohop), dim=1)
+        # top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        # top_k_conf_nohop, _ = torch.topk(input=conf_nohop, k=2, dim=-1, largest=True)
+        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
+        samples = torch.cat((conf, conf_nohop, labels), dim=1)
 
-        # labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
+        # 
         # samples = torch.cat([conf, labels], dim=1).to(device)
 
         
@@ -358,9 +359,12 @@ def generate_attack_samples(graph, conf, conf_nohop, num_class, mode, device):
         num_test = int(graph.ndata[te_mask].sum().item())
         num_half = min(num_train, num_test)
 
-        top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
-        top_k_conf_nohop, _ = torch.topk(input=conf_nohop, k=2, dim=-1, largest=True)
-        samples = torch.cat((top_k_conf, top_k_conf_nohop), dim=1)
+        # top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        # top_k_conf_nohop, _ = torch.topk(input=conf_nohop, k=2, dim=-1, largest=True)
+        # samples = torch.cat((top_k_conf, top_k_conf_nohop), dim=1)
+
+        labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
+        samples = torch.cat((conf, conf_nohop, labels), dim=1)
 
         # labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
         # samples = torch.cat([conf, labels], dim=1).to(device)
