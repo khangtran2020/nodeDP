@@ -158,6 +158,7 @@ def run(args, current_date, device):
             num_val = x.size(dim=0) - num_test - num_train
 
             new_dim = x.size(dim=1)
+            print(f"Dimension new is: {new_dim}")
 
             tr_data = Data(X=x[:num_train], y=y[:num_train])
             va_data = Data(X=x[num_train:num_train+num_val], y=y[num_train:num_train+num_val])
