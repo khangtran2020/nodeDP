@@ -305,7 +305,7 @@ def init_shadow_loader(args, device, graph):
                                            num_workers=args.num_worker)
     return tr_loader, va_loader
 
-def generate_attack_samples(graph, conf, num_class, mode, device):
+def generate_attack_samples(graph, conf, conf_nohop, num_class, mode, device):
 
     tr_mask = 'train_mask' if mode == 'target' else 'sha_train_mask'
     te_mask = 'test_mask' if mode == 'target' else 'sha_test_mask'
@@ -318,11 +318,13 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         num_half = min(num_train, num_test)
 
         top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        top_k_conf_nohop, _ = torch.topk(input=conf_nohop, k=2, dim=-1, largest=True)
+        samples = torch.cat((top_k_conf, top_k_conf_nohop), dim=1)
 
         # labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
         # samples = torch.cat([conf, labels], dim=1).to(device)
 
-        samples = top_k_conf.clone().to(device)
+        
 
         perm = torch.randperm(num_train, device=device)[:num_half]
         idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
@@ -357,12 +359,13 @@ def generate_attack_samples(graph, conf, num_class, mode, device):
         num_half = min(num_train, num_test)
 
         top_k_conf, _ = torch.topk(input=conf, k=2, dim=-1, largest=True)
+        top_k_conf_nohop, _ = torch.topk(input=conf_nohop, k=2, dim=-1, largest=True)
+        samples = torch.cat((top_k_conf, top_k_conf_nohop), dim=1)
 
         # labels = F.one_hot(graph.ndata['label'], num_class).float().to(device)
         # samples = torch.cat([conf, labels], dim=1).to(device)
 
-        samples = top_k_conf.clone().to(device)
-
+    
         perm = torch.randperm(num_train, device=device)[:num_half]
         idx = get_index_by_value(a=graph.ndata[tr_mask], val=1)
         pos_samples = samples[idx][perm]
