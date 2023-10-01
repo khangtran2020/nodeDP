@@ -124,6 +124,7 @@ class NN(nn.Module):
         self.n_layers = n_layer
         self.block_1 = nn.ModuleList()
         self.block_2 = nn.ModuleList()
+        self.indim = input_dim
         
         if self.n_layers > 1:
             
@@ -169,8 +170,8 @@ class NN(nn.Module):
 
     def forward(self, x):
         if self.n_layers > 1:
-            h1 = x[:, :2]
-            h2 = x[:, :2]
+            h1 = x[:, :self.indim]
+            h2 = x[:, :self.indim]
 
             for i in range(0, self.n_layers):
                 h1 = self.block_1[i](h1)
@@ -186,8 +187,8 @@ class NN(nn.Module):
             h = self.last_activation(h)
             return h
         else:
-            h1 = x[:, :2]
-            h2 = x[:, :2]
+            h1 = x[:, :self.indim]
+            h2 = x[:, :self.indim]
             h1 = self.layer_1(h1)
             h2 = self.layer_2(h2)
             h1 = self.activation(h1)
