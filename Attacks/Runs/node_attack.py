@@ -150,6 +150,9 @@ def run(args, current_date, device):
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
 
+            for i in range(x.size(dim=1)):
+                x[:, i] = (x[:, i] - x[:, i].mean()) / (x[:, i].std() + 1e-12)
+
             num_test = x_test.size(0)
             num_train = int((x.size(0) - num_test) * 0.8)
             num_val = x.size(dim=0) - num_test - num_train
