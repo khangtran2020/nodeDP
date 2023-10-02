@@ -9,7 +9,7 @@ from rich import print as rprint
 from Utils.utils import seed_everything, timeit, read_pickel, save_res
 from Attacks.config import parse_args
 from Attacks.Runs.black_box import run as blackbox
-from Attacks.Runs.white_box import run as whitebox
+# from Attacks.Runs.white_box import run as whitebox
 from Attacks.Utils.utils import print_args, init_history, get_name
 from Attacks.Utils.data_utils import shadow_split
 from Models.init import init_model
@@ -72,8 +72,8 @@ def run(args, current_time, device):
 
     if args.attack_mode == 'blackbox':
         blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
-    elif args.attack_mode == 'whitebox':
-        whitebox(args=args,graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
+    # elif args.attack_mode == 'whitebox':
+    #     whitebox(args=args,graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
 
 
 if __name__ == "__main__":
