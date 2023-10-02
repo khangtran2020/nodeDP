@@ -20,7 +20,7 @@ from torch_geometric.transforms import Compose, RandomNodeSplit
 from joblib import Parallel, delayed
 
 
-def read_data(args, data_name, history):
+def read_data(args, data_name, history=None):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
@@ -95,9 +95,13 @@ def read_data(args, data_name, history):
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
-    history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0)
-    history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0)
-    history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0)
+
+    if history is not None:
+        history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0).tolist()
+        history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0).tolist()
+        history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0).tolist()
+    
+    
     if args.submode == 'density':
         if args.density <= 1.0:
             graph = reduce_desity(g=graph, dens_reduction=args.density)
@@ -128,19 +132,21 @@ def node_split(graph, val_size, test_size):
     keys = graph.ndata.keys()
     if 'train_mask' not in keys or 'val_mask' not in keys or 'test_mask' not in keys:
         node_id = np.arange(len(graph.nodes()))
-        node_label = graph.ndata['label'].numpy()
-        id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=test_size,
-                                                              stratify=node_label)
-        test_mask = np.zeros_like(node_id)
-        test_mask[id_test] = 1
+        node_label = graph.ndata['label'].tolist()
+        id_train, id_test, y_train, y_test = train_test_split(node_id, node_label, test_size=test_size, stratify=node_label)
         id_train, id_val, y_train, y_val = train_test_split(id_train, y_train, test_size=val_size, stratify=y_train)
-        train_mask = np.zeros_like(node_id)
+        
+        train_mask = torch.zeros(graph.nodes().size(dim=0))
+        val_mask = torch.zeros(graph.nodes().size(dim=0))
+        test_mask = torch.zeros(graph.nodes().size(dim=0))
+        
         train_mask[id_train] = 1
-        val_mask = np.zeros_like(node_id)
         val_mask[id_val] = 1
-        graph.ndata['train_mask'] = torch.from_numpy(train_mask)
-        graph.ndata['val_mask'] = torch.from_numpy(train_mask)
-        graph.ndata['test_mask'] = torch.from_numpy(train_mask)
+        test_mask[id_test] = 1
+
+        graph.ndata['train_mask'] = train_mask.int()
+        graph.ndata['val_mask'] = val_mask.int()
+        graph.ndata['test_mask'] = test_mask.int()
 
 
 def graph_split(graph, drop=True):
