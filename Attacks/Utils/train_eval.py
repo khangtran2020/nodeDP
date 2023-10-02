@@ -8,6 +8,8 @@ from Models.init import init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 
+def get_entropy(pred):
+    pass
 
 def train_shadow(args, tr_loader, shadow_model, epochs, optimizer, name, device, history, mode):
     model_name = f'{name}_{mode}_shadow.pt'
@@ -129,7 +131,7 @@ def update_attack_step(model, device, loader, metrics, criterion, optimizer):
         optimizer.step()
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
-        train_loss += loss.item()
+        train_loss += loss.item()*predictions.size(dim=0)
     performance = metrics.compute()
     metrics.reset()
     return train_loss / num_data, performance
