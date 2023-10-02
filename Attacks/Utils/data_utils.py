@@ -125,7 +125,7 @@ def generate_attack_samples(graph, conf, nohop_conf, mode, device, te_graph=None
         return x, y
 
     else:
-        num_classes = graph.size(1)
+        num_classes = conf.size(1)
         print(num_classes, graph.ndata['label'].unique())
         num_train = graph.ndata[tr_mask].sum()
         num_test = te_graph.ndata[te_mask].sum()
