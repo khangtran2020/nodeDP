@@ -93,6 +93,8 @@ def run(args, graph, model, device, history, name):
             test_distribution_shift(x_tr=x, x_te=x_test)
             x = torch.cat([x, x_test], dim=0)
             y = torch.cat([y, y_test], dim=0)
+            for i in x.size(dim=1):
+                x[:, i] = (x[:,i] - x[:,i].mean()) / (x[:,i].std() + 1e-12)
             num_test = x_test.size(0)
             num_train = int((x.size(0) - num_test) * 0.8)
 

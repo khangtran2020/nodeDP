@@ -22,7 +22,9 @@ class Data(Dataset):
 def test_distribution_shift(x_tr, x_te):
     num_data = x_tr.size(dim=0) + x_te.size(dim=0)
     perm = torch.randperm(num_data)
-    x = torch.cat((x_tr, x_te), dim=0).cpu()[perm].numpy()
+    x = torch.cat((x_tr, x_te), dim=0).cpu()[perm]
+    for i in x.size(dim=1):
+        x[:, i] = (x[:,i] - x[:,i].mean()) / (x[:,i].std() + 1e-12)
     y = torch.cat((torch.ones(x_tr.size(dim=0)), torch.zeros(x_te.size(dim=0))), dim=0).cpu()[perm].numpy()
     lr = LogisticRegression()
     lr.fit(X=x, y=y)
