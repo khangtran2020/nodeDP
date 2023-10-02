@@ -70,7 +70,7 @@ def run(args, current_time, device):
     args.exist_model = exist_model
     history = (model_hist, att_hist)
 
-    if args.attack_mode == 'blackbox':
+    if args.att_mode == 'blackbox':
         blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
     # elif args.attack_mode == 'whitebox':
     #     whitebox(args=args,graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
