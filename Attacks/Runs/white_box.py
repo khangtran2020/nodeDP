@@ -7,9 +7,10 @@ from Runs.run_nodedp import run as run_nodedp
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
-from Attacks.train_eval import train_shadow, train_attack, eval_attack_step
-from Attacks.helper import generate_attack_samples_white_box_grad, Data
-from Models.models import NN, GraphSageFull, GATFull
+from Attacks.Utils.train_eval import train_attack, eval_attack_step
+from Attacks.Utils.helper import generate_attack_samples_white_box, Data
+from Models.models import NN
+from sklearn.model_selection import train_test_split
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -41,8 +42,7 @@ def retrain(args, train_g, val_g, test_g, current_time, device, history):
     return tar_model, tar_history
 
 
-def run_white_box(args, current_time, device):
-
+def run_white_box_train(args, current_time, device):
     with timeit(logger=logger, task='init-target-model'):
         if args.retrain_tar:
             history = init_history_attack()
@@ -54,50 +54,43 @@ def run_white_box(args, current_time, device):
             train_g, val_g, test_g, graph = read_data_attack(args=args, data_name=args.dataset, history=tar_history)
             tar_model = init_model(args=args)
             tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
-
+        # device = torch.device('cpu')
+        
     with timeit(logger=logger, task='preparing-attack-data'):
+        
         tar_model.to(device)
-        graph = graph.to(device)
         tar_model.zero_grad()
-        metrics = torchmetrics.classification.AUROC(task="binary").to(device)
-
+        g = graph.to(device)
         criter = torch.nn.CrossEntropyLoss(reduction='none')
-        idx_pos, idx_neg, y_pos, y_neg = generate_attack_samples_white_box_grad(graph=graph, device=device)
+        x_tr, x_va, x_te, y_tr, y_va, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
+                                                                   criter=criter, device=device)
+        
+        new_dim = x_tr.size(dim=1)
 
-        feature = graph.ndata['feat']
-        label = graph.ndata['label']
-        pred = tar_model.full(g = graph, x = feature)
-        loss = criter(pred, label)
+        tr_data = Data(X=x_tr, y=y_tr)
+        va_data = Data(X=x_va, y=y_va)
+        te_data = Data(X=x_te, y=y_te)
 
-        pos_grad_norm = []
-        for i, idx in enumerate(idx_pos):
-            grad = 0
-            loss[idx].backward(retain_graph=True)
-            for _, tensor in tar_model.named_parameters():
-                if tensor.grad is not None:
-                    grad = grad + tensor.grad.detach().norm(p=2)**2
-            pos_grad_norm.append(grad.sqrt().item())
-            tar_model.zero_grad()
+    # device = torch.device('cpu')
+    with timeit(logger=logger, task='train-attack-model'):
 
-        pos_grad_norm = torch.Tensor(pos_grad_norm).to(device)
-        # pos_grad_norm = torch.nn.functional.softmax(-1*pos_grad_norm)
+        tr_loader = torch.utils.data.DataLoader(tr_data, batch_size=args.batch_size,
+                                                pin_memory=False, drop_last=True, shuffle=True)
 
-        neg_grad_norm = []
-        for i, idx in enumerate(idx_neg):
-            grad = 0
-            loss[idx].backward(retain_graph=True)
-            for _, tensor in tar_model.named_parameters():
-                if tensor.grad is not None:
-                    grad = grad + tensor.grad.detach().norm(p=2)**2
-            neg_grad_norm.append(grad.sqrt().item())
-            tar_model.zero_grad()
-        neg_grad_norm = torch.Tensor(neg_grad_norm).to(device)
+        va_loader = torch.utils.data.DataLoader(va_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
+                                                pin_memory=False, drop_last=False)
 
-        rprint(f"Mean pos grad: {pos_grad_norm.mean()}, Mean neg grad: {neg_grad_norm.mean()}")
-        # neg_grad_norm = torch.nn.functional.softmax(-1*neg_grad_norm)
+        te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
+                                                pin_memory=False, drop_last=False)
+        attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
+        attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 
-        grad_pred = torch.cat((pos_grad_norm, neg_grad_norm), dim=0)
-        grad_pred = torch.nn.functional.softmax(-1*grad_pred)
-        y = torch.cat((y_pos, y_neg), dim=0).to(device)
-        auc = metrics(grad_pred, y)
-        rprint(f"Attack AUC: {auc}")
+        attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
+                                    attack_model=attack_model, epochs=args.attack_epochs, optimizer=attack_optimizer,
+                                    name=tar_history['name'], device=device)
+
+    attack_model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_attack.pt"))
+    te_loss, te_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
+                                       metrics=torchmetrics.classification.BinaryAUROC().to(device),
+                                       criterion=torch.nn.BCELoss())
+    rprint(f"Attack AUC: {te_auc}")
