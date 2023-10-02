@@ -313,13 +313,13 @@ def init_loader(args, device, train_g, test_g, val_g):
     else:
         train_loader = dgl.dataloading.DataLoader(train_g, train_nodes, sampler, device=device,
                                                   batch_size=args.batch_size, shuffle=True, drop_last=True,
-                                                  num_workers=args.num_worker)
+                                                  num_workers=0)
     val_loader = dgl.dataloading.DataLoader(val_g, val_nodes, sampler, device=device,
                                             batch_size=args.batch_size, shuffle=True, drop_last=False,
-                                            num_workers=args.num_worker)
+                                            num_workers=0)
     test_loader = dgl.dataloading.DataLoader(test_g, test_nodes, sampler, device=device,
                                              batch_size=args.batch_size, shuffle=True, drop_last=False,
-                                             num_workers=args.num_worker)
+                                             num_workers=0)
     return train_loader, val_loader, test_loader
 
 def fold_separation(g, num_folds):
