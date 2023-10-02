@@ -20,7 +20,7 @@ from torch_geometric.transforms import Compose, RandomNodeSplit
 from joblib import Parallel, delayed
 
 
-def read_data(args, data_name, history=None):
+def read_data(args, data_name, history, exist=False):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
         graph = data[0]
@@ -96,10 +96,31 @@ def read_data(args, data_name, history=None):
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
 
-    if history is not None:
+    if exist == False:
         history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0).tolist()
         history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0).tolist()
         history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0).tolist()
+
+    else:
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
+
+        train_mask = torch.zeros(graph.nodes().size(dim=0))
+        val_mask = torch.zeros(graph.nodes().size(dim=0))
+        test_mask = torch.zeros(graph.nodes().size(dim=0))
+        
+        id_train = history['tr_id']
+        id_val = history['va_id']
+        id_test = history['te_id']
+        
+        train_mask[id_train] = 1
+        val_mask[id_val] = 1
+        test_mask[id_test] = 1
+
+        graph.ndata['train_mask'] = train_mask.int()
+        graph.ndata['val_mask'] = val_mask.int()
+        graph.ndata['test_mask'] = test_mask.int()
     
     
     if args.submode == 'density':
@@ -127,7 +148,6 @@ def read_data(args, data_name, history=None):
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 
-
 def node_split(graph, val_size, test_size):
     keys = graph.ndata.keys()
     if 'train_mask' not in keys or 'val_mask' not in keys or 'test_mask' not in keys:
@@ -148,7 +168,6 @@ def node_split(graph, val_size, test_size):
         graph.ndata['val_mask'] = val_mask.int()
         graph.ndata['test_mask'] = test_mask.int()
 
-
 def graph_split(graph, drop=True):
     train_id = torch.index_select(graph.nodes(), 0, graph.ndata['train_mask'].nonzero().squeeze()).numpy()
     val_id = torch.index_select(graph.nodes(), 0, graph.ndata['val_mask'].nonzero().squeeze()).numpy()
@@ -164,7 +183,6 @@ def graph_split(graph, drop=True):
         test_g = drop_isolated_node(test_g)
 
     return train_g, val_g, test_g
-
 
 def drop_isolated_node(graph):
     mask = torch.zeros_like(graph.nodes())
@@ -276,7 +294,6 @@ def filter_class_by_chosen_label(graph, chosen_label):
     graph.ndata['label_mask'] = mask
     return range(len(chosen_label))
 
-
 def init_loader(args, device, train_g, test_g, val_g):
     train_nodes = train_g.nodes()
     val_nodes = val_g.nodes()
@@ -305,14 +322,12 @@ def init_loader(args, device, train_g, test_g, val_g):
                                              num_workers=args.num_worker)
     return train_loader, val_loader, test_loader
 
-
 def fold_separation(g, num_folds):
     skf = StratifiedKFold(n_splits=num_folds)
     node_id = range(len(g.nodes().tolist()))
     node_label = g.ndata['label'].tolist()
     folds = [x for x in skf.split(node_id, node_label)]
     return folds
-
 
 def fold_assign(g, folds, current_fold):
     tr_mask = np.zeros(len(g.nodes().tolist()))
@@ -325,7 +340,6 @@ def fold_assign(g, folds, current_fold):
     g.ndata['train_mask'] = torch.BoolTensor(tr_mask)
     g.ndata['val_mask'] = torch.BoolTensor(va_mask)
     return
-
 
 def reduce_desity(g, dens_reduction):
     # num_edge = g.edges()[0].size(dim=0)
@@ -390,7 +404,6 @@ def reduce_desity_deg(g, dens_reduction):
     print(f"Old # edges: {num_edge}, New # edges: {new_g.edges()[0].size(dim=0)}")
     return new_g
 
-
 def read_data_attack(args, data_name, history):
     if data_name == 'reddit':
         data = dgl.data.RedditDataset()
@@ -443,51 +456,6 @@ def read_data_attack(args, data_name, history):
         g_train = reduce_desity(g=g_train, dens_reduction=args.density)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
-
-
-def init_shadow_loader(args, device, graph):
-    tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1).to(device)
-    va_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1).to(device)
-    te_nid = get_index_by_value(a=graph.ndata['sva_mask'], val=1).to(device)
-
-    sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
-    tr_loader = dgl.dataloading.DataLoader(graph.to(device), tr_nid.to(device), sampler, device=device,
-                                           batch_size=args.batch_size, shuffle=True, drop_last=True,
-                                           num_workers=args.num_worker)
-
-    va_loader = dgl.dataloading.DataLoader(graph.to(device), va_nid.to(device), sampler, device=device,
-                                           batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                           num_workers=args.num_worker)
-
-    te_loader = dgl.dataloading.DataLoader(graph.to(device), te_nid.to(device), sampler, device=device,
-                                           batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                           num_workers=args.num_worker)
-    return tr_loader, va_loader, te_loader
-
-
-def randomsplit(graph, num_node_per_class, train_ratio=0.7, test_ratio=0.2):
-    y = graph.ndata['label']
-    num_classes = y.max().item() + 1
-    num_train_nodes_per_class = int(num_node_per_class * train_ratio)
-    num_test_nodes_per_class = int(num_node_per_class * test_ratio)
-
-    train_mask = torch.zeros_like(y)
-    test_mask = torch.zeros_like(y)
-    val_mask = torch.zeros_like(y)
-
-    for c in range(num_classes):
-        idx = (y == c).nonzero(as_tuple=False).view(-1)
-        num_nodes = idx.size(0)
-        if num_nodes >= num_node_per_class:
-            idx = idx[torch.randperm(idx.size(0))][:num_node_per_class]
-            train_mask[idx[:num_train_nodes_per_class]] = True
-            test_mask[idx[num_train_nodes_per_class:num_train_nodes_per_class + num_test_nodes_per_class]] = True
-            val_mask[idx[num_train_nodes_per_class + num_test_nodes_per_class:]] = True
-
-    graph.ndata['str_mask'] = train_mask
-    graph.ndata['sva_mask'] = val_mask
-    graph.ndata['ste_mask'] = test_mask
-
 
 def read_pair_file(args, file_path='Data/wpair/', nodes=None):
     temp = None

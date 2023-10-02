@@ -7,8 +7,8 @@ from Runs.run_nodedp import run as run_nodedp
 from Utils.utils import *
 from loguru import logger
 from rich import print as rprint
-from Attacks.train_eval import train_attack, eval_attack_step
-from Attacks.helper import generate_attack_samples_white_box, Data
+from Attacks.Utils.train_eval import train_attack, eval_attack_step
+from Attacks.Utils.helper import generate_attack_samples_white_box, Data
 from Models.models import NN
 from sklearn.model_selection import train_test_split
 

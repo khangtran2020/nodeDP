@@ -8,6 +8,11 @@ from contextlib import contextmanager
 from rich import print as rprint
 from rich.pretty import pretty_repr
 
+
+def save_dict(path, dct):
+    with open('{}.pkl'.format(path), 'wb') as f:
+        pickle.dump(dct, f)
+
 def print_args(args):
     arg_dict = {}
     if args.mode == 'dp':
