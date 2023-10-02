@@ -138,3 +138,5 @@ def run(args, graph, model, device, history, name):
         te_loss, te_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
                                        metrics=metric_dict[met], criterion=torch.nn.BCELoss())
         rprint(f"Attack {met}: {te_auc}")
+    
+    return model_hist, att_hist

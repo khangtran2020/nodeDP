@@ -71,10 +71,17 @@ def run(args, current_time, device):
     history = (model_hist, att_hist)
 
     if args.att_mode == 'blackbox':
-        blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
+        model_hist, att_hist = blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
     # elif args.attack_mode == 'whitebox':
     #     whitebox(args=args,graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
 
+    general_hist = {
+        'data': data_hist,
+        'model': model_hist,
+        'att': att_hist
+    }
+    general_path = args.res_path + f"{name['general']}.pkl"
+    save_dict(path=general_path, dct=general_hist)
 
 if __name__ == "__main__":
     current_time = datetime.datetime.now()
