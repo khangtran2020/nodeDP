@@ -169,7 +169,7 @@ def retrain(args, train_g, val_g, test_g, model, device, history, name):
     va_info = va_loader
     te_info = (test_g, te_loader)
 
-    if args.tar_clean == 1:
+    if args.mode == 'clean':
         run_mode = run_clean
     else:
         run_mode = run_nodedp
