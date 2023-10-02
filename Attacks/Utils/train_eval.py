@@ -100,6 +100,8 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
         te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
                                            criterion=criterion)
         
+        rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc}, va_loss {va_loss}, va_acc {va_acc}")
+
         history['attr_loss'].append(tr_loss)
         history['attr_perf'].append(tr_acc)
         history['atva_loss'].append(va_loss)
