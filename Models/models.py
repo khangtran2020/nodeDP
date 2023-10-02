@@ -130,33 +130,13 @@ class NN(nn.Module):
                 h = self.layers[i](h)
                 h = self.activation(h)
             h = self.layers[-1](h)
-            # h = self.last_activation(h)
+            h = self.last_activation(h)
             return h
         else:
             h = x
             h = self.out_layer(h)
-            # h = self.last_activation(h)
+            h = self.last_activation(h)
             return h
-
-
-class CustomNN(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, n_layer, dropout=None):
-        super(CustomNN, self).__init__()
-        self.input_dim = input_dim
-        self.block_1 = NN(input_dim=input_dim, hidden_dim= hidden_dim, output_dim=hidden_dim, n_layer=n_layer-1, dropout=dropout)
-        self.block_2 = NN(input_dim=input_dim, hidden_dim= hidden_dim, output_dim=hidden_dim, n_layer=n_layer-1, dropout=dropout)
-        self.final_block = NN(input_dim=int(2*hidden_dim), hidden_dim= hidden_dim, output_dim=output_dim, n_layer=n_layer-1, dropout=dropout)
-        self.last_activation = torch.nn.Softmax(dim=1) if output_dim > 1 else torch.nn.Sigmoid()
-
-    def forward(self, x):
-        h1 = x[:,:self.input_dim]
-        h2 = x[:,self.input_dim:]
-        h1 = self.block_1(h1)
-        h2 = self.block_2(h2)
-        h = torch.cat((h1, h2), dim=1)
-        h = self.final_block(h)
-        return self.last_activation(h)
-
 
 class DotPredictor(nn.Module):
     def forward(self, g, h):
