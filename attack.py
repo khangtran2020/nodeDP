@@ -6,11 +6,11 @@ import warnings
 from Data.read import read_data
 from loguru import logger
 from rich import print as rprint
-from Utils.utils import seed_everything, timeit, read_pickel, save_res
+from Utils.utils import seed_everything, timeit, read_pickel
 from Attacks.config import parse_args
 from Attacks.Runs.black_box import run as blackbox
 # from Attacks.Runs.white_box import run as whitebox
-from Attacks.Utils.utils import print_args, init_history, get_name
+from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
 from Attacks.Utils.data_utils import shadow_split
 from Models.init import init_model
 from hashlib import md5
@@ -39,7 +39,7 @@ def run(args, current_time, device):
         shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
 
         if exist_data == False:
-            save_res(name=data_path, dct=data_hist)
+            save_dict(path=data_path, dct=data_hist)
 
         train_g = train_g.to(device)
         val_g = val_g.to(device)
