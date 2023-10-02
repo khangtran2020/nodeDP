@@ -74,11 +74,11 @@ def init_shadow_loader(args, device, graph):
     sampler = dgl.dataloading.NeighborSampler([args.n_neighbor for i in range(args.n_layers)])
     tr_loader = dgl.dataloading.DataLoader(graph.to(device), tr_nid.to(device), sampler, device=device,
                                            batch_size=args.batch_size, shuffle=True, drop_last=True,
-                                           num_workers=args.num_worker)
+                                           num_workers=0)
 
     te_loader = dgl.dataloading.DataLoader(graph.to(device), te_nid.to(device), sampler, device=device,
                                            batch_size=args.batch_size, shuffle=False, drop_last=False,
-                                           num_workers=args.num_worker)
+                                           num_workers=0)
     return tr_loader, te_loader
 
 def generate_attack_samples(graph, conf, nohop_conf, mode, device, te_graph=None, te_conf=None, te_nohop_conf=None):
