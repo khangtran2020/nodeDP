@@ -117,7 +117,7 @@ def run(args, graph, model, device, history, name):
         te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.att_batch_size, num_workers=0, shuffle=False,
                                                 pin_memory=False, drop_last=False)
         
-        attack_model = CustomNN(input_dim=new_dim, hidden_dim=128, output_dim=1, n_layer=3)
+        attack_model = CustomNN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=4)
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.att_lr)
 
         attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
