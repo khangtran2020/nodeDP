@@ -111,7 +111,7 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
         
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 
-        es(epoch=epoch, epoch_score=va_acc.item(), model=attack_model, model_path=args.save_path + model_name)
+        es(epoch=epoch, epoch_score=te_acc.item(), model=attack_model, model_path=args.save_path + model_name)
 
     return attack_model
 
