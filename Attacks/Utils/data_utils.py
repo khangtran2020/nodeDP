@@ -31,7 +31,7 @@ def test_distribution_shift(x_tr, x_te):
     lr.fit(X=x, y=y)
     rprint(f"Distribution shift accuracy: {lr.score(X=x, y=y)}")
 
-def shadow_split(graph, ratio, train_ratio=0.8, test_ratio=0.2, history=None, exist=False):
+def shadow_split(graph, ratio, train_ratio=0.6, test_ratio=0.4, history=None, exist=False):
 
     if exist == False:
         y = graph.ndata['label']
