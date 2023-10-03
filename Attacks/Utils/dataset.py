@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 from dgl.dataloading import transforms
 from dgl.dataloading.base import NID
 from Utils.utils import get_index_by_value
+from rich import print as rprint
 
 
 class Data(Dataset):
@@ -35,10 +36,15 @@ class ShadowData(Dataset):
         self.model.zero_grad()
 
     def __getitem__(self, index):
-        print(f"Current index: {index}")
         membership_label = self.membership_label[index]
         node = self.nodes[index]
         blocks = self.sample_blocks(seed_nodes=node)
+
+        rprint(f"\n ========= Current blocks of index {index} =========")
+        for i, bl in enumerate(blocks):
+            rprint(f"Block {i} has {bl.srcdata[NID].size(dim=0)} src nodes and {bl.dstdata[NID].size(dim=0)} nodes")
+        rprint(f"========= Done =========\n")
+
         label = blocks[-1].dstdata["label"]
         out_dict, pred = self.model.forwardout(blocks=blocks, x=blocks[-1].srcdata["feat"])
         loss = self.criterion(pred, label)
