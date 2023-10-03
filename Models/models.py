@@ -37,7 +37,7 @@ class GraphSAGE(nn.Module):
             h = x
             for i in range(0, self.n_layers-1):
                 rprint(f"At layer {i}, block {i} has {blocks[i].srcdata[NID]} src nodes and {blocks[i].dstdata[NID]} dst nodes")
-                rprint(f"With feature size {blocks[i].ndata['feat']}\n")
+                rprint(f"With feature size {blocks[i].ndata['feat']['_N'].size()}\n")
                 h_dst = h[:blocks[i].num_dst_nodes()]
                 h = self.layers[i](blocks[i], (h, h_dst))
                 h = self.activation(h)
