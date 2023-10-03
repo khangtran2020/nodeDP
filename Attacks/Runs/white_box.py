@@ -9,9 +9,9 @@ from Utils.utils import timeit
 from Models.models import NN, CustomNN
 from Models.init import init_model, init_optimizer
 from Attacks.Utils.utils import save_dict
-# from Attacks.Utils.data_utils import init_shadow_loader, generate_attack_samples, generate_nohop_graph, test_distribution_shift
-from Attacks.Utils.dataset import Data, ShadowData
+from Attacks.Utils.dataset import Data, ShadowData, custom_collate
 from Attacks.Utils.train_eval import train_shadow, train_attack, eval_attack_step, retrain
+from functools import partial
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -37,17 +37,24 @@ def run(args, graph, model, device, history, name):
         
         shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
         shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
-        
+
         out_keys = [f'out_{i}' for i in range(args.n_layers)]
-        grad_keys = []
+        model_keys = []
         for named, p in model.named_parameters():
             if p.requires_grad:
-                grad_keys.append(named)
-                
-        x, y = shtr_dataset.__getitem__(index=0)
-        it_loss, it_label, it_out_dict, it_grad_dict = x
-        rprint(f"Out dict keys: {it_out_dict.keys()}, out_keys: {out_keys}")
-        rprint(f"Grad dict keys: {it_grad_dict.keys()}, grad_keys: {grad_keys}")
+                model_keys.append(named)
+        
+        collate_fn = partial(custom_collate, out_key=out_keys, model_key=model_keys, device=device)
+        tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
+                                                drop_last=True, shuffle=True)
+        
+        x, y = next(iter(tr_loader))
+        label, loss, out_dict, grad_dict = x
+        rprint(f"Label: {label}, size: {label.size()}")
+        rprint(f"Loss: {loss}, size: {loss.size()}")
+        rprint(f"Out dict: {pretty_repr(out_dict)}, keys: {out_dict.keys()}")
+        rprint(f"Grad dict: {pretty_repr(grad_dict)}, keys: {grad_dict.keys()}")
+        rprint(f"Membership Label: {y}, size: {y.size()}")
         sys.exit()
 
     # device = torch.device('cpu')

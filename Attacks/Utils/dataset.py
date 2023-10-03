@@ -88,18 +88,18 @@ def custom_collate(batch, out_key, model_key, device):
         membership_label = torch.cat((membership_label, y), dim=0)
 
         # true label 
-        label = torch.cat((label, it_label), dim=0)
+        label = torch.cat((label, it_label.detach()), dim=0)
 
         # loss
-        loss = torch.cat((loss, it_loss), dim=0)
+        loss = torch.cat((loss, it_loss.detach()), dim=0)
 
         # out dict
         for key in out_key:
-            out = torch.unsqueeze(it_out_dict[key], dim=0)
+            out = torch.unsqueeze(it_out_dict[key], dim=0).detach()
             out_dict[key] = torch.cat((out_dict[key], out), dim=0)
 
         for key in model_key:
-            grad = torch.unsqueeze(it_grad_dict[key], dim=0)
+            grad = torch.unsqueeze(it_grad_dict[key], dim=0).detach()
             grad_dict[key] = torch.cat((grad_dict[key], grad), dim=0)
 
     return (label, loss, out_dict, grad_dict), membership_label
