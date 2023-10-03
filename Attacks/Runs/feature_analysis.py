@@ -99,6 +99,17 @@ def run(args, graph, model, device, history, name):
         plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
         plt.savefig('grad_in_tr.jpg', bbox_inches='tight')
 
+        X = torch.cat((grad_pos_te, grad_neg_te), dim=0).detach().cpu().numpy()
+        y = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
+
+        pipe.fit(X)
+
+        Xt = pipe.transform(X)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1], c=y)
+        plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
+        plt.savefig('grad_in_te.jpg', bbox_inches='tight')
+
         X_pos_te = grad_pos_te.detach().cpu().numpy()
         Xt = pipe.transform(X_pos_te)
         plt.figure()
@@ -111,15 +122,6 @@ def run(args, graph, model, device, history, name):
         plot = plt.scatter(Xt[:,0], Xt[:,1])
         plt.legend(handles=plot.legend_elements()[0], labels=['neg'])
         plt.savefig('grad_neg_te.jpg', bbox_inches='tight')
-
-        X = torch.cat((grad_pos_te, grad_neg_te), dim=0).detach().cpu().numpy()
-        y = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
-
-        Xt = pipe.transform(X)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1], c=y)
-        plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
-        plt.savefig('grad_in_te.jpg', bbox_inches='tight')
 
         sys.exit()
 
