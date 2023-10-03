@@ -31,7 +31,6 @@ class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
             block.edata[EID] = eid
             seed_nodes = block.srcdata[NID]
             blocks.insert(0, block)
-
         return blocks
 
     def sample(self, g, seed_nodes, exclude_eids=None):
@@ -40,7 +39,6 @@ class ComputeSubgraphSampler(dgl.dataloading.BlockSampler):
             blocks = self.sample_blocks(g, seed_nodes=[node.item()])
             sub_graph[node.item()] = blocks
         return sub_graph
-
 
 class NodeDataLoader(object):
     logger = logging.getLogger('graph-dl')

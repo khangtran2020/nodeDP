@@ -1,75 +1,51 @@
+import sys
 import torch
 import torchmetrics
-from Data.read import *
-from Models.init import init_model, init_optimizer
-from Runs.run_clean import run as run_clean
-from Runs.run_nodedp import run as run_nodedp
-from Utils.utils import *
 from loguru import logger
+from hashlib import md5
 from rich import print as rprint
-from Attacks.Utils.train_eval import train_attack, eval_attack_step
-from Attacks.Utils.helper import generate_attack_samples_white_box, Data
-from Models.models import NN
-from sklearn.model_selection import train_test_split
+from rich.pretty import pretty_repr
+from Utils.utils import timeit
+from Models.models import NN, CustomNN
+from Models.init import init_model, init_optimizer
+from Attacks.Utils.utils import save_dict
+# from Attacks.Utils.data_utils import init_shadow_loader, generate_attack_samples, generate_nohop_graph, test_distribution_shift
+from Attacks.Utils.dataset import Data, ShadowData
+from Attacks.Utils.train_eval import train_shadow, train_attack, eval_attack_step, retrain
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
 
-def retrain(args, train_g, val_g, test_g, current_time, device, history):
-    train_g = train_g.to(device)
-    val_g = val_g.to(device)
-    test_g = test_g.to(device)
-    rprint(f"Node feature device: {train_g.ndata['feat'].device}, Node label device: {train_g.ndata['feat'].device}, "
-           f"Src edges device: {train_g.edges()[0].device}, Dst edges device: {train_g.edges()[1].device}")
-    tr_loader, va_loader, te_loader = init_loader(args=args, device=device, train_g=train_g, test_g=test_g,
-                                                  val_g=val_g)
+def run(args, graph, model, device, history, name):
 
-    model = init_model(args=args)
-    optimizer = init_optimizer(optimizer_name=args.optimizer, model=model, lr=args.lr)
-    tar_name = get_name(args=args, current_date=current_time)
-    history['name'] = tar_name
-    tr_info = (train_g, tr_loader)
-    va_info = va_loader
-    te_info = (test_g, te_loader)
+    train_g, val_g, test_g, shadow_graph = graph
+    model_hist, att_hist = history
 
-    if args.tar_clean == 1:
-        run_mode = run_clean
-    else:
-        run_mode = run_nodedp
-
-    tar_model, tar_history = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
-                                      optimizer=optimizer, name=tar_name, device=device, history=history)
-    return tar_model, tar_history
-
-
-def run_white_box_train(args, current_time, device):
     with timeit(logger=logger, task='init-target-model'):
-        if args.retrain_tar:
-            history = init_history_attack()
-            train_g, val_g, test_g, graph = read_data(args=args, data_name=args.dataset, history=history)
-            tar_model, tar_history = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g,
-                                             current_time=current_time, history=history, device=device)
-        else:
-            tar_history = read_pickel(args.res_path + f'{args.tar_name}.pkl')
-            train_g, val_g, test_g, graph = read_data_attack(args=args, data_name=args.dataset, history=tar_history)
-            tar_model = init_model(args=args)
-            tar_model.load_state_dict(torch.load(args.save_path + f'{args.tar_name}.pt'))
-        # device = torch.device('cpu')
-        
-    with timeit(logger=logger, task='preparing-attack-data'):
-        
-        tar_model.to(device)
-        tar_model.zero_grad()
-        g = graph.to(device)
-        criter = torch.nn.CrossEntropyLoss(reduction='none')
-        x_tr, x_va, x_te, y_tr, y_va, y_te = generate_attack_samples_white_box(graph=g, model=tar_model,
-                                                                   criter=criter, device=device)
-        
-        new_dim = x_tr.size(dim=1)
 
-        tr_data = Data(X=x_tr, y=y_tr)
-        va_data = Data(X=x_va, y=y_va)
-        te_data = Data(X=x_te, y=y_te)
+        if args.exist_model == False:
+            rprint(f"Model is {args.exist_model} to exist, need to retrain")
+            model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
+            model, model_hist = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, model=model, 
+                                        device=device, history=model_hist, name=model_name)
+            
+            target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
+            target_model_path = args.res_path + target_model_name
+            save_dict(path=target_model_path, dct=model_hist)
+        
+    with timeit(logger=logger, task='preparing-shadow-data'):
+        
+        shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
+        shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
+
+        x, y = shtr_dataset.__getitem__(index=0)
+        it_loss, it_label, it_out_dict, it_grad_dict = x
+
+        rprint(f"Loss: {it_loss}")
+        rprint(f"Label: {it_label}")
+        rprint(f"Out dict: {pretty_repr(it_out_dict)}")
+        rprint(f"Grad dict: {pretty_repr(it_grad_dict)}")
+        sys.exit()
 
     # device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):

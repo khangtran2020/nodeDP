@@ -22,6 +22,7 @@ def run(args, graph, model, device, history, name):
     with timeit(logger=logger, task='init-target-model'):
 
         if args.exist_model == False:
+            rprint(f"Model is {args.exist_model} to exist, need to retrain")
             model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
             model, model_hist = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, model=model, 
                                         device=device, history=model_hist, name=model_name)

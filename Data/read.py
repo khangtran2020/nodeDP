@@ -97,11 +97,13 @@ def read_data(args, data_name, history, exist=False):
     graph = dgl.remove_self_loop(graph)
 
     if exist == False:
+        rprint(f"History is {exist} to exist, need to reinitialize")
         history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0).tolist()
         history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0).tolist()
         history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0).tolist()
 
     else:
+        rprint(f"History is {exist} to exist, assigning masks according to previous run")
         del(graph.ndata['train_mask'])
         del(graph.ndata['val_mask'])
         del(graph.ndata['test_mask'])

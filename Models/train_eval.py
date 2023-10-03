@@ -53,7 +53,6 @@ class EarlyStopping:
                 torch.save(model, model_path)
         self.val_score = epoch_score
 
-
 def update_clean(model, optimizer, objective, batch):
     optimizer.zero_grad()
     input_nodes, output_nodes, mfgs = batch

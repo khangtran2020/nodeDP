@@ -69,6 +69,83 @@ def shadow_split(graph, ratio, train_ratio=0.6, test_ratio=0.4, history=None, ex
         graph.ndata['str_mask'] = train_mask
         graph.ndata['ste_mask'] = test_mask
 
+def shadow_split_whitebox(graph, ratio, history=None, exist=False):
+
+    org_nodes = graph.nodes()
+
+    if exist == False:
+
+        tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+        te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+
+        te_node = org_nodes[te_org_idx]
+        tr_node = org_nodes[tr_org_idx]
+
+        num_shadow = int(ratio * tr_node.size(dim=0))
+        perm = torch.randperm(tr_node.size(dim=0))
+        shatr_nodes = tr_node[perm[:num_shadow]]
+
+        num_half = min(int(te_node.size(dim=0) / 2), int(shatr_nodes.size(dim=0) / 2))
+
+        perm = torch.randperm(shatr_nodes.size(dim=0))
+        sha_pos_te = shatr_nodes[perm[:num_half]]
+        sha_pos_tr = shatr_nodes[perm[num_half:]]
+
+        perm = torch.randperm(te_node.size(dim=0))
+        sha_neg_te = te_node[perm[:num_half]]
+        sha_neg_tr = te_node[perm[num_half:]]
+
+        rprint(f"Shadow positive nodes to train: {sha_pos_tr.size(dim=0)}, to test: {sha_pos_te}")
+        rprint(f"Shadow negative nodes to train: {sha_neg_tr.size(dim=0)}, to test: {sha_neg_te}")
+
+        train_mask = torch.zeors(org_nodes.size(dim=0))
+        test_mask = torch.zeors(org_nodes.size(dim=0))
+        membership_label = torch.zeors(org_nodes.size(dim=0))
+
+        train_mask[sha_pos_tr] = 1
+        train_mask[sha_neg_tr] = 1
+
+        test_mask[sha_pos_te] = 1
+        test_mask[sha_neg_te] = 1
+
+        membership_label[sha_pos_tr] = 1
+        membership_label[sha_pos_te] = 1
+
+        membership_label[sha_neg_tr] = -1
+        membership_label[sha_neg_te] = -1
+
+        graph.ndata['str_mask'] = train_mask
+        graph.ndata['ste_mask'] = test_mask
+        graph.ndata['sha_label'] = membership_label
+
+        tr_idx = get_index_by_value(a=train_mask, val=1).tolist()
+        te_idx = get_index_by_value(a=test_mask, val=1).tolist()
+        history['sha_tr'] = tr_idx
+        history['sha_te'] = te_idx
+        history['sha_label'] = membership_label.tolist()
+
+        shadow_nodes = torch.cat((shatr_nodes, te_node), dim=0)
+    
+    else:    
+
+        train_mask = torch.zeros(graph.nodes().size(dim=0))
+        test_mask = torch.zeros(graph.nodes().size(dim=0))
+
+        train_mask[history['sha_tr']] = 1
+        test_mask[history['sha_te']] = 1
+
+        sha_tr_node = get_index_by_value(a=train_mask, val=1)
+        sha_te_node = get_index_by_value(a=test_mask, val=1)
+
+        shadow_nodes = torch.cat((sha_tr_node, sha_te_node), dim=0)
+
+        graph.ndata['str_mask'] = train_mask
+        graph.ndata['ste_mask'] = test_mask
+        graph.ndata['sha_label'] = torch.Tensor(history['sha_label'])
+    
+    shadow_graph = graph.subgraph(shadow_nodes)
+    return shadow_graph
+
 def init_shadow_loader(args, device, graph):
 
     tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1).to(device)
