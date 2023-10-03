@@ -54,10 +54,10 @@ def run(args, graph, model, device, history, name):
             if p.requires_grad:
                 model_keys.append(named)
                 if 'bias' in named:
-                    out_d = p.size().item()
+                    out_d = list(p.size())[0]
                     grad_dim.append((1, out_d))
                 else:
-                    out_d, in_d = p.size().item()
+                    out_d, in_d = list(p.size())
                     grad_dim.append((in_d, out_d))
                 rprint(f"Model parameter {named} has size: {p.size()}")
         
