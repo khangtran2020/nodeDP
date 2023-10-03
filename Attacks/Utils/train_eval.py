@@ -121,7 +121,7 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
 
     attack_model.to(device)
     # DEfining criterion
-    criterion = torch.nn.BCEWithLogitsLoss(reduction='mean', pos_weight=weight[1])
+    criterion = torch.nn.BCEWithLogitsLoss(reduction='mean', pos_weight=weight[0])
     criterion.to(device)
 
     metrics = torchmetrics.classification.BinaryAccuracy().to(device)
