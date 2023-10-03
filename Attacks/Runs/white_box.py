@@ -10,7 +10,7 @@ from Models.models import WbAttacker
 from Models.init import init_model, init_optimizer
 from Attacks.Utils.utils import save_dict
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
-from Attacks.Utils.train_eval import train_wb_attack, eval_attack_step, retrain
+from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain
 from functools import partial
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -102,7 +102,7 @@ def run(args, graph, model, device, history, name):
         'f1': torchmetrics.classification.BinaryF1Score().to(device)
     }
     for met in metric:
-        te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
+        te_loss, te_auc = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
                                            metrics=metric_dict[met], criterion=torch.nn.BCELoss())
         rprint(f"Attack {met}: {te_auc}")
     

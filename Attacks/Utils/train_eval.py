@@ -133,9 +133,9 @@ def train_wb_attack(args, tr_loader, te_loader, attack_model, epochs, optimizer,
     # THE ENGINE LOOP
     tk0 = tqdm(range(epochs), total=epochs)
     for epoch in tk0:
-        tr_loss, tr_acc = update_attack_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
+        tr_loss, tr_acc = upd_att_wb_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
                                              criterion=criterion, optimizer=optimizer)
-        te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
+        te_loss, te_acc = eval_att_wb_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
                                            criterion=criterion)
         
         rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc.item()}, te_loss {te_loss}, te_acc {te_acc.item()}")
@@ -150,7 +150,6 @@ def train_wb_attack(args, tr_loader, te_loader, attack_model, epochs, optimizer,
         es(epoch=epoch, epoch_score=te_acc.item(), model=attack_model, model_path=args.save_path + model_name)
 
     return attack_model
-
 
 def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.to(device)
@@ -218,3 +217,44 @@ def retrain(args, train_g, val_g, test_g, model, device, history, name):
     model, history = run_mode(args=args, tr_info=tr_info, va_info=va_info, te_info=te_info, model=model,
                                       optimizer=optimizer, name=name, device=device, history=history)
     return model, history
+
+def upd_att_wb_step(model, device, loader, metrics, criterion, optimizer):
+    model.to(device)
+    model.train()
+    model.zero_grad()
+    train_loss = 0
+    num_data = 0.0
+    for bi, d in enumerate(loader):
+        optimizer.zero_grad()
+        features, target = d
+        target = target.to(device)
+        predictions = model(features)
+        predictions = torch.squeeze(predictions, dim=-1)
+        loss = criterion(predictions, target.float())
+        loss.backward()
+        optimizer.step()
+        metrics.update(predictions, target)
+        num_data += predictions.size(dim=0)
+        train_loss += loss.item()*predictions.size(dim=0)
+    performance = metrics.compute()
+    metrics.reset()
+    return train_loss / num_data, performance
+
+def eval_att_wb_step(model, device, loader, metrics, criterion):
+    model.to(device)
+    model.eval()
+    val_loss = 0
+    num_data = 0.0
+    with torch.no_grad():
+        for bi, d in enumerate(loader):
+            features, target = d
+            target = target.to(device)
+            predictions = model(features)
+            predictions = torch.squeeze(predictions, dim=-1)
+            loss = criterion(predictions, target.float())
+            metrics.update(predictions, target)
+            num_data += predictions.size(dim=0)
+            val_loss += loss.item()*predictions.size(dim=0)
+        performance = metrics.compute()
+        metrics.reset()
+    return val_loss/num_data, performance
