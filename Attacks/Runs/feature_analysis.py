@@ -57,8 +57,8 @@ def run(args, graph, model, device, history, name):
         rprint(f"Grad pos: {grad_pos.size()}")
         rprint(f"Grad neg: {grad_neg.size()}")
 
-        rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.sizs(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
-        rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.sizs(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
+        rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
+        rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
 
         sys.exit()
 
