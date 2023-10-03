@@ -41,13 +41,13 @@ class GraphSAGE(nn.Module):
             h_dst = h[:blocks[-1].num_dst_nodes()]
             h = self.layers[-1](blocks[-1], (h, h_dst))
             pred = self.last_activation(h)
-            out_dict[f'out_{self.n_layers-1}'] = pred
+            out_dict[f'out_{self.n_layers-1}'] = pred[0]
             return out_dict, pred
         else:
             h = x
             h_dst = h[:blocks[0].num_dst_nodes()]
             pred = self.last_activation(self.layer(blocks[0], (h, h_dst)))
-            out_dict[f'out_{self.n_layers-1}'] = pred
+            out_dict[f'out_{self.n_layers-1}'] = pred[0]
             return out_dict, pred
 
     def forward(self, blocks, x):
