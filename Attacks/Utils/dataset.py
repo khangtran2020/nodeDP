@@ -25,7 +25,7 @@ class ShadowData(Dataset):
         self.graph = graph.to(device)
         org_nodes = self.graph.nodes()
         mask = 'str_mask' if mode == 'train' else 'ste_mask'
-        idx = get_index_by_value(a=mask, val=1)
+        idx = get_index_by_value(a=self.graph.ndata[mask], val=1)
         self.nodes = org_nodes[idx]
         self.num_layer = num_layer
         self.model = model.to(device)
