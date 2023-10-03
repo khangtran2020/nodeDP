@@ -226,7 +226,7 @@ def upd_att_wb_step(model, device, loader, metrics, criterion, optimizer):
     for bi, d in enumerate(loader):
         optimizer.zero_grad()
         features, target = d
-        target = target.to(device)
+        target = torch.unsqueeze(target, dim=1).to(device)
         predictions = model(features)
         loss = criterion(predictions, target.float())
         loss.backward()
