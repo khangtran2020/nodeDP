@@ -45,7 +45,7 @@ def run(args, graph, model, device, history, name):
         rprint(f"Loss: {it_loss}, size: {it_loss.size()}")
         rprint(f"Label: {it_label}, size: {it_label.size()}")
         rprint(f"Membership Label: {y}, size: {y.size()}")
-        rprint(f"Out dict keys: {it_out_dict['out_0'].keys()}")
+        rprint(f"Out dict keys: {it_out_dict.keys()}")
         rprint(f"Grad dict keys: {it_grad_dict.keys()}")
         sys.exit()
 
