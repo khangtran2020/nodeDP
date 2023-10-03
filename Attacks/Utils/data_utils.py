@@ -72,6 +72,9 @@ def shadow_split(graph, ratio, train_ratio=0.6, test_ratio=0.4, history=None, ex
 def shadow_split_whitebox(graph, ratio, history=None, exist=False):
 
     org_nodes = graph.nodes()
+    tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+    rprint(f"test orginal nodes: {te_org_idx}")
 
     if exist == False:
 
@@ -118,26 +121,18 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
         graph.ndata['ste_mask'] = test_mask
         graph.ndata['sha_label'] = membership_label
 
-        tr_idx = get_index_by_value(a=train_mask, val=1).tolist()
-        te_idx = get_index_by_value(a=test_mask, val=1).tolist()
-        history['sha_tr'] = tr_idx
-        history['sha_te'] = te_idx
-        history['sha_label'] = membership_label.tolist()
-
         shadow_nodes = torch.cat((shatr_nodes, te_node), dim=0)
+
+        history['sha_tr'] = train_mask.tolist()
+        history['sha_te'] = test_mask.tolist()
+        history['sha_label'] = membership_label.tolist()
+        history['shadow_nodes'] = shadow_nodes.tolist()
     
     else:    
 
-        train_mask = torch.zeros(graph.nodes().size(dim=0))
-        test_mask = torch.zeros(graph.nodes().size(dim=0))
-
-        train_mask[history['sha_tr']] = 1
-        test_mask[history['sha_te']] = 1
-
-        sha_tr_node = get_index_by_value(a=train_mask, val=1)
-        sha_te_node = get_index_by_value(a=test_mask, val=1)
-
-        shadow_nodes = torch.cat((sha_tr_node, sha_te_node), dim=0)
+        train_mask = torch.LongTensor(history['sha_tr'])
+        test_mask = torch.LongTensor(history['sha_te'])
+        shadow_nodes = torch.LongTensor(history['shadow_nodes'])
 
         graph.ndata['str_mask'] = train_mask
         graph.ndata['ste_mask'] = test_mask
