@@ -55,7 +55,7 @@ def run(args, current_time, device):
         target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
         target_model_path = args.res_path + target_model_name
 
-        rprint(f"Model pt exist {os.path.exists(model_path)}, Retraining {args.retrain}, Target model dict exist: {os.path.exists(target_model_path)}")
+        rprint(f"Model pt exist {os.path.exists(model_path)}, Retraining {bool(args.retrain)}, Target model dict exist: {os.path.exists(target_model_path)}")
 
         if (os.path.exists(model_path)) & (args.retrain == 0) & (os.path.exists(target_model_path)): 
             exist_model = True
