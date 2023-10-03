@@ -260,6 +260,7 @@ def get_grad(graph, model, criterion, device, mask):
 
     model.zero_grad()
     graph = graph.to(device)
+    model.to(device)
     mask = graph.ndata[mask].int()
 
     pred = model.full(g=graph, x=graph.ndata['feat'])
