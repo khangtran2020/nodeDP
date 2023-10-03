@@ -257,7 +257,7 @@ class WbAttacker(nn.Module):
             overall_emb = torch.cat((overall_emb, out_emb), dim=1)
 
         for key in self.model_keys:
-            rprint(f"Forwarding at key {key}")
+            rprint(f"Forwarding at key {key}, with size {grad_dict[key].size()}")
             grad_emb = self.block_grad[key](grad_dict[key])
             overall_emb = torch.cat((overall_emb, grad_emb), dim=1)
 
