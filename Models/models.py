@@ -4,6 +4,8 @@ import torch.nn
 from torch import nn
 import dgl.function as fn
 import torch.nn.functional as F
+from rich import print as rprint
+from dgl.dataloading.base import NID
 
 class GraphSAGE(nn.Module):
 
@@ -34,6 +36,8 @@ class GraphSAGE(nn.Module):
         if self.n_layers > 1:
             h = x
             for i in range(0, self.n_layers-1):
+                rprint(f"At layer {i}, block {i} has {blocks[i].srcdata[NID]} src nodes and {blocks[i].dstdata[NID]} dst nodes")
+                rprint(f"With feature size {blocks[i].ndata['feat'].size()}\n")
                 h_dst = h[:blocks[i].num_dst_nodes()]
                 h = self.layers[i](blocks[i], (h, h_dst))
                 h = self.activation(h)

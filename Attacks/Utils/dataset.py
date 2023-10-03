@@ -40,7 +40,7 @@ class ShadowData(Dataset):
         node = self.nodes[index]
         blocks = self.sample_blocks(seed_nodes=node)
 
-        rprint(f"\n ========= Current blocks of index {index} =========")
+        rprint(f"\n========= Current blocks of index {index} =========")
         for i, bl in enumerate(blocks):
             rprint(f"Block {i} has {bl.srcdata[NID]} src nodes and {bl.dstdata[NID]} dst nodes")
         rprint(f"========= Done =========\n")
