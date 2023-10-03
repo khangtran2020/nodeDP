@@ -92,7 +92,7 @@ def run(args, graph, model, device, history, name):
                                out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
         att_model.to(device)
         att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
-        att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader,  
+        att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, weight=lab_weight, 
                                     attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
                                     name=name['att'], device=device, history=att_hist)
 
