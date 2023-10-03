@@ -39,12 +39,6 @@ class ShadowData(Dataset):
         membership_label = self.membership_label[index]
         node = self.nodes[index]
         blocks = self.sample_blocks(seed_nodes=node)
-
-        # rprint(f"\n========= Current blocks of index {index} =========")
-        # for i, bl in enumerate(blocks):
-        #     rprint(f"Block {i} has {bl.srcdata[NID]} src nodes and {bl.dstdata[NID]} dst nodes")
-        # rprint(f"========= Done =========\n")
-
         label = blocks[-1].dstdata["label"]
         out_dict, pred = self.model.forwardout(blocks=blocks, x=blocks[0].srcdata["feat"])
         loss = self.criterion(pred, label)
@@ -85,7 +79,7 @@ def custom_collate(batch, out_key, model_key, device):
         grad_dict[key] = torch.Tensor([]).to(device)
 
 
-    for item in batch:
+    for i, item in enumerate(batch):
         x, y = item
         it_loss, it_label, it_out_dict, it_grad_dict = x
 
@@ -101,6 +95,7 @@ def custom_collate(batch, out_key, model_key, device):
 
         # out dict
         for key in out_key:
+            rprint(f"At item {i}, out dim of key {key} is {it_out_dict[key].size()}")
             out = torch.unsqueeze(it_out_dict[key], dim=0).detach()
             out_dict[key] = torch.cat((out_dict[key], out), dim=0)
 
