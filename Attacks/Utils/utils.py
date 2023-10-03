@@ -10,7 +10,7 @@ from rich.pretty import pretty_repr
 
 
 def save_dict(path, dct):
-    with open('{}.pkl'.format(path), 'wb') as f:
+    with open(path, 'wb') as f:
         pickle.dump(dct, f)
 
 def print_args(args):
