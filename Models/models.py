@@ -218,7 +218,7 @@ class WbAttacker(nn.Module):
         self.grad_dict = nn.ModuleDict()
         for i, key in enumerate(model_keys):
             grad_dim = grad_dim_list[i]
-            self.grad_dict[key] = nn.Sequential(nn.Conv2d(1, num_filters, (1, grad_dim[0]), stride=1),
+            self.grad_dict[key.replace(".", "-")] = nn.Sequential(nn.Conv2d(1, num_filters, (1, grad_dim[0]), stride=1),
                                        nn.ReLU(),
                                        nn.Dropout(p=0.2),
                                        nn.Flatten(),
