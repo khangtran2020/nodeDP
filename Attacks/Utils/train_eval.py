@@ -279,4 +279,4 @@ def get_grad(graph, model, criterion, device, mask):
             grad = torch.unsqueeze(grad, dim=0)
             grad_overall = torch.cat((grad_overall, grad), dim=0)
 
-    return grad
+    return grad_overall
