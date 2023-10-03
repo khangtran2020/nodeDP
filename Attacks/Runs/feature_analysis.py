@@ -79,16 +79,46 @@ def run(args, graph, model, device, history, name):
         X = torch.cat((grad_pos_tr, grad_neg_tr), dim=0).detach().cpu().numpy()
         y = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).numpy()
 
-        Xt = pipe.fit_transform(X)
+        pipe.fit(X)
+
+        X_pos_tr = grad_pos_tr.detach().cpu().numpy()
+        Xt = pipe.transform(X_pos_tr)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1])
+        plt.legend(handles=plot.legend_elements()[0], labels=['pos'])
+        plt.savefig('grad_pos_tr.jpg', bbox_inches='tight')
+
+        X_neg_tr = grad_neg_tr.detach().cpu().numpy()
+        Xt = pipe.transform(X_neg_tr)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1])
+        plt.legend(handles=plot.legend_elements()[0], labels=['neg'])
+        plt.savefig('grad_neg_tr.jpg', bbox_inches='tight')\
+
+        Xt = pipe.transform(X)
         plt.figure()
         plot = plt.scatter(Xt[:,0], Xt[:,1], c=y)
         plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
         plt.savefig('grad_in_tr.jpg', bbox_inches='tight')
 
+        X_pos_te = grad_pos_te.detach().cpu().numpy()
+        Xt = pipe.transform(X_pos_te)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1])
+        plt.legend(handles=plot.legend_elements()[0], labels=['pos'])
+        plt.savefig('grad_pos_te.jpg', bbox_inches='tight')
+
+        X_neg_te = grad_neg_te.detach().cpu().numpy()
+        Xt = pipe.transform(X_neg_te)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1])
+        plt.legend(handles=plot.legend_elements()[0], labels=['neg'])
+        plt.savefig('grad_neg_te.jpg', bbox_inches='tight')
+
         X = torch.cat((grad_pos_te, grad_neg_te), dim=0).detach().cpu().numpy()
         y = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
 
-        Xt = pipe.fit_transform(X)
+        Xt = pipe.transform(X)
         plt.figure()
         plot = plt.scatter(Xt[:,0], Xt[:,1], c=y)
         plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
