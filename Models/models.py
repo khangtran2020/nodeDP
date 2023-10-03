@@ -4,8 +4,6 @@ import torch.nn
 from torch import nn
 import dgl.function as fn
 import torch.nn.functional as F
-from rich import print as rprint
-from dgl.dataloading.base import NID
 
 class GraphSAGE(nn.Module):
 
@@ -35,18 +33,13 @@ class GraphSAGE(nn.Module):
         out_dict = {}
         if self.n_layers > 1:
             h = x
-            print(f"Input size: {h.size()}")
             for i in range(0, self.n_layers-1):
-                rprint(f"At layer {i}, block {i} has {blocks[i].srcdata[NID]} src nodes and {blocks[i].dstdata[NID]} dst nodes")
-                rprint(f"With feature size {blocks[i].ndata['feat']['_N'].size()}\n")
                 h_dst = h[:blocks[i].num_dst_nodes()]
-                h = self.layers[i](blocks[i], h)
+                h = self.layers[i](blocks[i], (h, h_dst))
                 h = self.activation(h)
                 out_dict[f'out_{i}'] = h
             h_dst = h[:blocks[-1].num_dst_nodes()]
             h = self.layers[-1](blocks[-1], (h, h_dst))
-            rprint(f"At layer {self.n_layers-1}, block {self.n_layers-1} has {blocks[-1].srcdata[NID]} src nodes and {blocks[-1].dstdata[NID]} dst nodes")
-            rprint(f"With feature size {blocks[-1].ndata['feat']['_N'].size()}\n")
             pred = self.last_activation(h)
             out_dict[f'out_{self.n_layers-1}'] = pred
             return out_dict, pred
