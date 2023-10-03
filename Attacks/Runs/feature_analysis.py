@@ -12,6 +12,17 @@ from Attacks.Utils.utils import save_dict
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
 from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad
 from functools import partial
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+plt.rcParams["figure.figsize"] = (3.5, 3)
+plt.rcParams['axes.labelsize'] = 14
+plt.rcParams['axes.titlesize'] = 14
+plt.rcParams['xtick.labelsize'] = 12
+plt.rcParams['ytick.labelsize'] = 12
+plt.rcParams['legend.fontsize']= 12
+plt.rcParams['legend.title_fontsize']= 14
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 
@@ -59,6 +70,29 @@ def run(args, graph, model, device, history, name):
 
         rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
         rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
+
+        pca = PCA()
+        pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
+        
+        # PCA on train
+
+        X = torch.cat((grad_pos_tr, grad_neg_tr), dim=0).detach().cpu().numpy()
+        y = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).numpy()
+
+        Xt = pipe.fit_transform(X)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1], c=y)
+        plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
+        plt.savefig('grad_in_tr.jpg', bbox_inches='tight')
+
+        X = torch.cat((grad_pos_te, grad_neg_te), dim=0).detach().cpu().numpy()
+        y = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
+
+        Xt = pipe.fit_transform(X)
+        plt.figure()
+        plot = plt.scatter(Xt[:,0], Xt[:,1], c=y)
+        plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
+        plt.savefig('grad_in_te.jpg', bbox_inches='tight')
 
         sys.exit()
 
