@@ -95,8 +95,8 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
         sha_neg_te = te_node[perm[:num_half]]
         sha_neg_tr = te_node[perm[num_half:]]
 
-        rprint(f"Shadow positive nodes to train: {sha_pos_tr.size(dim=0)}, to test: {sha_pos_te}")
-        rprint(f"Shadow negative nodes to train: {sha_neg_tr.size(dim=0)}, to test: {sha_neg_te}")
+        rprint(f"Shadow positive nodes to train: {sha_pos_tr.size(dim=0)}, to test: {sha_pos_te.size(dim=0)}")
+        rprint(f"Shadow negative nodes to train: {sha_neg_tr.size(dim=0)}, to test: {sha_neg_te.size(dim=0)}")
 
         train_mask = torch.zeors(org_nodes.size(dim=0))
         test_mask = torch.zeors(org_nodes.size(dim=0))
