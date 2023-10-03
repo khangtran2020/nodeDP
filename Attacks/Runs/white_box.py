@@ -39,10 +39,26 @@ def run(args, graph, model, device, history, name):
         shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
 
         out_keys = [f'out_{i}' for i in range(args.n_layers)]
+        out_dim = []
+        if args.n_layers > 1:
+            out_dim.append(args.hid_dim)
+            for i in range(0, args.n_layers - 2):
+                out_dim.append(args.hid_dim)
+            out_dim.append(args.num_class)
+        else:
+            out_dim.append(args.num_class)
+
         model_keys = []
+        grad_dim = []
         for named, p in model.named_parameters():
             if p.requires_grad:
                 model_keys.append(named)
+                if 'bias' in named:
+                    out_d = p.size().item()
+                    grad_dim.append((1, out_d))
+                else:
+                    out_d, in_d = p.size().item()
+                    grad_dim.append((in_d, out_d))
                 rprint(f"Model parameter {named} has size: {p.size()}")
         
         collate_fn = partial(custom_collate, out_key=out_keys, model_key=model_keys, device=device, num_class=args.num_class)
@@ -51,15 +67,17 @@ def run(args, graph, model, device, history, name):
         te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
                                                 drop_last=False, shuffle=True)
         
-        x, y = next(iter(tr_loader))
-        label, loss, out_dict, grad_dict = x
-        rprint(f"Label size: {label.size()}")
-        rprint(f"Loss size: {loss.size()}")
-        rprint(f"Membership Label size: {y.size()}")
-        for key in out_keys:
-            rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
-        for key in model_keys:
-            rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
+        rprint(f"Out dim: {out_dim}")
+        rprint(f"Grad dim: {grad_dim}")
+        # x, y = next(iter(tr_loader))
+        # label, loss, out_dict, grad_dict = x
+        # rprint(f"Label size: {label.size()}")
+        # rprint(f"Loss size: {loss.size()}")
+        # rprint(f"Membership Label size: {y.size()}")
+        # for key in out_keys:
+        #     rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
+        # for key in model_keys:
+        #     rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
         sys.exit()
         
 
