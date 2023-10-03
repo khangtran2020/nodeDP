@@ -245,16 +245,15 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
     model.eval()
     val_loss = 0
     num_data = 0.0
-    with torch.no_grad():
-        for bi, d in enumerate(loader):
-            features, target = d
-            target = target.to(device)
-            predictions = model(features)
-            predictions = torch.squeeze(predictions, dim=-1)
-            loss = criterion(predictions, target.float())
-            metrics.update(predictions, target)
-            num_data += predictions.size(dim=0)
-            val_loss += loss.item()*predictions.size(dim=0)
-        performance = metrics.compute()
-        metrics.reset()
+    for bi, d in enumerate(loader):
+        features, target = d
+        target = target.to(device)
+        predictions = model(features)
+        predictions = torch.squeeze(predictions, dim=-1)
+        loss = criterion(predictions, target.float())
+        metrics.update(predictions, target)
+        num_data += predictions.size(dim=0)
+        val_loss += loss.item()*predictions.size(dim=0)
+    performance = metrics.compute()
+    metrics.reset()
     return val_loss/num_data, performance
