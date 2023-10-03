@@ -98,9 +98,9 @@ def read_data(args, data_name, history, exist=False):
 
     if exist == False:
         rprint(f"History is {exist} to exist, need to reinitialize")
-        history['tr_id'] = get_index_bynot_value(a=graph.ndata['train_mask'], val=0).tolist()
-        history['va_id'] = get_index_bynot_value(a=graph.ndata['val_mask'], val=0).tolist()
-        history['te_id'] = get_index_bynot_value(a=graph.ndata['test_mask'], val=0).tolist()
+        history['tr_id'] = graph.ndata['train_mask'].tolist()
+        history['va_id'] = graph.ndata['val_mask'].tolist()
+        history['te_id'] = graph.ndata['test_mask'].tolist()
 
     else:
         rprint(f"History is {exist} to exist, assigning masks according to previous run")
@@ -108,21 +108,13 @@ def read_data(args, data_name, history, exist=False):
         del(graph.ndata['val_mask'])
         del(graph.ndata['test_mask'])
 
-        train_mask = torch.zeros(graph.nodes().size(dim=0))
-        val_mask = torch.zeros(graph.nodes().size(dim=0))
-        test_mask = torch.zeros(graph.nodes().size(dim=0))
-        
         id_train = history['tr_id']
         id_val = history['va_id']
         id_test = history['te_id']
-        
-        train_mask[id_train] = 1
-        val_mask[id_val] = 1
-        test_mask[id_test] = 1
 
-        graph.ndata['train_mask'] = train_mask.int()
-        graph.ndata['val_mask'] = val_mask.int()
-        graph.ndata['test_mask'] = test_mask.int()
+        graph.ndata['train_mask'] = torch.LongTensor(id_train)
+        graph.ndata['val_mask'] = torch.LongTensor(id_val)
+        graph.ndata['test_mask'] = torch.LongTensor(id_test)
     
     
     if args.submode == 'density':

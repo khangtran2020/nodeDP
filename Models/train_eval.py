@@ -64,7 +64,6 @@ def update_clean(model, optimizer, objective, batch):
     loss.backward()
     optimizer.step()
     return labels, predictions, loss
-    
 
 def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
                   clip_node, ns, trim_rule, history, step, device):
