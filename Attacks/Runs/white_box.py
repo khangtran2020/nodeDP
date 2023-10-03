@@ -40,10 +40,6 @@ def run(args, graph, model, device, history, name):
 
         label, weight = shtr_dataset.label_weight
         lab_weight = 1 - weight / weight.sum()
-        temp = lab_weight[0].clone()
-        lab_weight[0] = lab_weight[1]
-        lab_weight[1] = temp
-        del(temp)
         rprint(f"Label weight will be: {lab_weight}")
 
         out_keys = [f'out_{i}' for i in range(args.n_layers)]
