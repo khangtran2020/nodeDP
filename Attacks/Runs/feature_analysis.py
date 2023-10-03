@@ -85,15 +85,13 @@ def run(args, graph, model, device, history, name):
         Xt = pipe.transform(X_pos_tr)
         plt.figure()
         plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.legend(handles=plot.legend_elements()[0], labels=['pos'])
         plt.savefig('grad_pos_tr.jpg', bbox_inches='tight')
 
         X_neg_tr = grad_neg_tr.detach().cpu().numpy()
         Xt = pipe.transform(X_neg_tr)
         plt.figure()
         plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.legend(handles=plot.legend_elements()[0], labels=['neg'])
-        plt.savefig('grad_neg_tr.jpg', bbox_inches='tight')\
+        plt.savefig('grad_neg_tr.jpg', bbox_inches='tight')
 
         Xt = pipe.transform(X)
         plt.figure()
@@ -105,7 +103,6 @@ def run(args, graph, model, device, history, name):
         Xt = pipe.transform(X_pos_te)
         plt.figure()
         plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.legend(handles=plot.legend_elements()[0], labels=['pos'])
         plt.savefig('grad_pos_te.jpg', bbox_inches='tight')
 
         X_neg_te = grad_neg_te.detach().cpu().numpy()
