@@ -10,7 +10,7 @@ from Models.models import WbAttacker
 from Models.init import init_model, init_optimizer
 from Attacks.Utils.utils import save_dict
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
-from Attacks.Utils.train_eval import train_shadow, train_attack, eval_attack_step, retrain
+from Attacks.Utils.train_eval import train_wb_attack, eval_attack_step, retrain
 from functools import partial
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -88,9 +88,9 @@ def run(args, graph, model, device, history, name):
                                out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
         att_model.to(device)
         att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
-        att_model = train_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, 
-                                 attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, 
-                                 name=name['att'], device=device)
+        att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader,  
+                                    attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
+                                    name=name['att'], device=device, history=att_hist)
 
     att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
     metric = ['auc', 'acc', 'pre', 'rec', 'f1']

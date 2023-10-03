@@ -115,6 +115,43 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
 
     return attack_model
 
+def train_wb_attack(args, tr_loader, te_loader, attack_model, epochs, optimizer, name, device, history):
+    
+    model_name = '{}_attack.pt'.format(name)
+
+    attack_model.to(device)
+
+    # DEfining criterion
+    criterion = torch.nn.BCELoss(reduction='mean')
+    criterion.to(device)
+
+    metrics = torchmetrics.classification.BinaryAUROC().to(device)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+
+    # THE ENGINE LOOP
+    tk0 = tqdm(range(epochs), total=epochs)
+    for epoch in tk0:
+        tr_loss, tr_acc = update_attack_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
+                                             criterion=criterion, optimizer=optimizer)
+        te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
+                                           criterion=criterion)
+        
+        rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc.item()}, te_loss {te_loss}, te_acc {te_acc.item()}")
+
+        history['attr_loss'].append(tr_loss)
+        history['attr_perf'].append(tr_acc)
+        history['atte_loss'].append(te_loss)
+        history['atte_perf'].append(te_acc)
+        
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
+
+        es(epoch=epoch, epoch_score=te_acc.item(), model=attack_model, model_path=args.save_path + model_name)
+
+    return attack_model
+
+
 def update_attack_step(model, device, loader, metrics, criterion, optimizer):
     model.to(device)
     model.train()
