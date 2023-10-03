@@ -103,9 +103,9 @@ def custom_collate(batch, out_key, model_key, device, num_class):
 
         for key in model_key:
             grad = torch.unsqueeze(it_grad_dict[key], dim=0).detach()
+            if 'bias' in key:
+                grad = torch.unsqueeze(grad, dim=-1).detach()
             grad_dict[key] = torch.cat((grad_dict[key], grad), dim=0)
-
-    print("Label size:", label.long())
     label = F.one_hot(label.long(), num_class).float().to(device)
 
     return (label, loss, out_dict, grad_dict), membership_label
