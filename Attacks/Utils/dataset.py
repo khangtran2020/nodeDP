@@ -109,7 +109,8 @@ def custom_collate(batch, out_key, model_key, device, num_class):
 
     label = F.one_hot(label.long(), num_class).float().to(device)
     loss = torch.unsqueeze(loss, dim=-1)
-    grad_dict[key] = torch.unsqueeze(grad_dict[key], dim=1)
+    for key in model_key:
+        grad_dict[key] = torch.unsqueeze(grad_dict[key], dim=1)
     return (label, loss, out_dict, grad_dict), membership_label
 
     # return filtered_data, filtered_target
