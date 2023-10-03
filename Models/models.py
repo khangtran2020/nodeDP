@@ -35,7 +35,7 @@ class GraphSAGE(nn.Module):
         out_dict = {}
         if self.n_layers > 1:
             h = x
-            print("Input size: h.size()")
+            print(f"Input size: {h.size()}")
             for i in range(0, self.n_layers-1):
                 rprint(f"At layer {i}, block {i} has {blocks[i].srcdata[NID]} src nodes and {blocks[i].dstdata[NID]} dst nodes")
                 rprint(f"With feature size {blocks[i].ndata['feat']['_N'].size()}\n")
