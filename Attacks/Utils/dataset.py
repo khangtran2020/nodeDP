@@ -105,6 +105,7 @@ def custom_collate(batch, out_key, model_key, device, num_class):
             grad = torch.unsqueeze(it_grad_dict[key], dim=0).detach()
             grad_dict[key] = torch.cat((grad_dict[key], grad), dim=0)
 
+    print("Label size:", label.size())
     label = F.one_hot(label, num_class).float().to(device)
 
     return (label, loss, out_dict, grad_dict), membership_label
