@@ -121,7 +121,7 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
 
     attack_model.to(device)
     # DEfining criterion
-    criterion = torch.nn.CrossEntropyLoss(weight=weight, reduction='mean')
+    criterion = torch.nn.BCEWithLogitsLoss(reduction='mean', pos_weight=weight[1])
     criterion.to(device)
 
     metrics = torchmetrics.classification.BinaryAccuracy().to(device)
@@ -228,11 +228,10 @@ def upd_att_wb_step(model, device, loader, metrics, criterion, optimizer):
         features, target = d
         target = target.to(device)
         predictions = model(features)
-        predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
         loss.backward()
         optimizer.step()
-        metrics.update(predictions, target)
+        metrics.update(torch.nn.functional.sigmoid(predictions), target)
         num_data += predictions.size(dim=0)
         train_loss += loss.item()*predictions.size(dim=0)
     performance = metrics.compute()

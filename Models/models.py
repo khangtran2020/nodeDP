@@ -241,8 +241,7 @@ class WbAttacker(nn.Module):
                                      nn.Linear(128, 64),
                                      nn.ReLU(),
                                      nn.Dropout(p=0.2),
-                                     nn.Linear(64, 1),
-                                     nn.Sigmoid())
+                                     nn.Linear(64, 1))
         
     def forward(self, x):
 
