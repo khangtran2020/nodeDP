@@ -94,7 +94,7 @@ def get_name(args, current_date):
         att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 
                 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
     else:
-        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bz',
+        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs',
                     'att_epochs', 'sha_ratio']
 
     data_str = ''
