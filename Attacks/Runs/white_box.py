@@ -88,21 +88,22 @@ def run(args, graph, model, device, history, name):
                                out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
         att_model.to(device)
         att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
+        att_model = train_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, 
+                                 attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, 
+                                 name=name['att'], device=device)
 
-        x, y = next(iter(tr_loader))
-        pred = att_model(x)
-        rprint(f"Prediction: {pred}, with size {pred.size()}")
-        sys.exit()
-
-    #     attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
-    #     attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
-
-    #     attack_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
-    #                                 attack_model=attack_model, epochs=args.attack_epochs, optimizer=attack_optimizer,
-    #                                 name=tar_history['name'], device=device)
-
-    # attack_model.load_state_dict(torch.load(args.save_path + f"{tar_history['name']}_attack.pt"))
-    # te_loss, te_auc = eval_attack_step(model=attack_model, device=device, loader=te_loader,
-    #                                    metrics=torchmetrics.classification.BinaryAUROC().to(device),
-    #                                    criterion=torch.nn.BCELoss())
-    # rprint(f"Attack AUC: {te_auc}")
+    att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
+    metric = ['auc', 'acc', 'pre', 'rec', 'f1']
+    metric_dict = {
+        'auc': torchmetrics.classification.BinaryAUROC().to(device),
+        'acc': torchmetrics.classification.BinaryAccuracy().to(device),
+        'pre': torchmetrics.classification.BinaryPrecision().to(device),
+        'rec': torchmetrics.classification.BinaryRecall().to(device),
+        'f1': torchmetrics.classification.BinaryF1Score().to(device)
+    }
+    for met in metric:
+        te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
+                                           metrics=metric_dict[met], criterion=torch.nn.BCELoss())
+        rprint(f"Attack {met}: {te_auc}")
+    
+    return model_hist, att_hist
