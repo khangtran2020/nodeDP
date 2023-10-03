@@ -47,7 +47,7 @@ def add_model_attack_group(group):
     group.add_argument('--att_layers', type=int, default=2, help='# of layers')
     group.add_argument('--att_hid_dim', type=int, default=64, help='hidden embedding dim')
     group.add_argument("--att_lr", type=float, default=0.001, help="learning rate")
-    group.add_argument('--att_batch_size', type=int, default=512, help="batch size for training process")
+    group.add_argument('--att_bs', type=int, default=512, help="batch size for training process")
     group.add_argument("--att_epochs", type=int, default=100, help='training step')
     group.add_argument("--sha_lr", type=float, default=0.001, help="learning rate")
     group.add_argument("--sha_epochs", type=int, default=100, help='training step')
