@@ -110,17 +110,22 @@ def get_name(args, current_date):
         for key in dp_key:
             dp_str += f"{key}_{getattr(args, key)}_"
     
+    if args.mode == 'nodedp':
+        model_str += dp_str
+
     att_str = ''
     for key in att_key:
         att_str += f"{key}_{getattr(args, key)}_"
 
+    general_str = data_str + model_str + att_str + date_str
+    if args.mode == 'nodedp':
+        general_str = data_str + model_str + dp_str + att_str + date_str
 
     name = {
         'data': data_str[:-1],
         'model': model_str[:-1],
-        'dp': dp_str[:-1],
         'att': att_str[:-1],
-        'general': data_str + model_str + dp_str + att_str + date_str
+        'general': general_str
     }
 
     return name

@@ -47,29 +47,12 @@ def run(args, graph, model, device, history, name):
         collate_fn = partial(custom_collate, out_key=out_keys, model_key=model_keys, device=device)
         tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
                                                 drop_last=True, shuffle=True)
-        
-        x, y = next(iter(tr_loader))
-        label, loss, out_dict, grad_dict = x
-        rprint(f"Label: {label}, size: {label.size()}")
-        rprint(f"Loss: {loss}, size: {loss.size()}")
-        rprint(f"Membership Label: {y}, size: {y.size()}")
-        for key in out_keys:
-            rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
-        for key in model_keys:
-            rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
-        sys.exit()
+        te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
+                                                drop_last=False, shuffle=True)
 
     # device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):
 
-        tr_loader = torch.utils.data.DataLoader(tr_data, batch_size=args.batch_size,
-                                                pin_memory=False, drop_last=True, shuffle=True)
-
-        va_loader = torch.utils.data.DataLoader(va_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
-                                                pin_memory=False, drop_last=False)
-
-        te_loader = torch.utils.data.DataLoader(te_data, batch_size=args.batch_size, num_workers=0, shuffle=False,
-                                                pin_memory=False, drop_last=False)
         attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
         attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)
 

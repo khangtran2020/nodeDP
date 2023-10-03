@@ -189,6 +189,59 @@ class CustomNN(nn.Module):
         h = self.final_block(h)
         return self.last_activation(h)
 
+class WbAttacker(nn.Module):
+
+    def __init__(self, label_dim, loss_dim, out_dim_list, grad_dim_list, out_keys, model_keys, num_filters, device):
+        
+        super(WbAttacker, self).__init__()
+        
+        self.block_label = nn.Sequential(nn.Linear(label_dim, 128),
+                                             nn.ReLU(),
+                                             nn.Dropout(p=0.2),
+                                             nn.Linear(128, 64),
+                                             nn.ReLU())
+        
+        self.block_loss = nn.Sequential(nn.Linear(loss_dim, 128),
+                                            nn.ReLU(),
+                                            nn.Dropout(p=0.2),
+                                            nn.Linear(128, 64),
+                                            nn.ReLU())
+        
+        self.out_dict = nn.ModuleDict()
+        for i, key in enumerate(out_keys):
+            self.out_dict[key] = nn.Sequential(nn.Linear(out_dim_list[i], 128),
+                                       nn.ReLU(),
+                                       nn.Dropout(p=0.2),
+                                       nn.Linear(128, 64),
+                                       nn.ReLU())
+        
+        self.grad_dict = nn.ModuleDict()
+        for i, key in enumerate(model_keys):
+            grad_dim = grad_dim_list[i]
+            self.grad_dict[key] = nn.Sequential(nn.Conv2d(1, num_filters, (1, grad_dim[0]), stride=1),
+                                       nn.ReLU(),
+                                       nn.Dropout(p=0.2),
+                                       nn.Flatten(),
+                                       nn.Linear(num_filters * grad_dim[1], 128),
+                                       nn.ReLU(),
+                                       nn.Dropout(p=0.2),
+                                       nn.Linear(128, 64),
+                                       nn.ReLU())
+            
+        encoder_input_size = 64 * (len(out_dim_list) + len(grad_dim_list)) + 128
+        self.encoder = nn.Sequential(nn.Dropout(p=0.2),
+                                     nn.Linear(encoder_input_size, 256),
+                                     nn.ReLU(),
+                                     nn.Dropout(p=0.2),
+                                     nn.Linear(256, 128),
+                                     nn.ReLU(),
+                                     nn.Dropout(p=0.2),
+                                     nn.Linear(128, 64),
+                                     nn.ReLU(),
+                                     nn.Dropout(p=0.2),
+                                     nn.Linear(64, 1),
+                                     nn.Sigmoid())
+    
 class DotPredictor(nn.Module):
     def forward(self, g, h):
         with g.local_scope():

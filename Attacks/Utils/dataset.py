@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from torch.utils.data import Dataset
 from dgl.dataloading import transforms
 from dgl.dataloading.base import NID
@@ -67,7 +68,7 @@ class ShadowData(Dataset):
         
         return blocks
 
-def custom_collate(batch, out_key, model_key, device):
+def custom_collate(batch, out_key, model_key, device, num_class):
 
     membership_label = torch.Tensor([]).to(device)
     label = torch.Tensor([]).to(device)
@@ -96,13 +97,15 @@ def custom_collate(batch, out_key, model_key, device):
 
         # out dict
         for key in out_key:
-            rprint(f"At item {i}, out dim of key {key} is {it_out_dict[key].size()}")
+            # rprint(f"At item {i}, out dim of key {key} is {it_out_dict[key].size()}")
             out = torch.unsqueeze(it_out_dict[key], dim=0).detach()
             out_dict[key] = torch.cat((out_dict[key], out), dim=0)
 
         for key in model_key:
             grad = torch.unsqueeze(it_grad_dict[key], dim=0).detach()
             grad_dict[key] = torch.cat((grad_dict[key], grad), dim=0)
+
+    label = F.one_hot(label, num_class).float().to(device)
 
     return (label, loss, out_dict, grad_dict), membership_label
 
