@@ -120,9 +120,8 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
     model_name = '{}_attack.pt'.format(name)
 
     attack_model.to(device)
-    weights = torch.cat([torch.unsqueeze(weight, dim=0) for i in range(args.att_bs)], dim=0)
     # DEfining criterion
-    criterion = torch.nn.BCELoss(weight=weights, reduction='mean')
+    criterion = torch.nn.CrossEntropyLoss(weight=weight, reduction='mean')
     criterion.to(device)
 
     metrics = torchmetrics.classification.BinaryAccuracy().to(device)
