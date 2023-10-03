@@ -18,12 +18,12 @@ def print_args(args):
     if args.mode == 'dp':
         keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type', 
                 'lr', 'n_layers', 'hid_dim', 'epochs', 'clip', 'clip_node', 'trim_rule', 'ns', 'debug', 'device', 
-                'sampling_rate', 'optimizer', 'att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_batch_size',
+                'sampling_rate', 'optimizer', 'att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs',
                 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
     else:
         keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type', 
                 'lr', 'n_layers', 'hid_dim', 'epochs', 'debug', 'device', 'optimizer', 'att_mode', 'att_submode', 
-                'att_layers', 'att_hid_dim', 'att_lr', 'att_batch_size', 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
+                'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
         
     for key in keys:
         arg_dict[key] = getattr(args, key)
