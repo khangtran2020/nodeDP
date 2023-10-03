@@ -43,6 +43,7 @@ def run(args, graph, model, device, history, name):
 
         rprint(f"Loss: {it_loss}, size: {it_loss.size()}")
         rprint(f"Label: {it_label}, size: {it_label.size()}")
+        rprint(f"Membership Label: {y}, size: {y.size()}")
         rprint(f"Out dict: {pretty_repr(it_out_dict)}, size: {it_out_dict['out_0'].size()}")
         rprint(f"Grad dict: {pretty_repr(it_grad_dict)}, size: {it_grad_dict['layers.0.fc_neigh.weight'].size()}")
         sys.exit()

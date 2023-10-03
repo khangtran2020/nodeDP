@@ -66,25 +66,22 @@ class ShadowData(Dataset):
         
         return blocks
 
-
-
-
 def custom_collate(batch, out_key, model_key, device):
-    pass
-    # membership_label = torch.Tensor([]).to(device)
-    # label = torch.Tensor([]).to(device)
-    # loss = torch.Tensor([]).to(device)
-    # out_dict = {}
-    # for key in out_key:
-    #     out_dict[key] = torch.Tensor([]).to(device)
-    # grad_dict = {}
-    # for key in model_key:
-    #     grad_dict[key] = torch.Tensor([]).to(device)
+
+    membership_label = torch.Tensor([]).to(device)
+    label = torch.Tensor([]).to(device)
+    loss = torch.Tensor([]).to(device)
+    out_dict = {}
+    for key in out_key:
+        out_dict[key] = torch.Tensor([]).to(device)
+    grad_dict = {}
+    for key in model_key:
+        grad_dict[key] = torch.Tensor([]).to(device)
 
 
-    # for item in batch:
-    #     x, y = item
-    #     it_loss, it_label, it_out_dict, it_grad_dict = x
+    for item in batch:
+        x, y = item
+        it_loss, it_label, it_out_dict, it_grad_dict = x
     
 
     # return filtered_data, filtered_target
