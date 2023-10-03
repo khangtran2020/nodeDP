@@ -120,7 +120,6 @@ def update_nodedp(args, model, optimizer, objective, batch, g, clip_grad,
     optimizer.step()
     return labels, predictions, running_loss
 
-
 def eval_clean(model, objective, batch):
     input_nodes, output_nodes, mfgs = batch
     inputs = mfgs[0].srcdata["feat"]
@@ -128,7 +127,6 @@ def eval_clean(model, objective, batch):
     predictions = model(mfgs, inputs)
     loss = objective(predictions, labels)
     return labels, predictions.argmax(1), loss
-
 
 def train_fn(dataloader, model, criterion, optimizer, device, metric, scheduler):
     model.to(device)
@@ -145,7 +143,6 @@ def train_fn(dataloader, model, criterion, optimizer, device, metric, scheduler)
     performance = metric.compute()
     metric.reset()
     return train_loss / num_data, performance
-
 
 def train_nodedp(args, dataloader, model, criterion, optimizer, device, scheduler, g, clip_grad, clip_node, ns,
                  trim_rule, history, step, metric):
@@ -166,7 +163,6 @@ def train_nodedp(args, dataloader, model, criterion, optimizer, device, schedule
 
     return train_loss, performace
 
-
 def eval_fn(data_loader, model, criterion, metric, device):
     model.to(device)
     loss_eval = 0
@@ -183,13 +179,11 @@ def eval_fn(data_loader, model, criterion, metric, device):
         metric.reset()
     return loss_eval / num_point, performance
 
-
 def get_norm_grad(model):
     total_l2_norm = 0
     for p in model.named_parameters():
         total_l2_norm += p[1].grad.detach().norm(p=2) ** 2
     return np.sqrt(total_l2_norm)
-
 
 def performace_eval(args, y_true, y_pred):
     if args.performance_metric == 'acc':
@@ -200,7 +194,6 @@ def performace_eval(args, y_true, y_pred):
         return roc_auc_score(y_true=y_true, y_score=y_pred)
     elif args.performance_metric == 'pre':
         return precision_score(y_true=y_true, y_pred=y_pred)
-
 
 def update_dp(model, optimizer, objective, batch, clip, ns):
     optimizer.zero_grad()
@@ -233,7 +226,6 @@ def update_dp(model, optimizer, objective, batch, clip, ns):
 
     optimizer.step()
     return labels, predictions.argmax(1), running_loss
-
 
 def update_mlp_clean(model, optimizer, objective, loader, metrics):
     train_loss = 0
@@ -290,7 +282,6 @@ def update_mlp_dpsgd(model:torch.nn.Module, optimizer, objective, loader, clip_g
     metrics.reset()
     return perf, train_loss / num_data
 
-
 def train_mlp(loader, model, criter, optimizer, device, metrics, mode='clean', clip=None, ns=None):
     
     model.to(device)
@@ -322,7 +313,6 @@ def eval_mlp(loader, model, criter, metrics, device):
         performance = metrics.compute()
         metrics.reset()
     return performance, loss_eval / num_point
-
 
 def train_nodedp_grad_inspect(args, dataloader, model, model_clean, criterion, criterion_clean, optimizer, 
                               device, scheduler, g, clip_grad, clip_node, ns, trim_rule, history, step, metric):
@@ -375,19 +365,7 @@ def train_fn_grad_inspect(args, dataloader, model, criterion, optimizer, device,
     performance = metric.compute()
     metric.reset()
     return train_loss / num_data, performance, grad_norm
-
-
-
-# def get_grad(model_clean, batch, criterion):
-#     model_clean.zero_grad()
-#     dst_node, subgraphs = batch
-#     inputs = mfgs[0].srcdata["feat"]
-#     labels = mfgs[-1].dstdata["label"]
-#     predictions = model_clean(mfgs, inputs)
-#     loss = criterion(predictions, labels)
-#     loss.backward()
-    
-
+ 
 def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, objective_clean, batch, g, clip_grad, clip_node, 
                                ns, trim_rule, history, step, device):
     optimizer.zero_grad()
@@ -502,7 +480,6 @@ def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, o
 
     optimizer.step()
     return labels, predictions, running_loss, grad_diff.sqrt().item(), perturbed_grad_diff.sqrt().item(), avg_clean_grad, avg_clipped_grad
-
 
 def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     

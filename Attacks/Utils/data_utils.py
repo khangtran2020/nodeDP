@@ -103,6 +103,16 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
 
         train_mask = torch.zeros(org_nodes.size(dim=0))
         test_mask = torch.zeros(org_nodes.size(dim=0))
+
+        pos_mask_tr = torch.zeros(org_nodes.size(dim=0))
+        pos_mask_te = torch.zeros(org_nodes.size(dim=0))
+
+        neg_mask_tr = torch.zeros(org_nodes.size(dim=0))
+        neg_mask_te = torch.zeros(org_nodes.size(dim=0))
+        
+        pos_mask = torch.zeros(org_nodes.size(dim=0))
+        neg_mask = torch.zeros(org_nodes.size(dim=0))
+
         membership_label = torch.zeros(org_nodes.size(dim=0))
 
         train_mask[sha_pos_tr] = 1
@@ -110,6 +120,18 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
 
         test_mask[sha_pos_te] = 1
         test_mask[sha_neg_te] = 1
+
+        pos_mask_tr[sha_pos_tr] = 1
+        pos_mask_te[sha_pos_te] = 1
+
+        neg_mask_tr[sha_neg_tr] = 1
+        neg_mask_te[sha_neg_te] = 1
+
+        pos_mask[sha_pos_tr] = 1
+        pos_mask[sha_pos_te] = 1
+
+        neg_mask[sha_neg_tr] = 1
+        neg_mask[sha_neg_te] = 1
 
         membership_label[sha_pos_tr] = 1
         membership_label[sha_pos_te] = 1
@@ -120,6 +142,12 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
         graph.ndata['str_mask'] = train_mask
         graph.ndata['ste_mask'] = test_mask
         graph.ndata['sha_label'] = membership_label
+        graph.ndata['pos_mask'] = pos_mask
+        graph.ndata['neg_mask'] = neg_mask
+        graph.ndata['pos_mask_tr'] = pos_mask_tr
+        graph.ndata['pos_mask_te'] = pos_mask_te
+        graph.ndata['neg_mask_tr'] = neg_mask_tr
+        graph.ndata['neg_mask_te'] = neg_mask_te
 
         shadow_nodes = torch.cat((shatr_nodes, te_node), dim=0)
 
@@ -127,16 +155,35 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
         history['sha_te'] = test_mask.tolist()
         history['sha_label'] = membership_label.tolist()
         history['shadow_nodes'] = shadow_nodes.tolist()
+        history['pos_mask'] = pos_mask.tolist()
+        history['neg_mask'] = neg_mask.tolist()
+        history['pos_mask_tr'] = pos_mask_tr.tolist()
+        history['pos_mask_te'] = pos_mask_te.tolist()
+        history['neg_mask_tr'] = neg_mask_tr.tolist()
+        history['neg_mask_te'] = neg_mask_te.tolist()
+
     
     else:    
 
         train_mask = torch.LongTensor(history['sha_tr'])
         test_mask = torch.LongTensor(history['sha_te'])
         shadow_nodes = torch.LongTensor(history['shadow_nodes'])
+        pos_mask = torch.LongTensor(history['pos_mask'])
+        neg_mask = torch.LongTensor(history['neg_mask'])
+        pos_mask_tr = torch.LongTensor(history['pos_mask_tr'])
+        pos_mask_te = torch.LongTensor(history['pos_mask_te'])
+        neg_mask_tr = torch.LongTensor(history['neg_mask_tr'])
+        neg_mask_te = torch.LongTensor(history['neg_mask_te'])
 
         graph.ndata['str_mask'] = train_mask
         graph.ndata['ste_mask'] = test_mask
         graph.ndata['sha_label'] = torch.Tensor(history['sha_label'])
+        graph.ndata['pos_mask'] = pos_mask
+        graph.ndata['neg_mask'] = neg_mask
+        graph.ndata['pos_mask_tr'] = pos_mask_tr
+        graph.ndata['pos_mask_te'] = pos_mask_te
+        graph.ndata['neg_mask_tr'] = neg_mask_tr
+        graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
     return shadow_graph

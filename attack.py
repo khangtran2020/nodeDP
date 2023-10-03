@@ -10,6 +10,7 @@ from Utils.utils import seed_everything, timeit, read_pickel
 from Attacks.config import parse_args
 from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
+from Attacks.Runs.feature_analysis import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
 from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox
 from Models.init import init_model
@@ -80,6 +81,8 @@ def run(args, current_time, device):
         model_hist, att_hist = blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
     elif args.att_mode == 'whitebox':
         model_hist, att_hist = whitebox(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
+    elif args.att_mode == 'wanal':
+        model_hist, att_hist = wanal(args=args, graph=(train_g, val_g, test_g, shadow_graph, graph), model=model, device=device, history=history, name=name)
 
     general_hist = {
         'data': data_hist,

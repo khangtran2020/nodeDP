@@ -255,3 +255,28 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
     performance = metrics.compute()
     metrics.reset()
     return val_loss/num_data, performance
+
+def get_grad(graph, model, criterion, device, mask):
+
+    model.zero_grad()
+    graph = graph.to(device)
+    mask = graph.ndata[mask].int()
+
+    pred = model.full(g=graph, x=graph.ndata['feat'])
+    label = graph.ndata['label']
+
+    loss = criterion(pred, label)
+
+    grad_overall = torch.Tensor([]).to(device)
+    for i, los in enumerate(loss):
+        if mask[i].item() > 0:
+            los.backward(retain_graph=True)
+            grad = torch.Tensor([]).to(device)
+            for name, p in model.named_parameters():
+                if p.grad is not None:
+                    new_grad = p.grad.detach().clone()
+                    grad = torch.cat((grad, new_grad.flatten()), dim=0)
+            grad = torch.unsqueeze(grad, dim=0)
+            grad_overall = torch.cat((grad_overall, grad), dim=0)
+
+    return grad
