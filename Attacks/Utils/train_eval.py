@@ -115,14 +115,14 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
 
     return attack_model
 
-def train_wb_attack(args, tr_loader, te_loader, attack_model, epochs, optimizer, name, device, history):
+def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, optimizer, name, device, history):
     
     model_name = '{}_attack.pt'.format(name)
 
     attack_model.to(device)
 
     # DEfining criterion
-    criterion = torch.nn.BCELoss(reduction='mean')
+    criterion = torch.nn.BCELoss(weight=weight, reduction='mean')
     criterion.to(device)
 
     metrics = torchmetrics.classification.BinaryAccuracy().to(device)
