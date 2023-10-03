@@ -53,9 +53,9 @@ def run(args, graph, model, device, history, name):
         
         x, y = next(iter(tr_loader))
         label, loss, out_dict, grad_dict = x
-        rprint(f"Label: {label}, size: {label.size()}")
-        rprint(f"Loss: {loss}, size: {loss.size()}")
-        rprint(f"Membership Label: {y}, size: {y.size()}")
+        rprint(f"Label size: {label.size()}")
+        rprint(f"Loss size: {loss.size()}")
+        rprint(f"Membership Label size: {y.size()}")
         for key in out_keys:
             rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
         for key in model_keys:
