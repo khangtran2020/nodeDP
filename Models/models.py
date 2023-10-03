@@ -4,6 +4,7 @@ import torch.nn
 from torch import nn
 import dgl.function as fn
 import torch.nn.functional as F
+from rich import print as rprint
 
 class GraphSAGE(nn.Module):
 
