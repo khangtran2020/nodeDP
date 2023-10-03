@@ -69,15 +69,15 @@ def run(args, graph, model, device, history, name):
         
         rprint(f"Out dim: {out_dim}")
         rprint(f"Grad dim: {grad_dim}")
-        # x, y = next(iter(tr_loader))
-        # label, loss, out_dict, grad_dict = x
-        # rprint(f"Label size: {label.size()}")
-        # rprint(f"Loss size: {loss.size()}")
-        # rprint(f"Membership Label size: {y.size()}")
-        # for key in out_keys:
-        #     rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
-        # for key in model_keys:
-        #     rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
+        x, y = next(iter(tr_loader))
+        label, loss, out_dict, grad_dict = x
+        rprint(f"Label size: {label.size()}")
+        rprint(f"Loss size: {loss.size()}")
+        rprint(f"Membership Label size: {y.size()}")
+        for key in out_keys:
+            rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
+        for key in model_keys:
+            rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
         # sys.exit()
         
 
