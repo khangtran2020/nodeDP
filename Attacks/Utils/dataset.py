@@ -35,7 +35,7 @@ class ShadowData(Dataset):
         self.model.zero_grad()
 
     def __getitem__(self, index):
-
+        print(f"Current index: {index}")
         membership_label = self.membership_label[index]
         node = self.nodes[index]
         blocks = self.sample_blocks(seed_nodes=node)
