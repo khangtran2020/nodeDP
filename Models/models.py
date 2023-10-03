@@ -44,6 +44,8 @@ class GraphSAGE(nn.Module):
                 out_dict[f'out_{i}'] = h
             h_dst = h[:blocks[-1].num_dst_nodes()]
             h = self.layers[-1](blocks[-1], (h, h_dst))
+            rprint(f"At layer {self.n_layers-1}, block {self.n_layers-1} has {blocks[-1].srcdata[NID]} src nodes and {blocks[-1].dstdata[NID]} dst nodes")
+            rprint(f"With feature size {blocks[-1].ndata['feat']['_N'].size()}\n")
             pred = self.last_activation(h)
             out_dict[f'out_{self.n_layers-1}'] = pred
             return out_dict, pred
