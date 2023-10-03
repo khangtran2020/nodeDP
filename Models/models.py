@@ -194,7 +194,8 @@ class WbAttacker(nn.Module):
     def __init__(self, label_dim, loss_dim, out_dim_list, grad_dim_list, out_keys, model_keys, num_filters, device):
         
         super(WbAttacker, self).__init__()
-        
+        self.out_keys = out_keys
+        self.model_keys = model_keys
         self.block_label = nn.Sequential(nn.Linear(label_dim, 128),
                                              nn.ReLU(),
                                              nn.Dropout(p=0.2),
@@ -207,18 +208,18 @@ class WbAttacker(nn.Module):
                                             nn.Linear(128, 64),
                                             nn.ReLU())
         
-        self.out_dict = nn.ModuleDict()
+        self.block_out = nn.ModuleDict()
         for i, key in enumerate(out_keys):
-            self.out_dict[key] = nn.Sequential(nn.Linear(out_dim_list[i], 128),
+            self.block_out[key] = nn.Sequential(nn.Linear(out_dim_list[i], 128),
                                        nn.ReLU(),
                                        nn.Dropout(p=0.2),
                                        nn.Linear(128, 64),
                                        nn.ReLU())
         
-        self.grad_dict = nn.ModuleDict()
+        self.block_grad = nn.ModuleDict()
         for i, key in enumerate(model_keys):
             grad_dim = grad_dim_list[i]
-            self.grad_dict[key.replace(".", "-")] = nn.Sequential(nn.Conv2d(1, num_filters, (1, grad_dim[0]), stride=1),
+            self.block_grad[key.replace(".", "-")] = nn.Sequential(nn.Conv2d(1, num_filters, (1, grad_dim[0]), stride=1),
                                        nn.ReLU(),
                                        nn.Dropout(p=0.2),
                                        nn.Flatten(),
@@ -241,7 +242,27 @@ class WbAttacker(nn.Module):
                                      nn.Dropout(p=0.2),
                                      nn.Linear(64, 1),
                                      nn.Sigmoid())
-    
+        
+    def forward(self, x):
+
+        label, loss, out_dict, grad_dict = x
+         
+        label_emb = self.block_label(label)
+        loss_emb = self.block_loss(loss)
+
+        overall_emb = torch.cat((label_emb, loss_emb), dim=1)
+        for key in self.out_keys:
+            out_emb = self.block_out[key](out_dict[key])
+            overall_emb = torch.cat((overall_emb, out_emb), dim=1)
+
+        for key in self.model_keys:
+            grad_emb = self.block_grad[key](grad_dict[key])
+            overall_emb = torch.cat((overall_emb, grad_emb), dim=1)
+
+        pred = self.encoder(overall_emb)
+        return pred
+        
+
 class DotPredictor(nn.Module):
     def forward(self, g, h):
         with g.local_scope():

@@ -48,7 +48,7 @@ class ShadowData(Dataset):
         grad_dict = {}
         for name, p in self.model.named_parameters():
             if p.grad is not None:
-                grad_dict[name] = p.grad.clone()
+                grad_dict[name.replace('.', '-')] = p.grad.clone()
         self.model.zero_grad()
         return (loss, label, out_dict, grad_dict), membership_label
 

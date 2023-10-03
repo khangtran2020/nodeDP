@@ -52,7 +52,7 @@ def run(args, graph, model, device, history, name):
         grad_dim = []
         for named, p in model.named_parameters():
             if p.requires_grad:
-                model_keys.append(named)
+                model_keys.append(named.replace('.', '-'))
                 if 'bias' in named:
                     out_d = list(p.size())[0]
                     grad_dim.append((1, out_d))
@@ -86,7 +86,12 @@ def run(args, graph, model, device, history, name):
         
         att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, out_dim_list=out_dim, grad_dim_list=grad_dim, 
                                out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
-        rprint(att_model)
+        att_model.to(device)
+        att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
+
+        x, y = next(iter(tr_loader))
+        pred = att_model(x)
+        rprint(f"Prediction: {pred}, with size {pred.size()}")
         sys.exit()
 
     #     attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
