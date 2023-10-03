@@ -38,6 +38,9 @@ def run(args, graph, model, device, history, name):
         shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
         shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
 
+        label_weight = shtr_dataset.label_weight
+        rprint(f"Label weight: {label_weight}")
+
         out_keys = [f'out_{i}' for i in range(args.n_layers)]
         out_dim = []
         if args.n_layers > 1:

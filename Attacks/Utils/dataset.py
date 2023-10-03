@@ -35,6 +35,7 @@ class ShadowData(Dataset):
         self.membership_label = self.graph.ndata['sha_label'][idx]
         self.criterion = torch.nn.CrossEntropyLoss(reduction='none')
         self.model.zero_grad()
+        self.label_weight = self.membership_label.unique(return_counts=True)
         rprint(f"Membership label distribution of shadow {mode}: {self.membership_label.unique(return_counts=True)}")
 
     def __getitem__(self, index):
