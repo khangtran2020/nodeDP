@@ -78,13 +78,16 @@ def run(args, graph, model, device, history, name):
         #     rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
         # for key in model_keys:
         #     rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
-        sys.exit()
+        # sys.exit()
         
 
     # device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):
         
-        att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, )
+        att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, out_dim_list=out_dim, grad_dim_list=grad_dim, 
+                               out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
+        rprint(att_model)
+        sys.exit()
 
     #     attack_model = NN(input_dim=new_dim, hidden_dim=64, output_dim=1, n_layer=3)
     #     attack_optimizer = init_optimizer(optimizer_name=args.optimizer, model=attack_model, lr=args.lr)

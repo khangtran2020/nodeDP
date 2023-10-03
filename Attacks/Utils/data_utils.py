@@ -74,7 +74,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
     org_nodes = graph.nodes()
     tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
     te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-    rprint(f"test orginal nodes: {te_org_idx}")
+    # rprint(f"test orginal nodes: {te_org_idx}")
 
     if exist == False:
 
