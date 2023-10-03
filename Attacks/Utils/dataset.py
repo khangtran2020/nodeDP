@@ -82,6 +82,26 @@ def custom_collate(batch, out_key, model_key, device):
     for item in batch:
         x, y = item
         it_loss, it_label, it_out_dict, it_grad_dict = x
-    
+
+        # membership label
+        y = torch.Tensor([(y.item()+1)/2]).to(device)
+        membership_label = torch.cat((membership_label, y), dim=0)
+
+        # true label 
+        label = torch.cat((label, it_label), dim=0)
+
+        # loss
+        loss = torch.cat((loss, it_loss), dim=0)
+
+        # out dict
+        for key in out_key:
+            out = torch.unsqueeze(it_out_dict[key], dim=0)
+            out_dict[key] = torch.cat((out_dict[key], out), dim=0)
+
+        for key in model_key:
+            grad = torch.unsqueeze(it_grad_dict[key], dim=0)
+            grad_dict[key] = torch.cat((grad_dict[key], grad), dim=0)
+
+    return (label, loss, out_dict, grad_dict), membership_label
 
     # return filtered_data, filtered_target
