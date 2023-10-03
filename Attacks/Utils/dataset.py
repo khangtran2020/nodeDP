@@ -42,7 +42,7 @@ class ShadowData(Dataset):
 
         rprint(f"\n ========= Current blocks of index {index} =========")
         for i, bl in enumerate(blocks):
-            rprint(f"Block {i} has {bl.srcdata[NID].size(dim=0)} src nodes and {bl.dstdata[NID].size(dim=0)} nodes")
+            rprint(f"Block {i} has {bl.srcdata[NID]} src nodes and {bl.dstdata[NID]} dst nodes")
         rprint(f"========= Done =========\n")
 
         label = blocks[-1].dstdata["label"]
