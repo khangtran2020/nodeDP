@@ -43,7 +43,7 @@ def run(args, graph, model, device, history, name):
         for named, p in model.named_parameters():
             if p.requires_grad:
                 model_keys.append(named)
-                rprint(f"Model parameter {named} has size: {p.tensor.size()}")
+                rprint(f"Model parameter {named} has size: {p.size()}")
         
         collate_fn = partial(custom_collate, out_key=out_keys, model_key=model_keys, device=device, num_class=args.num_class)
         tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
