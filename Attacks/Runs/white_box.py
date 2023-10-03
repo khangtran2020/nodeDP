@@ -52,9 +52,11 @@ def run(args, graph, model, device, history, name):
         label, loss, out_dict, grad_dict = x
         rprint(f"Label: {label}, size: {label.size()}")
         rprint(f"Loss: {loss}, size: {loss.size()}")
-        rprint(f"Out dict: {pretty_repr(out_dict)}, keys: {out_dict.keys()}")
-        rprint(f"Grad dict: {pretty_repr(grad_dict)}, keys: {grad_dict.keys()}")
         rprint(f"Membership Label: {y}, size: {y.size()}")
+        for key in out_keys:
+            rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
+        for key in model_keys:
+            rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
         sys.exit()
 
     # device = torch.device('cpu')
