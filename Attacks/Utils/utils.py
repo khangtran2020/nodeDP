@@ -91,10 +91,10 @@ def get_name(args, current_date):
     dp_key = ['clip', 'clip_node', 'trim_rule', 'ns', 'sampling_rate']
 
     if args.att_mode == 'blackbox':
-        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_batch_size', 
+        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 
                 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
     else:
-        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_batch_size',
+        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bz',
                     'att_epochs', 'sha_ratio']
 
     data_str = ''
