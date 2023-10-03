@@ -37,15 +37,16 @@ def run(args, graph, model, device, history, name):
         
         shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
         shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
-
+        
+        out_keys = [f'out_{i}' for i in range(args.n_layers)]
         x, y = shtr_dataset.__getitem__(index=0)
         it_loss, it_label, it_out_dict, it_grad_dict = x
 
         rprint(f"Loss: {it_loss}, size: {it_loss.size()}")
         rprint(f"Label: {it_label}, size: {it_label.size()}")
         rprint(f"Membership Label: {y}, size: {y.size()}")
-        rprint(f"Out dict: {pretty_repr(it_out_dict)}, size: {it_out_dict['out_0'].size()}")
-        rprint(f"Grad dict: {pretty_repr(it_grad_dict)}, keys: {it_grad_dict.keys()}")
+        rprint(f"Out dict keys: {it_out_dict['out_0'].keys()}")
+        rprint(f"Grad dict keys: {it_grad_dict.keys()}")
         sys.exit()
 
     # device = torch.device('cpu')
