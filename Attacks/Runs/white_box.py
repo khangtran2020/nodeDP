@@ -41,10 +41,10 @@ def run(args, graph, model, device, history, name):
         x, y = shtr_dataset.__getitem__(index=0)
         it_loss, it_label, it_out_dict, it_grad_dict = x
 
-        rprint(f"Loss: {it_loss}")
-        rprint(f"Label: {it_label}")
-        rprint(f"Out dict: {pretty_repr(it_out_dict)}")
-        rprint(f"Grad dict: {pretty_repr(it_grad_dict)}")
+        rprint(f"Loss: {it_loss}, size: {it_loss.size()}")
+        rprint(f"Label: {it_label}, size: {it_label.size()}")
+        rprint(f"Out dict: {pretty_repr(it_out_dict)}, size: {it_out_dict['out_0'].size()}")
+        rprint(f"Grad dict: {pretty_repr(it_grad_dict)}, size: {it_grad_dict['layers.0.fc_neigh.weight'].size()}")
         sys.exit()
 
     # device = torch.device('cpu')
