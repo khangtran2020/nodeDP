@@ -51,7 +51,7 @@ def run(args, current_time, device):
     
     with timeit(logger, 'init-model'):
         model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
-        model_path = args.res_path + model_name
+        model_path = args.save_path + model_name
         target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
         target_model_path = args.res_path + target_model_name
 
