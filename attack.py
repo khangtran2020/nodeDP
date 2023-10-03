@@ -76,7 +76,7 @@ def run(args, current_time, device):
 
     if args.att_mode == 'blackbox':
         model_hist, att_hist = blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
-    elif args.attack_mode == 'whitebox':
+    elif args.att_mode == 'whitebox':
         model_hist, att_hist = whitebox(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
 
     general_hist = {
