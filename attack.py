@@ -41,7 +41,7 @@ def run(args, current_time, device):
         if args.att_mode == 'blackbox':
             shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
         else:
-            shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
+            shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
 
         if exist_data == False:
             save_dict(path=data_path, dct=data_hist)
