@@ -213,7 +213,6 @@ def percentage_pos(node, graph):
     pos_percentage = num_pos.item() / (num_pos.item() + num_neg.item() + 1e-12)
     return pos_percentage
 
-
 def init_shadow_loader(args, device, graph):
 
     tr_nid = get_index_by_value(a=graph.ndata['str_mask'], val=1).to(device)

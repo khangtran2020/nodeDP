@@ -1,6 +1,8 @@
 import torch
 import torchmetrics
 from tqdm import tqdm
+from dgl.dataloading import transforms
+from dgl.dataloading.base import NID
 from Models.train_eval import EarlyStopping
 from rich import print as rprint
 from Data.read import init_loader
@@ -261,9 +263,10 @@ def get_grad(graph, model, criterion, device, mask):
     model.zero_grad()
     graph = graph.to(device)
     model.to(device)
+    blocks = sample_blocks(nodes=graph.nodes(), graph=graph, n_layer=model.n_layers, device=device)
+    
     mask = graph.ndata[mask].int()
-
-    pred = model.full(g=graph, x=graph.ndata['feat'])
+    pred = model.forward(blocks=blocks, x=blocks[0].srcdata['feat'])
     label = graph.ndata['label']
 
     loss = criterion(pred, label)
@@ -283,3 +286,12 @@ def get_grad(graph, model, criterion, device, mask):
             grad_overall = torch.cat((grad_overall, grad), dim=0)
             model.zero_grad()
     return grad_overall, norm
+
+def sample_blocks(nodes, graph, n_layer, device, fout=2):
+    blocks = []
+    for i in reversed(range(n_layer)):
+        frontier = graph.sample_neighbors(seed_nodes, fout, output_device=device)
+        block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=True)
+        seed_nodes = block.srcdata[NID]
+        blocks.insert(0, block)
+    return blocks
