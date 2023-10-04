@@ -1,6 +1,7 @@
 import sys
 import torch
 import torchmetrics
+import numpy as np
 from loguru import logger
 from hashlib import md5
 from rich import print as rprint
@@ -48,78 +49,29 @@ def run(args, graph, model, device, history, name):
         
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
         # get grad from shadow graph
-        grad_pos_tr = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
+        grad_pos_tr, norm_pos_tr = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='pos_mask_tr')
-        grad_pos_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
+        grad_pos_te, norm_pos_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='pos_mask_te')
-        grad_neg_tr = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
+        grad_neg_tr, norm_neg_tr = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_tr')
-        grad_neg_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
+        grad_neg_te, norm_neg_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_te')
-        grad_pos = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
-                               mask='pos_mask')
-        grad_neg = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
-                               mask='neg_mask')
         
-        rprint(f"Grad pos tr: {grad_pos_tr.size()}")
-        rprint(f"Grad pos te: {grad_pos_te.size()}")
-        rprint(f"Grad neg tr: {grad_neg_tr.size()}")
-        rprint(f"Grad neg te: {grad_neg_te.size()}")
-        rprint(f"Grad pos: {grad_pos.size()}")
-        rprint(f"Grad neg: {grad_neg.size()}")
-
         rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
         rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
 
-        pca = PCA()
-        pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
+        norm_pos_tr = np.array(norm_pos_tr)
+        norm_pos_te = np.array(norm_pos_te)
+        norm_neg_tr = np.array(norm_neg_tr)
+        norm_neg_te = np.array(norm_neg_te)
         
-        # PCA on train
+        rprint(f"Grad pos tr avg norm: {np.mean(norm_pos_tr)}, std {np.std(norm_pos_tr)}") 
+        rprint(f"Grad neg tr avg norm: {np.mean(norm_neg_tr)}, std {np.std(norm_neg_tr)}") 
+               
 
-        X = torch.cat((grad_pos, grad_neg), dim=0).detach().cpu().numpy()
-        y = torch.cat((torch.ones(grad_pos.size(dim=0)), torch.zeros(grad_neg.size(dim=0))), dim=0).numpy()
-
-        pipe.fit(X)
-
-        X_pos_tr = grad_pos_tr.detach().cpu().numpy()
-        Xt = pipe.transform(X_pos_tr)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.savefig('grad_pos_tr.jpg', bbox_inches='tight')
-
-        X_neg_tr = grad_neg_tr.detach().cpu().numpy()
-        Xt = pipe.transform(X_neg_tr)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.savefig('grad_neg_tr.jpg', bbox_inches='tight')
-
-        X_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim = 0).detach().cpu().numpy()
-        y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).numpy()
-        Xt = pipe.transform(X_tr)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1], c=y_tr)
-        plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
-        plt.savefig('grad_in_tr.jpg', bbox_inches='tight')
-
-        X_pos_te = grad_pos_te.detach().cpu().numpy()
-        Xt = pipe.transform(X_pos_te)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.savefig('grad_pos_te.jpg', bbox_inches='tight')
-
-        X_neg_te = grad_neg_te.detach().cpu().numpy()
-        Xt = pipe.transform(X_neg_te)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1])
-        plt.savefig('grad_neg_te.jpg', bbox_inches='tight')
-
-        X_te = torch.cat((grad_pos_te, grad_neg_te), dim = 0).detach().cpu().numpy()
-        y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
-        Xt = pipe.transform(X_te)
-        plt.figure()
-        plot = plt.scatter(Xt[:,0], Xt[:,1], c=y_te)
-        plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
-        plt.savefig('grad_in_te.jpg', bbox_inches='tight')
+        rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
+        rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
 
         sys.exit()
 
@@ -203,3 +155,54 @@ def run(args, graph, model, device, history, name):
     #     rprint(f"Attack {met}: {te_auc}")
     
     return model_hist, att_hist
+
+
+# pca = PCA()
+# pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
+
+# # PCA on train
+
+# X = torch.cat((grad_pos, grad_neg), dim=0).detach().cpu().numpy()
+# y = torch.cat((torch.ones(grad_pos.size(dim=0)), torch.zeros(grad_neg.size(dim=0))), dim=0).numpy()
+
+# pipe.fit(X)
+
+# X_pos_tr = grad_pos_tr.detach().cpu().numpy()
+# Xt = pipe.transform(X_pos_tr)
+# plt.figure()
+# plot = plt.scatter(Xt[:,0], Xt[:,1])
+# plt.savefig('grad_pos_tr.jpg', bbox_inches='tight')
+
+# X_neg_tr = grad_neg_tr.detach().cpu().numpy()
+# Xt = pipe.transform(X_neg_tr)
+# plt.figure()
+# plot = plt.scatter(Xt[:,0], Xt[:,1])
+# plt.savefig('grad_neg_tr.jpg', bbox_inches='tight')
+
+# X_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim = 0).detach().cpu().numpy()
+# y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).numpy()
+# Xt = pipe.transform(X_tr)
+# plt.figure()
+# plot = plt.scatter(Xt[:,0], Xt[:,1], c=y_tr)
+# plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
+# plt.savefig('grad_in_tr.jpg', bbox_inches='tight')
+
+# X_pos_te = grad_pos_te.detach().cpu().numpy()
+# Xt = pipe.transform(X_pos_te)
+# plt.figure()
+# plot = plt.scatter(Xt[:,0], Xt[:,1])
+# plt.savefig('grad_pos_te.jpg', bbox_inches='tight')
+
+# X_neg_te = grad_neg_te.detach().cpu().numpy()
+# Xt = pipe.transform(X_neg_te)
+# plt.figure()
+# plot = plt.scatter(Xt[:,0], Xt[:,1])
+# plt.savefig('grad_neg_te.jpg', bbox_inches='tight')
+
+# X_te = torch.cat((grad_pos_te, grad_neg_te), dim = 0).detach().cpu().numpy()
+# y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
+# Xt = pipe.transform(X_te)
+# plt.figure()
+# plot = plt.scatter(Xt[:,0], Xt[:,1], c=y_te)
+# plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
+# plt.savefig('grad_in_te.jpg', bbox_inches='tight')

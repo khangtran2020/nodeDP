@@ -269,6 +269,7 @@ def get_grad(graph, model, criterion, device, mask):
     loss = criterion(pred, label)
 
     grad_overall = torch.Tensor([]).to(device)
+    norm = []
     for i, los in enumerate(loss):
         if mask[i].item() > 0:
             los.backward(retain_graph=True)
@@ -278,6 +279,7 @@ def get_grad(graph, model, criterion, device, mask):
                     new_grad = p.grad.detach().clone()
                     grad = torch.cat((grad, new_grad.flatten()), dim=0)
             grad = torch.unsqueeze(grad, dim=0)
+            norm.append(grad.norm().detach().item())
             grad_overall = torch.cat((grad_overall, grad), dim=0)
             model.zero_grad()
-    return grad_overall
+    return grad_overall, norm
