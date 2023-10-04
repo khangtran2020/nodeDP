@@ -12,6 +12,7 @@ dataset
 .DS_Store
 *.sh
 Data/pairs/
+Data/features/
 
 # Distribution / packaging
 .Python
