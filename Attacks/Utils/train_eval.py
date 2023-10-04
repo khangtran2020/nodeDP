@@ -258,12 +258,12 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
     metrics.reset()
     return val_loss/num_data, performance
 
-def get_grad(graph, model, criterion, device, mask):
+def get_grad(graph, model, criterion, device, mask, fan_out=[2,1]):
 
     model.zero_grad()
     graph = graph.to(device)
     model.to(device)
-    blocks = sample_blocks(nodes=graph.nodes(), graph=graph, n_layer=model.n_layers, device=device)
+    blocks = sample_blocks(nodes=graph.nodes(), graph=graph, n_layer=model.n_layers, device=device, fout=fan_out)
     
     mask = graph.ndata[mask].int()
     pred = model.forward(blocks=blocks, x=blocks[0].srcdata['feat'])
@@ -287,11 +287,11 @@ def get_grad(graph, model, criterion, device, mask):
             model.zero_grad()
     return grad_overall, norm
 
-def sample_blocks(nodes, graph, n_layer, device, fout=2):
+def sample_blocks(nodes, graph, n_layer, device, fout):
     blocks = []
     seed_nodes = nodes
     for i in reversed(range(n_layer)):
-        frontier = graph.sample_neighbors(seed_nodes, fout, output_device=device)
+        frontier = graph.sample_neighbors(seed_nodes, fout[i], output_device=device)
         block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=True)
         seed_nodes = block.srcdata[NID]
         blocks.insert(0, block)
