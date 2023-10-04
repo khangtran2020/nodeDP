@@ -288,7 +288,7 @@ def generate_attack_samples(graph, conf, nohop_conf, mode, device, te_graph=None
         x, y = x[perm], y[perm]
 
         return x, y
-    
+
 def generate_nohop_graph(graph, device):
 
     nodes = graph.nodes().tolist()

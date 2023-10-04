@@ -10,7 +10,7 @@ from Utils.utils import seed_everything, timeit, read_pickel
 from Attacks.config import parse_args
 from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
-from Attacks.Runs.feature_analysis import run as wanal
+from Attacks.Runs.wb_simple import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
 from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox
 from Models.init import init_model
