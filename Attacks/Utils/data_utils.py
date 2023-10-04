@@ -196,6 +196,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     return shadow_graph
 
 def percentage_pos(node, graph):
+    print(node)
     frontier = graph.sample_neighbors(node, -1)
     mask = torch.zeros_like(frontier.nodes())
     src, dst = frontier.edges()
