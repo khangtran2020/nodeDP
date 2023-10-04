@@ -188,7 +188,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     
     shadow_graph = graph.subgraph(shadow_nodes)
     if diag:
-        rprint(f"Shadow graph average node degree: {shadow_graph.in_degree().mean().item()}")
+        rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().mean().item()}")
         per = partial(percentage_pos, graph=shadow_graph)
         shadow_graph.apply_nodes(per)
         rprint(f"Shadow graph average percentage neighbor is pos: {shadow_graph.ndata['pos_per'].mean().item()}")
