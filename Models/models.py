@@ -163,12 +163,16 @@ class NN(nn.Module):
             for i in range(0, self.n_layers-1):
                 h = self.layers[i](h)
                 h = self.activation(h)
+                if self.dropout is not None:
+                    h = self.dropout(h)
             h = self.layers[-1](h)
             # h = self.last_activation(h)
             return h
         else:
             h = x
             h = self.out_layer(h)
+            if self.dropout is not None:
+                h = self.dropout(h)
             # h = self.last_activation(h)
             return h
 

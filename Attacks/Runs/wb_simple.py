@@ -7,12 +7,13 @@ from hashlib import md5
 from rich import print as rprint
 from rich.pretty import pretty_repr
 from Utils.utils import timeit
-from Models.models import WbAttacker
+from Models.models import WbAttacker, NN
 from Models.init import init_model, init_optimizer
 from Attacks.Utils.utils import save_dict
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
-from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad
+from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad, train_attack, eval_attack_step
 from functools import partial
+from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -73,86 +74,69 @@ def run(args, graph, model, device, history, name):
         rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
         rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
 
-        sys.exit()
+        x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0).to(device)
+        y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).to(device)
 
-        # get grad from full graph
+        id_xtr = range(x_tr.size(dim=0))
+        id_ytr = y_tr.tolist()
 
-        # get grad from 
-
-    #     shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
-    #     shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
-
-    #     label, weight = shtr_dataset.label_weight
-    #     lab_weight = 1 - weight / weight.sum()
-    #     rprint(f"Label weight will be: {lab_weight}")
-
-    #     out_keys = [f'out_{i}' for i in range(args.n_layers)]
-    #     out_dim = []
-    #     if args.n_layers > 1:
-    #         out_dim.append(args.hid_dim)
-    #         for i in range(0, args.n_layers - 2):
-    #             out_dim.append(args.hid_dim)
-    #         out_dim.append(args.num_class)
-    #     else:
-    #         out_dim.append(args.num_class)
-
-    #     model_keys = []
-    #     grad_dim = []
-    #     for named, p in model.named_parameters():
-    #         if p.requires_grad:
-    #             model_keys.append(named.replace('.', '-'))
-    #             if 'bias' in named:
-    #                 out_d = list(p.size())[0]
-    #                 grad_dim.append((1, out_d))
-    #             else:
-    #                 out_d, in_d = list(p.size())
-    #                 grad_dim.append((in_d, out_d))
-    #             rprint(f"Model parameter {named} has size: {p.size()}")
+        id_tr, id_val, y_tr_id, y_va_id = train_test_split(id_xtr, id_ytr, test_size=0.2, stratify=id_ytr)
         
-    #     collate_fn = partial(custom_collate, out_key=out_keys, model_key=model_keys, device=device, num_class=args.num_class)
-    #     tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
-    #                                             drop_last=True, shuffle=True)
-    #     te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
-    #                                             drop_last=False, shuffle=True)
-        
-    #     rprint(f"Out dim: {out_dim}")
-    #     rprint(f"Grad dim: {grad_dim}")
-    #     x, y = next(iter(tr_loader))
-    #     label, loss, out_dict, grad_dict = x
-    #     rprint(f"Label size: {label.size()}")
-    #     rprint(f"Loss size: {loss.size()}")
-    #     rprint(f"Membership Label size: {y.size()}")
-    #     for key in out_keys:
-    #         rprint(f"Out dict at key {key} has size: {out_dict[key].size()}")
-    #     for key in model_keys:
-    #         rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
-    #     # sys.exit()
+        x_va = x_tr[id_val]
+        y_va = y_tr[id_val]
+        perm = torch.randperm(x_va.size(dim=0)).to(device)
+        x_va = x_va[perm]
+        y_va = y_va[perm]
+
+        x_tr = x_tr[id_tr]
+        y_tr = y_tr[id_tr]
+        perm = torch.randperm(x_tr.size(dim=0)).to(device)
+        x_tr = x_tr[perm]
+        y_tr = y_tr[perm]
+
+        x_te = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
+        y_te = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
+        perm = torch.randperm(x_te.size(dim=0)).to(device)
+        x_te = x_te[perm]
+        y_te = y_te[perm]
+
+        shtr_dataset = Data(X=x_tr, y=y_tr)
+        shva_dataset = Data(X=x_va, y=y_va)
+        shte_dataset = Data(X=x_te, y=y_te)
         
 
     # # device = torch.device('cpu')
-    # with timeit(logger=logger, task='train-attack-model'):
+    with timeit(logger=logger, task='train-attack-model'):
         
-    #     att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, out_dim_list=out_dim, grad_dim_list=grad_dim, 
-    #                            out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
-    #     att_model.to(device)
-    #     att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
-    #     att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, weight=lab_weight, 
-    #                                 attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
-    #                                 name=name['att'], device=device, history=att_hist)
+        tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_batch_size,
+                                                drop_last=True, shuffle=True)
 
-    # att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
-    # metric = ['auc', 'acc', 'pre', 'rec', 'f1']
-    # metric_dict = {
-    #     'auc': torchmetrics.classification.BinaryAUROC().to(device),
-    #     'acc': torchmetrics.classification.BinaryAccuracy().to(device),
-    #     'pre': torchmetrics.classification.BinaryPrecision().to(device),
-    #     'rec': torchmetrics.classification.BinaryRecall().to(device),
-    #     'f1': torchmetrics.classification.BinaryF1Score().to(device)
-    # }
-    # for met in metric:
-    #     te_loss, te_auc = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
-    #                                        metrics=metric_dict[met], criterion=torch.nn.BCELoss())
-    #     rprint(f"Attack {met}: {te_auc}")
+        va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_batch_size,
+                                                shuffle=False, drop_last=False)
+
+        te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_batch_size,
+                                                shuffle=False, drop_last=False)
+
+        att_model = NN(input_dim=x_tr.size(dim=1), hidden_dim=args.att_hid_dim, output_dim=1, n_layer=args.att_layers, dropout=0.2)
+        att_model.to(device)
+        att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
+        att_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
+                                 attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, name=name['att'],
+                                 device=device, history=att_hist)
+
+    att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
+    metric = ['auc', 'acc', 'pre', 'rec', 'f1']
+    metric_dict = {
+        'auc': torchmetrics.classification.BinaryAUROC().to(device),
+        'acc': torchmetrics.classification.BinaryAccuracy().to(device),
+        'pre': torchmetrics.classification.BinaryPrecision().to(device),
+        'rec': torchmetrics.classification.BinaryRecall().to(device),
+        'f1': torchmetrics.classification.BinaryF1Score().to(device)
+    }
+    for met in metric:
+        te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
+                                           metrics=metric_dict[met], criterion=torch.nn.BCEWithLogitsLoss().to(device))
+        rprint(f"Attack {met}: {te_auc}")
     
     return model_hist, att_hist
 
