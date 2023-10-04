@@ -94,6 +94,9 @@ def run(args, graph, model, device, history, name):
         x_tr = x_tr[perm]
         y_tr = y_tr[perm]
 
+        val, counts = y_tr.unique(return_counts=True)
+        weigts = counts[0].item() / counts[1].item()
+
         x_te = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
         y_te = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
         perm = torch.randperm(x_te.size(dim=0)).to(device)
@@ -122,7 +125,7 @@ def run(args, graph, model, device, history, name):
         att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
         att_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
                                  attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, name=name['att'],
-                                 device=device, history=att_hist)
+                                 device=device, history=att_hist, weight=weigts)
 
     att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
     metric = ['auc', 'acc', 'pre', 'rec', 'f1']
