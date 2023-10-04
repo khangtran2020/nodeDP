@@ -66,8 +66,7 @@ def run(args, graph, model, device, history, name):
 
         rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
         rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
-        sys.exit()
-        
+
         x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0).to(device)
         y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).to(device)
 
