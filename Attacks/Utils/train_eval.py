@@ -290,7 +290,7 @@ def get_grad(graph, model, criterion, device, mask):
 def sample_blocks(nodes, graph, n_layer, device, fout=2):
     blocks = []
     for i in reversed(range(n_layer)):
-        frontier = graph.sample_neighbors(seed_nodes, fout, output_device=device)
+        frontier = graph.sample_neighbors(nodes, fout, output_device=device)
         block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=True)
         seed_nodes = block.srcdata[NID]
         blocks.insert(0, block)
