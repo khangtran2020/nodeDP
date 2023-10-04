@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from Utils.utils import get_index_by_value
 from sklearn.linear_model import LogisticRegression
 from rich import print as rprint
+from functools import partial
 
 
 class Data(Dataset):
@@ -69,7 +70,7 @@ def shadow_split(graph, ratio, train_ratio=0.6, test_ratio=0.4, history=None, ex
         graph.ndata['str_mask'] = train_mask
         graph.ndata['ste_mask'] = test_mask
 
-def shadow_split_whitebox(graph, ratio, history=None, exist=False):
+def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
 
     org_nodes = graph.nodes()
     tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
@@ -186,7 +187,27 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False):
         graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
+    if diag:
+        rprint(f"Shadow graph average node degree: {shadow_graph.in_degree().mean().item()}")
+        per = partial(percentage_pos, graph=shadow_graph)
+        shadow_graph.apply_nodes(per)
+        rprint(f"Shadow graph average percentage neighbor is pos: {shadow_graph.ndata['pos_per'].mean().item()}")
+        rprint(f"Shadow graph average percentage neighbor is neg: {1 - shadow_graph.ndata['pos_per'].mean().item()}")
     return shadow_graph
+
+def percentage_pos(node, graph):
+    frontier = graph.sample_neighbors(node, -1)
+    mask = torch.zeros_like(frontier.nodes())
+    src, dst = frontier.edges()
+    mask[src.unique()] = 1
+    mask[dst.unique()] = 1
+    index = get_index_by_value(a=mask, val=1)
+    nodes_id = frontier.nodes()[index]
+    num_pos = graph.ndata['pos_mask'][nodes_id].sum()
+    num_neg = graph.ndata['neg_mask'][nodes_id].sum()
+    pos_percentage = num_pos.item() / (num_pos.item() + num_neg.item() + 1e-12)
+    return {'pos_per': pos_percentage}
+
 
 def init_shadow_loader(args, device, graph):
 

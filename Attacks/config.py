@@ -4,7 +4,7 @@ import argparse
 def add_general_group(group):
     group.add_argument("--save_path", type=str, default="results/models/", help="dir path for saving model file")
     group.add_argument("--res_path", type=str, default="results/dict/", help="dir path for output file")
-    group.add_argument("--plot_path", type=str, default="results/plot/", help="dir path for output file")
+    group.add_argument("--feat_path", type=str, default="Data/features/", help="dir path for output file")
     group.add_argument("--seed", type=int, default=2605, help="seed value")
     group.add_argument("--mode", type=str, default='clean', help="Mode of running ['clean', 'dp']")
     group.add_argument("--submode", type=str, default='none')
