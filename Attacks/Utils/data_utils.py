@@ -190,13 +190,14 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     if diag:
         rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().float().mean().item()}")
         per = partial(percentage_pos, graph=shadow_graph)
-        shadow_graph.apply_nodes(per)
-        rprint(f"Shadow graph average percentage neighbor is pos: {shadow_graph.ndata['pos_per'].mean().item()}")
-        rprint(f"Shadow graph average percentage neighbor is neg: {1 - shadow_graph.ndata['pos_per'].mean().item()}")
+        percentage = []
+        for node in shadow_graph.nodes():
+            percentage.append(per(node))
+        rprint(f"Shadow graph average percentage neighbor is pos: {sum(percentage)/(len(percentage) + 1e-12)}")
+        rprint(f"Shadow graph average percentage neighbor is neg: {1 - sum(percentage)/(len(percentage) + 1e-12)}")
     return shadow_graph
 
 def percentage_pos(node, graph):
-    print(node)
     frontier = graph.sample_neighbors(node, -1)
     mask = torch.zeros_like(frontier.nodes())
     src, dst = frontier.edges()
@@ -207,7 +208,7 @@ def percentage_pos(node, graph):
     num_pos = graph.ndata['pos_mask'][nodes_id].sum()
     num_neg = graph.ndata['neg_mask'][nodes_id].sum()
     pos_percentage = num_pos.item() / (num_pos.item() + num_neg.item() + 1e-12)
-    return {'pos_per': pos_percentage}
+    return pos_percentage
 
 
 def init_shadow_loader(args, device, graph):
