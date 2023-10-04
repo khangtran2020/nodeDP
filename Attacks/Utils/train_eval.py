@@ -279,5 +279,5 @@ def get_grad(graph, model, criterion, device, mask):
                     grad = torch.cat((grad, new_grad.flatten()), dim=0)
             grad = torch.unsqueeze(grad, dim=0)
             grad_overall = torch.cat((grad_overall, grad), dim=0)
-        model.zero_grad()
+            model.zero_grad()
     return grad_overall
