@@ -267,7 +267,6 @@ class WbAttacker(nn.Module):
         pred = self.encoder(overall_emb)
         return pred
         
-
 class DotPredictor(nn.Module):
     def forward(self, g, h):
         with g.local_scope():
