@@ -75,14 +75,14 @@ def eval_step(model, device, loader, metrics, criterion):
         metrics.reset()
     return val_loss / num_data, performance
 
-def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, optimizer, name, device, weight, history):
+def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, optimizer, name, device, history):
     
     model_name = '{}_attack.pt'.format(name)
 
     attack_model.to(device)
 
     # DEfining criterion
-    criterion = torch.nn.BCEWithLogitsLoss(reduction='mean', pos_weight=weight)
+    criterion = torch.nn.BCEWithLogitsLoss(reduction='mean')
     criterion.to(device)
 
     metrics = torchmetrics.classification.BinaryAUROC().to(device)
@@ -100,7 +100,7 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
         te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
                                            criterion=criterion)
         
-        # rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc}, va_loss {va_loss}, va_acc {va_acc}")
+        rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc}, va_loss {va_loss}, va_acc {va_acc}")
 
         history['attr_loss'].append(tr_loss)
         history['attr_perf'].append(tr_acc)
