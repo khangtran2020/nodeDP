@@ -95,7 +95,7 @@ def run(args, graph, model, device, history, name):
         y_tr = y_tr[perm]
 
         val, counts = y_tr.unique(return_counts=True)
-        weigts = counts[0].item() / counts[1].item()
+        weigts = counts[0] / counts[1]
 
         x_te = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
         y_te = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
