@@ -108,13 +108,13 @@ def run(args, graph, model, device, history, name):
     # # device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):
         
-        tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_batch_size,
+        tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs,
                                                 drop_last=True, shuffle=True)
 
-        va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_batch_size,
+        va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_bs,
                                                 shuffle=False, drop_last=False)
 
-        te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_batch_size,
+        te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs,
                                                 shuffle=False, drop_last=False)
 
         att_model = NN(input_dim=x_tr.size(dim=1), hidden_dim=args.att_hid_dim, output_dim=1, n_layer=args.att_layers, dropout=0.2)
