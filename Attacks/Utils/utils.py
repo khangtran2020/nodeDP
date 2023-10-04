@@ -90,12 +90,22 @@ def get_name(args, current_date):
     model_key = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'lr', 'n_layers', 'hid_dim', 'epochs', 'optimizer']
     dp_key = ['clip', 'clip_node', 'trim_rule', 'ns', 'sampling_rate']
 
+    if args.mode == 'dp':
+        gen_keys = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'n_layers', 'clip', 'clip_node', 'trim_rule', 'ns',
+                'sampling_rate', 'att_mode', 'sha_ratio']
+    else:
+        gen_keys = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'n_layers', 'att_mode', 'sha_ratio']
+
     if args.att_mode == 'blackbox':
         att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 
                 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
     else:
         att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs',
                     'att_epochs', 'sha_ratio']
+    
+    general_str = ''
+    for key in gen_keys:
+        general_str += f"{key}_{getattr(args, key)}_"
 
     data_str = ''
     for key in data_key:
@@ -116,10 +126,6 @@ def get_name(args, current_date):
     att_str = ''
     for key in att_key:
         att_str += f"{key}_{getattr(args, key)}_"
-
-    general_str = data_str + model_str + att_str + date_str
-    if args.mode == 'nodedp':
-        general_str = data_str + model_str + dp_str + att_str + date_str
 
     name = {
         'data': data_str[:-1],
