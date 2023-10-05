@@ -353,7 +353,7 @@ def reduce_desity(g, dens_reduction):
         new_g = dgl.graph((torch.LongTensor([]), torch.LongTensor([])), num_nodes=num_node)
         for key in g.ndata.keys():
             new_g.ndata[key] = g.ndata[key].clone()
-        print("New graph:", new_g)
+        print("New graph:", new_g, new_g.ndata['train_mask'])
     else:
         indices = np.arange(num_edge)
 
