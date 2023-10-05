@@ -187,13 +187,13 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
+    rprint("Shadow graph:", shadow_graph)
     if diag:
         rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
         per = partial(percentage_pos, graph=shadow_graph)
         percentage = []
         for node in shadow_graph.nodes():
             percentage.append(per(node))
-            rprint(f"Percentage of node {node}:", per(node))
         percentage = torch.Tensor(percentage)
         rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
         rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
