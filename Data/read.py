@@ -351,9 +351,9 @@ def reduce_desity(g, dens_reduction):
     num_edge_new = int(dens * num_node)
     if num_edge_new == 0:
         new_g = dgl.graph((torch.LongTensor([]), torch.LongTensor([])), num_nodes=num_node)
-        print("New graph:", new_g)
         for key in g.ndata.keys():
             new_g.ndata[key] = g.ndata[key].clone()
+        print("New graph:", new_g)
     else:
         indices = np.arange(num_edge)
 
