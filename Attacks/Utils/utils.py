@@ -114,7 +114,7 @@ def get_name(args, current_date):
     for key in gen_keys:
         general_str += f"{key}_{getattr(args, key)}_"
     general_str += date_str
-    
+
     data_str = ''
     for key in data_key:
         data_str += f"{key}_{getattr(args, key)}_"
@@ -168,7 +168,7 @@ def plot_PCA(gtrpos, gtrneg, gtepos, gteneg):
     y_tr = torch.cat((torch.ones(gtrpos.size(dim=0)), torch.zeros(gtrneg.size(dim=0))), dim=0).numpy()
     X_tr = pipe.transform(X_tr)
     plot = ax[0][2].scatter(X_tr[:,0], X_tr[:,1], c=y_tr)
-    plot.set_title("Gradient\nIn shaddow train")
+    ax[0][2].set_title("Gradient\nIn shaddow train")
     plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
 
     X_pos_te = gtepos.detach().cpu().numpy()
@@ -185,7 +185,7 @@ def plot_PCA(gtrpos, gtrneg, gtepos, gteneg):
     y_te = torch.cat((torch.ones(gtepos.size(dim=0)), torch.zeros(gteneg.size(dim=0))), dim=0).numpy()
     X_te = pipe.transform(X_te)
     plot = ax[1][2].scatter(X_te[:,0], X_te[:,1], c=y_te)
-    plot.set_title("Gradient\nIn shaddow test")
+    ax[1][2].set_title("Gradient\nIn shaddow test")
     plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
 
     plt.savefig('results/grad_inspect.jpg', bbox_inches='tight')
