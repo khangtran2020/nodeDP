@@ -10,6 +10,7 @@ from Utils.utils import timeit
 from Models.models import WbAttacker, NN
 from Models.init import init_model, init_optimizer
 from Attacks.Utils.utils import save_dict
+from Attacks.Utils.data_utils import test_distribution_shift
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
 from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad, train_attack, eval_attack_step
 from functools import partial
@@ -67,8 +68,13 @@ def run(args, graph, model, device, history, name):
         rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
         rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
 
-        x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0).to(device)
-        y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).to(device)
+        x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
+        y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
+
+        x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
+        y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
+
+        test_distribution_shift(x_tr=x_tr, x_te=x_te)
 
         id_xtr = range(x_tr.size(dim=0))
         id_ytr = y_tr.tolist()
@@ -87,8 +93,6 @@ def run(args, graph, model, device, history, name):
         x_tr = x_tr[perm]
         y_tr = y_tr[perm]
 
-        x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
-        y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_pos_te.size(dim=0))), dim=0)
         perm = torch.randperm(x_te.size(dim=0)).to(device)
         x_te = x_te[perm]
         y_te = y_te[perm]
