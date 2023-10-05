@@ -193,6 +193,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         percentage = []
         for node in shadow_graph.nodes():
             percentage.append(per(node))
+            print(per(node))
         percentage = torch.Tensor(percentage)
         rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
         rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
@@ -210,7 +211,6 @@ def percentage_pos(node, graph):
     mask[dst.unique()] = 1
     index = get_index_by_value(a=mask, val=1)
     nodes_id = frontier.nodes()[index]
-    print(nodes_id)
     num_pos = graph.ndata['pos_mask'][nodes_id].sum()
     num_neg = graph.ndata['neg_mask'][nodes_id].sum()
     pos_percentage = num_pos.item() / (num_pos.item() + num_neg.item() + 1e-12)
