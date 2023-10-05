@@ -66,12 +66,12 @@ def run(args, graph, model, device, history, name):
 
         arr = np.arange(len(x_tr))
         np.random.shuffle(arr)
-        x_tr = x_tr[arr]
+        x_tr = x_tr[arr].reshape(-1, 1)
         y_tr = y_tr[arr]
 
-        arr = np.arange(len(y_te))
+        arr = np.arange(len(x_te))
         np.random.shuffle(arr)
-        y_te = y_te[arr]
+        x_te = y_te[x_te].reshape(-1, 1) 
         y_te = y_te[arr]
 
         lr = LogisticRegression()
