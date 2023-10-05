@@ -9,15 +9,12 @@ from rich.pretty import pretty_repr
 from Utils.utils import timeit
 from Models.models import WbAttacker, NN
 from Models.init import init_model, init_optimizer
-from Attacks.Utils.utils import save_dict
+from Attacks.Utils.utils import save_dict, plot_PCA
 from Attacks.Utils.data_utils import test_distribution_shift
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
 from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad, train_attack, eval_attack_step
 from functools import partial
 from sklearn.model_selection import train_test_split
-from sklearn.decomposition import PCA
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -52,6 +49,8 @@ def run(args, graph, model, device, history, name):
                                mask='neg_mask_tr', fan_out=[1,1])
         grad_neg_te, norm_neg_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_te', fan_out=[1,1])
+        
+        plot_PCA(gtrpos=grad_pos_tr, gtrneg=grad_neg_tr, gtepos=grad_pos_te, gteneg=grad_neg_te)
         
         rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
         rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
