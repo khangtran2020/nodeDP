@@ -194,10 +194,12 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         for node in shadow_graph.nodes():
             percentage.append(per(node))
         percentage = torch.Tensor(percentage)
-        rprint(f"Shadow graph average percentage neighbor is pos: {percentage.mean().item()}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
-        rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.mean().item()}")
-        rprint(f"Shadow graph average percentage neighbor is pos of pos: {(percentage*shadow_graph.ndata['pos_mask']).mean().item()}")
-        rprint(f"Shadow graph average percentage neighbor is pos of neg: {(percentage*shadow_graph.ndata['neg_mask']).mean().item()}")
+        rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
+        rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
+        temp_pos = percentage*shadow_graph.ndata['pos_mask']
+        temp_neg = percentage*shadow_graph.ndata['neg_mask']
+        rprint(f"Shadow graph average percentage neighbor is pos of pos: {temp_pos.mean().item() / (len(temp_pos) + 1e-12)}")
+        rprint(f"Shadow graph average percentage neighbor is pos of neg: {temp_neg.mean().item() / (len(temp_neg) + 1e-12)}")
     return shadow_graph
 
 def percentage_pos(node, graph):
