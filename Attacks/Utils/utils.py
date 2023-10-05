@@ -153,38 +153,34 @@ def plot_PCA(gtrpos, gtrneg, gtepos, gteneg):
     X = torch.cat((gtrpos, gtepos, gtrneg, gteneg), dim=0).detach().cpu().numpy()
     pipe.fit(X)
 
-
-    X_pos_tr = gtrpos.detach().cpu().numpy()
-    X_pos_tr = pipe.transform(X_pos_tr)
-    ax[0][0].scatter(X_pos_tr[:,0], X_pos_tr[:,1])
-    ax[0][0].set_title("Positive gradient\nIn shaddow train")
-
-    X_neg_tr = gtrneg.detach().cpu().numpy()
-    X_neg_tr = pipe.transform(X_neg_tr)
-    ax[0][1].scatter(X_neg_tr[:,0], X_neg_tr[:,1])
-    ax[0][1].set_title("Negative gradient\nIn shaddow train")
-
     X_tr = torch.cat((gtrpos, gtrneg), dim = 0).detach().cpu().numpy()
     y_tr = torch.cat((torch.ones(gtrpos.size(dim=0)), torch.zeros(gtrneg.size(dim=0))), dim=0).numpy()
     X_tr = pipe.transform(X_tr)
-    plot = ax[0][2].scatter(X_tr[:,0], X_tr[:,1], c=y_tr)
+
+    plot = ax[0][0].scatter(X_tr[:,0], X_tr[:,1], c=y_tr)
+    ax[0][0].set_title("Gradient\nIn shaddow train")
+    plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
+
+    plot = ax[0][1].scatter(X_tr[:,1], X_tr[:,2], c=y_tr)
+    ax[0][1].set_title("Gradient\nIn shaddow train")
+    plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
+
+    plot = ax[0][2].scatter(X_tr[:,0], X_tr[:,2], c=y_tr)
     ax[0][2].set_title("Gradient\nIn shaddow train")
     plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
 
-    X_pos_te = gtepos.detach().cpu().numpy()
-    X_pos_te = pipe.transform(X_pos_te)
-    ax[1][0].scatter(X_pos_te[:,0], X_pos_te[:,1])
-    ax[1][0].set_title("Positive gradient\nIn shaddow test")
-
-    X_neg_te = gteneg.detach().cpu().numpy()
-    X_neg_te = pipe.transform(X_neg_te)
-    ax[1][1].scatter(X_neg_te[:,0], X_neg_te[:,1])
-    ax[1][1].set_title("Negative gradient\nIn shaddow test")
-
     X_te = torch.cat((gtepos, gteneg), dim = 0).detach().cpu().numpy()
     y_te = torch.cat((torch.ones(gtepos.size(dim=0)), torch.zeros(gteneg.size(dim=0))), dim=0).numpy()
-    X_te = pipe.transform(X_te)
-    plot = ax[1][2].scatter(X_te[:,0], X_te[:,1], c=y_te)
+
+    plot = ax[1][0].scatter(X_te[:,0], X_te[:,1], c=y_te)
+    ax[1][0].set_title("Gradient\nIn shaddow test")
+    plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
+
+    plot = ax[1][1].scatter(X_te[:,1], X_te[:,2], c=y_te)
+    ax[1][1].set_title("Gradient\nIn shaddow test")
+    plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
+
+    plot = ax[1][2].scatter(X_te[:,0], X_te[:,2], c=y_te)
     ax[1][2].set_title("Gradient\nIn shaddow test")
     plt.legend(handles=plot.legend_elements()[0], labels=['neg', 'pos'])
 
