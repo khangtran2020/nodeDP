@@ -97,7 +97,7 @@ def get_name(args, current_date):
     model_key = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'lr', 'n_layers', 'hid_dim', 'epochs', 'optimizer']
     dp_key = ['clip', 'clip_node', 'trim_rule', 'ns', 'sampling_rate']
 
-    if args.mode == 'dp':
+    if args.mode == 'nodedp':
         gen_keys = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'n_layers', 'clip', 'clip_node', 'trim_rule', 'ns',
                 'sampling_rate', 'att_mode', 'sha_ratio']
     else:
@@ -113,7 +113,8 @@ def get_name(args, current_date):
     general_str = ''
     for key in gen_keys:
         general_str += f"{key}_{getattr(args, key)}_"
-
+    general_str += date_str
+    
     data_str = ''
     for key in data_key:
         data_str += f"{key}_{getattr(args, key)}_"
