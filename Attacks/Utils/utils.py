@@ -150,7 +150,7 @@ def plot_PCA(gtrpos, gtrneg, gtepos, gteneg):
     pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
     fig, ax = plt.subplots(2, 3, sharex='col', sharey='row', figsize=(15, 8))  
 
-    X = torch.cat((gtrpos, gtepos, gtrneg, gteneg), dim=0).detach().cpu().numpy()
+    X = torch.cat((gtrpos, gtrneg), dim=0).detach().cpu().numpy()
     pipe.fit(X)
 
     X_tr = torch.cat((gtrpos, gtrneg), dim = 0).detach().cpu().numpy()

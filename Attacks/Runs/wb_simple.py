@@ -15,6 +15,9 @@ from Attacks.Utils.dataset import Data, ShadowData, custom_collate
 from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad, train_attack, eval_attack_step
 from functools import partial
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -73,10 +76,15 @@ def run(args, graph, model, device, history, name):
         x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
         y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
 
-        rprint(f"Dimension of train: {x_tr.size()}, test: {x_te.size()}")
-        for i in range(x_tr.size(dim=1)):
-            x_tr[:, i] = (x_tr[:, i] - x_tr[:, i].mean().item()) / (x_tr[:, i].std().item() + 1e-12)
-            x_te[:, i] = (x_te[:, i] - x_tr[:, i].mean().item()) / (x_tr[:, i].std().item() + 1e-12)
+        pca = PCA(n_components=32)
+        pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
+        pipe.fit(x_tr.detach().clone().cpu().numpy())
+
+        x_tr = pipe.transform(x_tr.detach().clone().cpu().numpy())
+        x_te = pipe.transform(x_te.detach().clone().cpu().numpy())
+
+        x_tr = torch.from_numpy(x_tr)
+        x_te = torch.from_numpy(x_te)
 
         id_xtr = range(x_tr.size(dim=0))
         id_ytr = y_tr.tolist()
