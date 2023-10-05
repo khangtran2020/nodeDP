@@ -73,14 +73,6 @@ def run(args, graph, model, device, history, name):
         x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
         y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
 
-        X = torch.cat((x_tr, x_te), dim=0)
-        for i in range(X.size(dim=1)):
-            X[:, i] = (X[:, i] - X[:, i].mean()) / (X[:, i].std() + 1e-12)
-
-        test_distribution_shift(x_tr=x_tr, x_te=x_te)
-        x_tr = X[:x_tr.size(dim=0)]
-        x_te = X[x_tr.size(dim=0):]
-
         id_xtr = range(x_tr.size(dim=0))
         id_ytr = y_tr.tolist()
 
