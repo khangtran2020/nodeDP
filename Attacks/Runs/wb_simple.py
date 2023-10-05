@@ -87,8 +87,8 @@ def run(args, graph, model, device, history, name):
         x_tr = x_tr[perm]
         y_tr = y_tr[perm]
 
-        x_te = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
-        y_te = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
+        x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
+        y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_pos_te.size(dim=0))), dim=0)
         perm = torch.randperm(x_te.size(dim=0)).to(device)
         x_te = x_te[perm]
         y_te = y_te[perm]
