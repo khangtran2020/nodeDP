@@ -263,14 +263,10 @@ def get_grad(graph, model, criterion, device, mask, fan_out=[2,1]):
     model.zero_grad()
     graph = graph.to(device)
     model.to(device)
-    blocks = sample_blocks(nodes=graph.nodes(), graph=graph, n_layer=model.n_layers, device=device, fout=fan_out)
-    
     mask = graph.ndata[mask].int()
-    pred = model.forward(blocks=blocks, x=blocks[0].srcdata['feat'])
+    pred = model.full(g=graph, x=graph.ndata['feat'])
     label = graph.ndata['label']
-
     loss = criterion(pred, label)
-
     grad_overall = torch.Tensor([]).to(device)
     norm = []
     for i, los in enumerate(loss):
