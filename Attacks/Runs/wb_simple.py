@@ -76,7 +76,7 @@ def run(args, graph, model, device, history, name):
         x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
         y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
 
-        pca = PCA(n_components=32)
+        pca = PCA(n_components=128)
         pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
         pipe.fit(x_tr.detach().clone().cpu().numpy())
 
