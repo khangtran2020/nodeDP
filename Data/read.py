@@ -138,7 +138,8 @@ def read_data(args, data_name, history, exist=False):
             
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
-    graph = drop_isolated_node(graph)
+    if (args.submode == 'density') and (args.density != 1.0):
+        graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
 
@@ -353,7 +354,6 @@ def reduce_desity(g, dens_reduction):
         new_g = dgl.graph((torch.LongTensor([]), torch.LongTensor([])), num_nodes=num_node)
         for key in g.ndata.keys():
             new_g.ndata[key] = g.ndata[key].clone()
-        print("New graph:", new_g, new_g.ndata['train_mask'])
     else:
         indices = np.arange(num_edge)
 
