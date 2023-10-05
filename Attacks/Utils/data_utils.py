@@ -188,7 +188,6 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
-    rprint("Shadow graph:", shadow_graph)
     if diag:
         rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
         per = partial(percentage_pos, graph=shadow_graph)
