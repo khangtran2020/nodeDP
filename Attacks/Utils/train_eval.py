@@ -280,7 +280,7 @@ def get_grad(graph, model, criterion, device, mask, fan_out=[2,1]):
             grad = torch.unsqueeze(grad, dim=0)
             norm.append(grad.norm().detach().item())
             grad_overall = torch.cat((grad_overall, grad), dim=0)
-            model.zero_grad()
+            # model.zero_grad()
     return grad_overall, norm
 
 def sample_blocks(nodes, graph, n_layer, device, fout):
