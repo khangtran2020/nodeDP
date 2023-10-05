@@ -99,6 +99,8 @@ def run(args, graph, model, device, history, name):
         x_tr = x_tr[perm]
         y_tr = y_tr[perm]
 
+        test_distribution_shift(x_tr=x_tr, x_te=x_va)
+
         perm = torch.randperm(x_te.size(dim=0)).to(device)
         x_te = x_te[perm]
         y_te = y_te[perm]
