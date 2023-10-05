@@ -75,7 +75,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     org_nodes = graph.nodes()
     tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
     te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-    # rprint(f"test orginal nodes: {te_org_idx}")
+    rprint(f"Orginal graph: {graph}")
 
     if exist == False:
 
@@ -90,7 +90,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         shatr_nodes = tr_node[perm[:num_shadow]]
 
         num_half = min(int(te_node.size(dim=0) / 2), int(shatr_nodes.size(dim=0) / 2))
-        print("Half", num_half)
+        # print("Half", num_half)
 
         perm = torch.randperm(shatr_nodes.size(dim=0))
         sha_pos_te = shatr_nodes[perm[:num_half]]
