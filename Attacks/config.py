@@ -17,6 +17,7 @@ def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
     group.add_argument('--dataset', type=str, default='cora', help="name of dataset")
     group.add_argument('--n_neighbor', type=int, default=4, help="# of neighbor each layer")
+    group.add_argument("--density", type=float, default=1.0, help="dropping rate")
 
 
 def add_model_group(group):
