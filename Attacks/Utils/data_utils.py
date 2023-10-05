@@ -210,6 +210,7 @@ def percentage_pos(node, graph):
     mask[dst.unique()] = 1
     index = get_index_by_value(a=mask, val=1)
     nodes_id = frontier.nodes()[index]
+    print(nodes_id)
     num_pos = graph.ndata['pos_mask'][nodes_id].sum()
     num_neg = graph.ndata['neg_mask'][nodes_id].sum()
     pos_percentage = num_pos.item() / (num_pos.item() + num_neg.item() + 1e-12)
