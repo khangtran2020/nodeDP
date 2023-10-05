@@ -34,10 +34,6 @@ def run(args, graph, model, device, history, name):
             save_dict(path=target_model_path, dct=model_hist)
         
     with timeit(logger=logger, task='preparing-shadow-data'):
-
-        # get layer out
-
-        # get grad 
         
         shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
         shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')

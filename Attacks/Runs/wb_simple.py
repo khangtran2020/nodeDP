@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -53,99 +54,114 @@ def run(args, graph, model, device, history, name):
         grad_neg_te, norm_neg_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_te', fan_out=[1,1])
         
-        plot_PCA(gtrpos=grad_pos_tr, gtrneg=grad_neg_tr, gtepos=grad_pos_te, gteneg=grad_neg_te)
-        
-        rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
-        rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
-
         norm_pos_tr = np.array(norm_pos_tr)
         norm_pos_te = np.array(norm_pos_te)
         norm_neg_tr = np.array(norm_neg_tr)
         norm_neg_te = np.array(norm_neg_te)
+
+        x_tr = np.concatenate((norm_pos_tr, norm_neg_tr), axis=0)
+        x_te = np.concatenate((norm_pos_te, norm_neg_te), axis=0)
+        y_tr = np.concatenate((np.ones(len(norm_pos_tr)), np.zeros(len(norm_neg_tr))), axis=0)
+        y_te = np.concatenate((np.ones(len(norm_pos_te)), np.zeros(len(norm_neg_te))), axis=0)
+
+        arr = np.arange(len(x_tr))
+        np.random.shuffle(arr)
+        x_tr = x_tr[arr]
+        y_tr = y_tr[arr]
+
+        arr = np.arange(len(y_te))
+        np.random.shuffle(arr)
+        y_te = y_te[arr]
+        y_te = y_te[arr]
+
+        lr = LogisticRegression()
+        lr.fit(X=x_tr, y=y_tr)
+        rprint("Score for logistic regression:", lr.score(X=x_te, y=y_te))
+
         
-        rprint(f"Grad pos tr avg norm: {np.mean(norm_pos_tr)}, std {np.std(norm_pos_tr)}") 
-        rprint(f"Grad neg tr avg norm: {np.mean(norm_neg_tr)}, std {np.std(norm_neg_tr)}") 
+    #     plot_PCA(gtrpos=grad_pos_tr, gtrneg=grad_neg_tr, gtepos=grad_pos_te, gteneg=grad_neg_te)
+        
+    #     rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
+    #     rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
+
+    #     norm_pos_tr = np.array(norm_pos_tr)
+    #     norm_pos_te = np.array(norm_pos_te)
+    #     norm_neg_tr = np.array(norm_neg_tr)
+    #     norm_neg_te = np.array(norm_neg_te)
+        
+    #     rprint(f"Grad pos tr avg norm: {np.mean(norm_pos_tr)}, std {np.std(norm_pos_tr)}") 
+    #     rprint(f"Grad neg tr avg norm: {np.mean(norm_neg_tr)}, std {np.std(norm_neg_tr)}") 
                
 
-        rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
-        rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
+    #     rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
+    #     rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
 
-        x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
-        y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
+    #     x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
+    #     y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
 
-        x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
-        y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
+    #     x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
+    #     y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
 
-        pca = PCA(n_components=128)
-        pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
-        pipe.fit(x_tr.detach().clone().cpu().numpy())
+    #     id_xtr = range(x_tr.size(dim=0))
+    #     id_ytr = y_tr.tolist()
 
-        x_tr = pipe.transform(x_tr.detach().clone().cpu().numpy())
-        x_te = pipe.transform(x_te.detach().clone().cpu().numpy())
-
-        x_tr = torch.from_numpy(x_tr)
-        x_te = torch.from_numpy(x_te)
-
-        id_xtr = range(x_tr.size(dim=0))
-        id_ytr = y_tr.tolist()
-
-        id_tr, id_val, y_tr_id, y_va_id = train_test_split(id_xtr, id_ytr, test_size=0.2, stratify=id_ytr)
+    #     id_tr, id_val, y_tr_id, y_va_id = train_test_split(id_xtr, id_ytr, test_size=0.2, stratify=id_ytr)
         
-        x_va = x_tr[id_val]
-        y_va = y_tr[id_val]
-        perm = torch.randperm(x_va.size(dim=0)).to(device)
-        x_va = x_va[perm]
-        y_va = y_va[perm]
+    #     x_va = x_tr[id_val]
+    #     y_va = y_tr[id_val]
+    #     perm = torch.randperm(x_va.size(dim=0)).to(device)
+    #     x_va = x_va[perm]
+    #     y_va = y_va[perm]
 
-        x_tr = x_tr[id_tr]
-        y_tr = y_tr[id_tr]
-        perm = torch.randperm(x_tr.size(dim=0)).to(device)
-        x_tr = x_tr[perm]
-        y_tr = y_tr[perm]
+    #     x_tr = x_tr[id_tr]
+    #     y_tr = y_tr[id_tr]
+    #     perm = torch.randperm(x_tr.size(dim=0)).to(device)
+    #     x_tr = x_tr[perm]
+    #     y_tr = y_tr[perm]
 
-        test_distribution_shift(x_tr=x_tr, x_te=x_va)
+    #     test_distribution_shift(x_tr=x_tr, x_te=x_va)
 
-        perm = torch.randperm(x_te.size(dim=0)).to(device)
-        x_te = x_te[perm]
-        y_te = y_te[perm]
+    #     perm = torch.randperm(x_te.size(dim=0)).to(device)
+    #     x_te = x_te[perm]
+    #     y_te = y_te[perm]
 
-        shtr_dataset = Data(X=x_tr, y=y_tr)
-        shva_dataset = Data(X=x_va, y=y_va)
-        shte_dataset = Data(X=x_te, y=y_te)
+    #     shtr_dataset = Data(X=x_tr, y=y_tr)
+    #     shva_dataset = Data(X=x_va, y=y_va)
+    #     shte_dataset = Data(X=x_te, y=y_te)
         
 
-    # # device = torch.device('cpu')
-    with timeit(logger=logger, task='train-attack-model'):
+    # # # device = torch.device('cpu')
+    # with timeit(logger=logger, task='train-attack-model'):
         
-        tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs,
-                                                drop_last=True, shuffle=True)
+    #     tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs,
+    #                                             drop_last=True, shuffle=True)
 
-        va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_bs,
-                                                shuffle=False, drop_last=False)
+    #     va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_bs,
+    #                                             shuffle=False, drop_last=False)
 
-        te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs,
-                                                shuffle=False, drop_last=False)
+    #     te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs,
+    #                                             shuffle=False, drop_last=False)
 
-        att_model = NN(input_dim=x_tr.size(dim=1), hidden_dim=args.att_hid_dim, output_dim=1, n_layer=args.att_layers, dropout=0.2)
-        att_model.to(device)
-        att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
-        att_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
-                                 attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, name=name['att'],
-                                 device=device, history=att_hist)
+    #     att_model = NN(input_dim=x_tr.size(dim=1), hidden_dim=args.att_hid_dim, output_dim=1, n_layer=args.att_layers, dropout=0.2)
+    #     att_model.to(device)
+    #     att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
+    #     att_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
+    #                              attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, name=name['att'],
+    #                              device=device, history=att_hist)
 
-    att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
-    metric = ['auc', 'acc', 'pre', 'rec', 'f1']
-    metric_dict = {
-        'auc': torchmetrics.classification.BinaryAUROC().to(device),
-        'acc': torchmetrics.classification.BinaryAccuracy().to(device),
-        'pre': torchmetrics.classification.BinaryPrecision().to(device),
-        'rec': torchmetrics.classification.BinaryRecall().to(device),
-        'f1': torchmetrics.classification.BinaryF1Score().to(device)
-    }
-    for met in metric:
-        te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
-                                           metrics=metric_dict[met], criterion=torch.nn.BCEWithLogitsLoss().to(device))
-        rprint(f"Attack {met}: {te_auc}")
+    # att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
+    # metric = ['auc', 'acc', 'pre', 'rec', 'f1']
+    # metric_dict = {
+    #     'auc': torchmetrics.classification.BinaryAUROC().to(device),
+    #     'acc': torchmetrics.classification.BinaryAccuracy().to(device),
+    #     'pre': torchmetrics.classification.BinaryPrecision().to(device),
+    #     'rec': torchmetrics.classification.BinaryRecall().to(device),
+    #     'f1': torchmetrics.classification.BinaryF1Score().to(device)
+    # }
+    # for met in metric:
+    #     te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
+    #                                        metrics=metric_dict[met], criterion=torch.nn.BCEWithLogitsLoss().to(device))
+    #     rprint(f"Attack {met}: {te_auc}")
     
     return model_hist, att_hist
 
