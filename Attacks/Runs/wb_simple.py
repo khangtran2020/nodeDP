@@ -54,6 +54,21 @@ def run(args, graph, model, device, history, name):
         grad_neg_te, norm_neg_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_te', fan_out=[1,1])
         
+        rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
+        rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
+
+        norm_pos_tr = np.array(norm_pos_tr)
+        norm_pos_te = np.array(norm_pos_te)
+        norm_neg_tr = np.array(norm_neg_tr)
+        norm_neg_te = np.array(norm_neg_te)
+        
+        rprint(f"Grad pos tr avg norm: {np.mean(norm_pos_tr)}, std {np.std(norm_pos_tr)}") 
+        rprint(f"Grad neg tr avg norm: {np.mean(norm_neg_tr)}, std {np.std(norm_neg_tr)}") 
+               
+
+        rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
+        rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
+
         norm_pos_tr = np.array(norm_pos_tr)
         norm_pos_te = np.array(norm_pos_te)
         norm_neg_tr = np.array(norm_neg_tr)
@@ -81,20 +96,7 @@ def run(args, graph, model, device, history, name):
         
     #     plot_PCA(gtrpos=grad_pos_tr, gtrneg=grad_neg_tr, gtepos=grad_pos_te, gteneg=grad_neg_te)
         
-    #     rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
-    #     rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")
-
-    #     norm_pos_tr = np.array(norm_pos_tr)
-    #     norm_pos_te = np.array(norm_pos_te)
-    #     norm_neg_tr = np.array(norm_neg_tr)
-    #     norm_neg_te = np.array(norm_neg_te)
-        
-    #     rprint(f"Grad pos tr avg norm: {np.mean(norm_pos_tr)}, std {np.std(norm_pos_tr)}") 
-    #     rprint(f"Grad neg tr avg norm: {np.mean(norm_neg_tr)}, std {np.std(norm_neg_tr)}") 
-               
-
-    #     rprint(f"Grad pos te avg norm: {np.mean(norm_pos_te)}, std {np.std(norm_pos_te)}") 
-    #     rprint(f"Grad neg te avg norm: {np.mean(norm_neg_te)}, std {np.std(norm_neg_te)}") 
+    #     
 
     #     x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
     #     y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
