@@ -73,6 +73,11 @@ def run(args, graph, model, device, history, name):
         x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
         y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
 
+        rprint(f"Dimension of train: {x_tr.size()}, test: {x_te.size()}")
+        for i in range(x_tr.size(dim=1)):
+            x_tr[:, i] = (x_tr[:, i] - x_tr[:, i].mean().item()) / (x_tr[:, i].std().item() + 1e-12)
+            x_te[:, i] = (x_te[:, i] - x_tr[:, i].mean().item()) / (x_tr[:, i].std().item() + 1e-12)
+
         id_xtr = range(x_tr.size(dim=0))
         id_ytr = y_tr.tolist()
 
