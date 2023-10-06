@@ -327,7 +327,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
         diff_norm = np.array(diff_norm)
         norm_diff = np.array(norm_diff)
         norm_tr = np.array(norm_tr)
-        norm_sh = np.array(norm_sh)
+        norm_sh = np.array(norm)
         res_dict = {
             'cosine': {
                 'mean': np.mean(cos),
