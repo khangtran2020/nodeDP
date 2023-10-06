@@ -192,7 +192,9 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         pos_mask = shadow_graph.ndata['pos_mask'].clone()
         train_mask = shadow_graph.ndata['train_mask'].clone()
         neg_mask = shadow_graph.ndata['neg_mask'].clone()
-        test_mask = shadow_graph['test_mask'].clone()
+        test_mask = shadow_graph.ndata['test_mask'].clone()
+
+
         rprint(f"Positive mask unique: {pos_mask.unique(return_counts=True)}, Train mask in shadow graph {train_mask.unique(return_counts=True)}")
         rprint(f"Positive mask unique: {neg_mask.unique(return_counts=True)}, Train mask in shadow graph {test_mask.unique(return_counts=True)}")
         rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
