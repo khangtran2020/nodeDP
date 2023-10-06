@@ -3,7 +3,6 @@ import sys
 import torch
 import datetime
 import warnings
-from Data.read import read_data
 from loguru import logger
 from rich import print as rprint
 from Utils.utils import seed_everything, timeit, read_pickel
@@ -12,7 +11,7 @@ from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
 from Attacks.Runs.wb_simple import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
-from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox
+from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox, read_data
 from Models.init import init_model
 from hashlib import md5
 

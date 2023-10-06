@@ -45,13 +45,13 @@ def run(args, graph, model, device, history, name):
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
         # get grad from shadow graph
         grad_pos_tr, norm_pos_tr = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
-                               mask='pos_mask_tr', fan_out=[1,1])
+                               mask='pos_mask_tr', pos=True)
         grad_pos_te, norm_pos_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
-                               mask='pos_mask_te', fan_out=[1,1])
+                               mask='pos_mask_te', pos=True)
         grad_neg_tr, norm_neg_tr = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
-                               mask='neg_mask_tr', fan_out=[1,1])
+                               mask='neg_mask_tr')
         grad_neg_te, norm_neg_te = get_grad(graph=shadow_graph, model=model, criterion=criterion, device=device, 
-                               mask='neg_mask_te', fan_out=[1,1])
+                               mask='neg_mask_te')
         
         rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
         rprint(f"Grad pos te avg norm: {grad_pos_te.norm() / grad_pos_te.size(dim=0)}, neg te avg norm: {grad_neg_te.norm() / grad_neg_te.size(dim=0)}")

@@ -7,7 +7,7 @@ from Models.train_eval import EarlyStopping
 from rich import print as rprint
 from Data.read import init_loader
 from Models.init import init_optimizer
-from Runs.run_grad_clean import run as run_clean
+from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 
 def get_entropy(pred):
@@ -258,29 +258,69 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
     metrics.reset()
     return val_loss/num_data, performance
 
-def get_grad(graph, model, criterion, device, mask, fan_out=[2,1]):
+def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False):
 
     model.zero_grad()
-    graph = graph.to(device)
+    shadow_graph = shadow_graph.to(device)
     model.to(device)
-    mask = graph.ndata[mask].int()
-    pred = model.full(g=graph, x=graph.ndata['feat'])
-    label = graph.ndata['label']
-    loss = criterion(pred, label)
+    mask = shadow_graph.ndata[mask].int()
+
+    pred_shadow = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
+    label_shadow = shadow_graph.ndata['label']
+    loss_sh = criterion(pred_shadow, label_shadow)
+    
+    if pos:
+        cos = []
+        diff_norm = []
+        norm_diff = []
+        target_graph = target_graph.to(device)
+        pred_target = model.full(g=target_graph, x=target_graph.ndata['feat'])
+        label_target = target_graph.ndata['label']
+        loss_tr = criterion(pred_target, label_target)
+
     grad_overall = torch.Tensor([]).to(device)
     norm = []
-    for i, los in enumerate(loss):
+
+    for i, los in enumerate(loss_sh):
+
         if mask[i].item() > 0:
+        
             los.backward(retain_graph=True)
-            grad = torch.Tensor([]).to(device)
+            grad_sh = torch.Tensor([]).to(device)
+
             for name, p in model.named_parameters():
                 if p.grad is not None:
                     new_grad = p.grad.detach().clone()
-                    grad = torch.cat((grad, new_grad.flatten()), dim=0)
-            grad = torch.unsqueeze(grad, dim=0)
-            norm.append(grad.norm().detach().item())
-            grad_overall = torch.cat((grad_overall, grad), dim=0)
+                    grad_sh = torch.cat((grad_sh, new_grad.flatten()), dim=0)
             model.zero_grad()
+
+            if pos:
+                
+                id_tr = shadow_graph.ndata['id_intr'][i].item()
+                grad_tr = torch.Tensor([]).to(device)
+                loss_tr[id_tr].backward(retain_graph=True)
+                for name, p in model.named_parameters():
+                    if p.grad is not None:
+                        new_grad = p.grad.detach().clone()
+                        grad_tr = torch.cat((grad_tr, new_grad.flatten()), dim=0)
+                model.zero_grad()
+            
+                c = (grad_sh*grad_tr).sum().item() / (grad_sh.norm(p=2).item() + grad_tr.norm(p=2).item() + 1e-12)
+                n1 = (grad_sh.norm() - grad_tr.norm()).abs().item()
+                n2 = (grad_sh - grad_tr).norm().item()
+                cos.append(c)
+                diff_norm.append(n1)
+                norm_diff.append(n2)
+
+
+            grad_sh = torch.unsqueeze(grad_sh, dim=0)
+            norm.append(grad_sh.norm().detach().item())
+            grad_overall = torch.cat((grad_overall, grad_sh), dim=0)
+
+    if pos:
+
+        rprint(f"For {mask}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}")
+
     return grad_overall, norm
 
 def sample_blocks(nodes, graph, n_layer, device, fout):

@@ -2,11 +2,15 @@ import dgl
 import torch
 import numpy as np
 from torch.utils.data import Dataset
+from torch_geometric.transforms import Compose, RandomNodeSplit
 from Utils.utils import get_index_by_value
 from sklearn.linear_model import LogisticRegression
 from rich import print as rprint
 from functools import partial
-
+from dgl.data import CoraGraphDataset, CiteseerGraphDataset, PubmedGraphDataset
+from Data.read import node_split, filter_class_by_count, graph_split, drop_isolated_node
+from Data.facebook import Facebook
+from Data.amazon import Amazon
 
 class Data(Dataset):
     def __init__(self, X, y):
@@ -333,3 +337,113 @@ def generate_nohop_graph(graph, device):
         g.ndata[key] = graph.ndata[key].clone()
     
     return g
+
+def get_graph(data_name):
+
+    if data_name == 'reddit':
+        data = dgl.data.RedditDataset()
+        graph = data[0]
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=10000)
+    elif data_name == 'cora':
+        data = CoraGraphDataset()
+        graph = data[0]
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=0)
+    elif data_name == 'citeseer':
+        data = CiteseerGraphDataset()
+        graph = data[0]
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=0)
+    elif data_name == 'pubmed':
+        data = PubmedGraphDataset()
+        graph = data[0]
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
+        node_split(graph=graph, val_size=0.1, test_size=0.15)
+        list_of_label = filter_class_by_count(graph=graph, min_count=0)
+    elif data_name == 'facebook':
+        load_data = partial(Facebook, name='UIllinois20', target='year',
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                                # FilterClassByCount(min_count=1000, remove_unlabeled=True)
+                            ])
+                            )
+        data = load_data(root='dataset/')[0]
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        graph.ndata['train_mask'] = data.train_mask
+        graph.ndata['val_mask'] = data.val_mask
+        graph.ndata['test_mask'] = data.test_mask
+        list_of_label = filter_class_by_count(graph=graph, min_count=1000)
+        # sys.exit()
+    elif data_name == 'amazon':
+        load_data = partial(Amazon,
+                            transform=Compose([
+                                RandomNodeSplit(num_val=0.1, num_test=0.15)
+                            ])
+                            )
+        data = load_data(root='dataset/')[0]
+        src_edge = data.edge_index[0]
+        dst_edge = data.edge_index[1]
+        graph = dgl.graph((src_edge, dst_edge), num_nodes=data.x.size(dim=0))
+        graph.ndata['feat'] = data.x
+        graph.ndata['label'] = data.y
+        graph.ndata['train_mask'] = data.train_mask
+        graph.ndata['val_mask'] = data.val_mask
+        graph.ndata['test_mask'] = data.test_mask
+        list_of_label = filter_class_by_count(graph=graph, min_count=6000)
+
+    return graph, list_of_label
+
+def read_data(args, history, exist=False):
+
+    graph, list_of_label = get_graph(data_name=args.dataset)
+    args.num_class = len(list_of_label)
+    args.num_feat = graph.ndata['feat'].shape[1]
+    graph = dgl.remove_self_loop(graph)
+    graph.ndata['org_id'] = graph.nodes().clone()
+
+    if exist == False:
+        rprint(f"History is {exist} to exist, need to reinitialize")
+        history['tr_id'] = graph.ndata['train_mask'].tolist()
+        history['va_id'] = graph.ndata['val_mask'].tolist()
+        history['te_id'] = graph.ndata['test_mask'].tolist()
+    else:
+        rprint(f"History is {exist} to exist, assigning masks according to previous run")
+        del(graph.ndata['train_mask'])
+        del(graph.ndata['val_mask'])
+        del(graph.ndata['test_mask'])
+
+        id_train = history['tr_id']
+        id_val = history['va_id']
+        id_test = history['te_id']
+
+        graph.ndata['train_mask'] = torch.LongTensor(id_train)
+        graph.ndata['val_mask'] = torch.LongTensor(id_val)
+        graph.ndata['test_mask'] = torch.LongTensor(id_test)
+        
+    if (args.submode == 'density') and (args.density == 1.0):
+        g_train, g_val, g_test = graph_split(graph=graph, drop=False)
+    else:
+        g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+
+    id_intr = g_train.ndata['org_id']
+    graph.ndata['id_intr'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).int()
+    graph.ndata['id_intr'][id_intr] = g_train.nodes().clone
+    idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
+    graph = graph.subgraph(torch.LongTensor(idx))
+    if (args.submode == 'density') and (args.density != 1.0):
+        graph = drop_isolated_node(graph)
+    args.num_data_point = len(g_train.nodes())
+    return g_train, g_val, g_test, graph
