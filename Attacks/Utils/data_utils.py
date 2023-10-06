@@ -192,7 +192,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     shadow_graph = graph.subgraph(shadow_nodes)
     sh_org_node = shadow_graph.ndata['org_id']
     
-    temp = torch.isin(shadow_graph, sh_org_node)
+    temp = torch.isin(sh_org_node, shadow_nodes)
 
 
     rprint(f"Shadow graph has len {len(shadow_graph.nodes())}, shadow_graph org_id equal to shadow nodes {temp.sum().item()}")
