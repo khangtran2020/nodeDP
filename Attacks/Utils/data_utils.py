@@ -8,7 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from rich import print as rprint
 from functools import partial
 from dgl.data import CoraGraphDataset, CiteseerGraphDataset, PubmedGraphDataset
-from Data.read import node_split, filter_class_by_count, graph_split, drop_isolated_node
+from Data.read import node_split, filter_class_by_count, graph_split, drop_isolated_node, reduce_desity
 from Data.facebook import Facebook
 from Data.amazon import Amazon
 
@@ -432,7 +432,10 @@ def read_data(args, history, exist=False):
         graph.ndata['train_mask'] = torch.LongTensor(id_train)
         graph.ndata['val_mask'] = torch.LongTensor(id_val)
         graph.ndata['test_mask'] = torch.LongTensor(id_test)
-        
+    
+    if args.submode == 'density':
+        graph = reduce_desity(g=graph, dens_reduction=args.density)
+
     if (args.submode == 'density') and (args.density == 1.0):
         g_train, g_val, g_test = graph_split(graph=graph, drop=False)
     else:
