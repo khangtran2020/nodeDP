@@ -258,7 +258,7 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
     metrics.reset()
     return val_loss/num_data, performance
 
-def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False):
+def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False, name=None):
 
     model.zero_grad()
     shadow_graph = shadow_graph.to(device)
@@ -306,7 +306,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
                 model.zero_grad()
             
                 c = (grad_sh*grad_tr).sum().item() / (grad_sh.norm(p=2).item() + grad_tr.norm(p=2).item() + 1e-12)
-                n1 = (grad_sh.norm() - grad_tr.norm()).abs().item()
+                n1 = (grad_sh.norm() - grad_tr.norm()).abs().item() / ((grad_sh.norm() + grad_tr.norm()).item() + 1e-12)
                 n2 = (grad_sh - grad_tr).norm().item()
                 cos.append(c)
                 diff_norm.append(n1)
@@ -319,8 +319,8 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
 
     if pos:
 
-        rprint(f"For {mask}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}")
-
+        rprint(f"For {name}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average smape diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}")
+    
     return grad_overall, norm
 
 def sample_blocks(nodes, graph, n_layer, device, fout):
