@@ -6,7 +6,7 @@ from copy import deepcopy
 from rich import print as rprint
 from rich.pretty import pretty_repr
 from tqdm import tqdm
-from Models.train_eval import EarlyStopping, train_fn_grad_inspect, eval_fn
+from Models.train_eval import EarlyStopping, train_fn_grad_inspect, eval_grad_clean
 from Utils.utils import save_res, timeit
 from loguru import logger
 
@@ -66,9 +66,9 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
             t = t1 - t0
 
             # scheduler.step()
-            va_loss, va_acc, grad_vva, grad_nva = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
+            va_loss, va_acc, grad_vva, grad_nva = eval_grad_clean(data_loader=va_loader, model=model, criterion=criterion,
                                     metric=metrics, device=device)
-            te_loss, te_acc, grad_vte, grad_nte = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
+            te_loss, te_acc, grad_vte, grad_nte = eval_grad_clean(data_loader=te_loader, model=model, criterion=criterion,
                                     metric=metrics, device=device)
 
             cons = (grad_vtr*grad_vte).sum().item() / (grad_vtr.norm(p=2).item() * grad_vte.norm(p=2).item() + 1e-12)
