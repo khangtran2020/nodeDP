@@ -51,7 +51,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
             # scheduler.step(acc_score)
 
-            tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
+            tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
             history['train_history_loss'].append(tr_loss)
             history['train_history_acc'].append(tr_acc.item())
