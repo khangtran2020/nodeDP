@@ -46,7 +46,6 @@ def init_history(args):
     }
 
     if args.mode == 'clean':
-
         target_model_hist = {
             'name': None,
             'train_history_loss': [],
@@ -57,9 +56,7 @@ def init_history(args):
             'test_history_acc': [],
             'best_test': 0
         }
-
     else:
-
         target_model_hist =  {
             'name': None,
             'train_history_loss': [],
@@ -94,7 +91,8 @@ def get_name(args, current_date):
     date_str = f'{current_date.day}{current_date.month}{current_date.year}-{current_date.hour}{current_date.minute}'
 
     data_key = ['dataset', 'seed']
-    model_key = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'lr', 'n_layers', 'hid_dim', 'epochs', 'optimizer']
+    model_key = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'lr', 'n_layers', 
+                 'hid_dim', 'epochs', 'optimizer']
     dp_key = ['clip', 'clip_node', 'trim_rule', 'ns', 'sampling_rate']
 
     if args.mode == 'nodedp':

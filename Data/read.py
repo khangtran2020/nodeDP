@@ -92,6 +92,7 @@ def read_data(args, data_name, history, exist=False):
         del(graph.ndata['val_mask'])
         del(graph.ndata['test_mask'])
         node_split(graph=graph, val_size=0.1, test_size=0.15)
+
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
@@ -101,7 +102,6 @@ def read_data(args, data_name, history, exist=False):
         history['tr_id'] = graph.ndata['train_mask'].tolist()
         history['va_id'] = graph.ndata['val_mask'].tolist()
         history['te_id'] = graph.ndata['test_mask'].tolist()
-
     else:
         rprint(f"History is {exist} to exist, assigning masks according to previous run")
         del(graph.ndata['train_mask'])
