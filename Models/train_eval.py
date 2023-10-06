@@ -361,9 +361,7 @@ def train_fn_grad_inspect(args, dataloader, model, criterion, optimizer, device,
         metric.update(pred, target)
         num_data += pred.size(dim=0)
         train_loss += loss.mean().item()*pred.size(dim=0)
-    
-    for i in range(args.num_class):
-        grad_norm[f'label_{i}'] = sum(grad_norm[f'label_{i}'])/len(grad_norm[f'label_{i}'])
+
     performance = metric.compute()
     metric.reset()
     return train_loss / num_data, performance, grad_norm.sqrt().item() / num_data, grad_vec / num_data
@@ -530,8 +528,6 @@ def eval_grad_inspect_fn(data_loader, model, criterion, metric, device):
     metric.reset()
     model.zero_grad()
     return loss_eval / num_point, performance, grad_vec / num_point, grad_norm.sqrt().item() / num_point
-
-
 
 def eval_grad_clean(model, objective, batch, device):
     grad_vec = torch.Tensor([]).to(device)
