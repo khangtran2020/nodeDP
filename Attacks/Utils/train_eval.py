@@ -350,7 +350,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
                 'std': np.std(norm_sh)
             }
         }   
-        rprint(f"Result: {pretty_repr(res_dict)}") 
+        rprint(f"Result for {name_dt}: {pretty_repr(res_dict)}") 
     return grad_overall, norm
 
 def sample_blocks(nodes, graph, n_layer, device, fout):
