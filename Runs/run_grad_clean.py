@@ -73,7 +73,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
             cons = (grad_vtr*grad_vte).sum().item() / (grad_vtr.norm(p=2).item() * grad_vte.norm(p=2).item() + 1e-12)
 
-            # rprint(f"At epoch {epoch}: norm of avg grad in train {grad_ntr}, norm of avg grad in test {grad_nte}, cosine between two vec: {cons}")
+            rprint(f"At epoch {epoch}: norm of avg grad in train {grad_ntr}, norm of avg grad in test {grad_nte}, cosine between two vec: {cons}")
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
