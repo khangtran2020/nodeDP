@@ -322,7 +322,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
 
     if pos:
 
-        rprint(f"For {name_dt}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average smape diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}, average norm in target graph {sum(norm_tr) / (len(norm_tr) + 1e-12)}")
+        rprint(f"For {name_dt}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average smape diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}, average norm in target graph {sum(norm_tr) / (len(norm_tr) + 1e-12)}, average norm in shadow graph {sum(norm) / (len(norm) + 1e-12)} ")
     
     return grad_overall, norm
 
