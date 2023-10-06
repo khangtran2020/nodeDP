@@ -389,6 +389,7 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
         id_intr = shadow_graph.ndata['id_intr'][nodes].int()
+        print(id_intr)
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
         mean_conf_intr = tr_conf[id_intr].mean().item()
