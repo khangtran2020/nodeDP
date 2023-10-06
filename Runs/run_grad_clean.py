@@ -6,7 +6,7 @@ from copy import deepcopy
 from rich import print as rprint
 from rich.pretty import pretty_repr
 from tqdm import tqdm
-from Models.train_eval import EarlyStopping, train_fn_grad_inspect, eval_grad_inspect_fn
+from Models.train_eval import EarlyStopping, train_fn_grad_inspect, eval_grad_inspect_fn, eval_fn
 from Utils.utils import save_res, timeit
 from loguru import logger
 
