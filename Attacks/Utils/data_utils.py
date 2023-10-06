@@ -195,7 +195,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     temp = torch.isin(sh_org_node, shadow_nodes)
 
 
-    rprint(f"Shadow graph has len {len(shadow_graph.nodes())}, shadow_graph org_id equal to shadow nodes {temp.sum().item()}")
+    rprint(f"Shadow graph org node allign with shaddow nodes: {(sh_org_node - shadow_nodes).sum().item()}")
 
     # if diag:
     #     pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
