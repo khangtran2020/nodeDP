@@ -11,9 +11,12 @@ from Models.init import init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 from rich.pretty import pretty_repr
+from Utils.utils import get_index_by_value
 
 def get_entropy(pred):
-    pass
+    ln_pred = torch.log(pred + 1e-12)
+    temp = -1 * pred * ln_pred
+    return temp.sum(dim=1)
 
 def train_shadow(args, tr_loader, shadow_model, epochs, optimizer, name, device, history, mode):
     model_name = f'{name}_{mode}_shadow.pt'
@@ -362,3 +365,88 @@ def sample_blocks(nodes, graph, n_layer, device, fout):
         seed_nodes = block.srcdata[NID]
         blocks.insert(0, block)
     return blocks
+
+def get_conf(shadow_graph, target_graph, test_graph, model, device):
+
+    with torch.no_grad():
+
+        shadow_graph = shadow_graph.to(device)
+        model.to(device)
+        pred_shadow = model.full(g=shadow_graph, x=shadow_graph.ndata['feat'])
+        sh_conf = get_entropy(pred=pred_shadow)
+    
+        target_graph = target_graph.to(device)
+        pred_target = model.full(g=target_graph, x=target_graph.ndata['feat'])
+        tr_conf = get_entropy(pred=pred_target)
+
+        test_graph = test_graph.to(device)
+        pred_test = model.full(g=test_graph, x=test_graph.ndata['feat'])
+        te_conf = get_entropy(pred=pred_test)
+
+        result = {}
+
+        mask = shadow_graph.ndata['pos_mask_tr']
+        indx = get_index_by_value(a=mask, val=1)
+        nodes = shadow_graph.nodes()[indx]
+        id_intr = shadow_graph.ndata['id_intr'][nodes]
+        mean_conf_insha = sh_conf[indx].mean().item()
+        std_conf_insha = sh_conf[indx].std().item()
+        mean_conf_intr = tr_conf[id_intr].mean().item()
+        std_conf_intr = tr_conf[id_intr].std().item()
+
+        result['pos_mask_tr'] = {
+            'Mean confidence in shadow': mean_conf_insha,
+            'Std confidence in shadow': std_conf_insha,
+            'Mean confidence in target': mean_conf_intr,
+            'Std confidence in target': std_conf_intr,
+        }
+
+        mask = shadow_graph.ndata['pos_mask_te']
+        indx = get_index_by_value(a=mask, val=1)
+        nodes = shadow_graph.nodes()[indx]
+        id_inte = shadow_graph.ndata['id_inte'][nodes]
+        mean_conf_insha = sh_conf[indx].mean().item()
+        std_conf_insha = sh_conf[indx].std().item()
+        mean_conf_inte = te_conf[id_inte].mean().item()
+        std_conf_inte = te_conf[id_inte].std().item()
+
+        result['pos_mask_te'] = {
+            'Mean confidence in shadow': mean_conf_insha,
+            'Std confidence in shadow': std_conf_insha,
+            'Mean confidence in test': mean_conf_inte,
+            'Std confidence in test': std_conf_inte,
+        }
+
+        mask = shadow_graph.ndata['neg_mask_tr']
+        indx = get_index_by_value(a=mask, val=1)
+        nodes = shadow_graph.nodes()[indx]
+        id_intr = shadow_graph.ndata['id_intr'][nodes]
+        mean_conf_insha = sh_conf[indx].mean().item()
+        std_conf_insha = sh_conf[indx].std().item()
+        mean_conf_intr = tr_conf[id_intr].mean().item()
+        std_conf_intr = tr_conf[id_intr].std().item()
+
+        result['neg_mask_tr'] = {
+            'Mean confidence in shadow': mean_conf_insha,
+            'Std confidence in shadow': std_conf_insha,
+            'Mean confidence in target': mean_conf_intr,
+            'Std confidence in target': std_conf_intr,
+        }
+
+        mask = shadow_graph.ndata['neg_mask_te']
+        indx = get_index_by_value(a=mask, val=1)
+        nodes = shadow_graph.nodes()[indx]
+        id_inte = shadow_graph.ndata['id_inte'][nodes]
+        mean_conf_insha = sh_conf[indx].mean().item()
+        std_conf_insha = sh_conf[indx].std().item()
+        mean_conf_inte = tr_conf[id_inte].mean().item()
+        std_conf_inte = tr_conf[id_inte].std().item()
+
+        result['neg_mask_te'] = {
+            'Mean confidence in shadow': mean_conf_insha,
+            'Std confidence in shadow': std_conf_insha,
+            'Mean confidence in test': mean_conf_inte,
+            'Std confidence in test': std_conf_inte,
+        }
+
+        rprint(f"Result for: {pretty_repr(result)}")

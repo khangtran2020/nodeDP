@@ -12,7 +12,7 @@ from Models.init import init_model, init_optimizer
 from Attacks.Utils.utils import save_dict, plot_PCA
 from Attacks.Utils.data_utils import test_distribution_shift
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
-from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad, train_attack, eval_attack_step
+from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_grad, train_attack, eval_attack_step, get_conf
 from functools import partial
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
@@ -43,6 +43,10 @@ def run(args, graph, model, device, history, name):
     with timeit(logger=logger, task='preparing-shadow-data'):
         
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
+
+        get_conf(shadow_graph=shadow_graph, target_graph=train_g, 
+                 test_graph=test_g, model=model, device=device)
+
         # get grad from shadow graph
         grad_pos_tr, norm_pos_tr = get_grad(shadow_graph=shadow_graph, target_graph=train_g, model=model, criterion=criterion, device=device, 
                                mask='pos_mask_tr', pos=True, name_dt='pos_tr')

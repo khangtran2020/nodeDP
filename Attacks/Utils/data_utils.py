@@ -444,6 +444,11 @@ def read_data(args, history, exist=False):
     id_intr = g_train.ndata['org_id']
     graph.ndata['id_intr'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).int()
     graph.ndata['id_intr'][id_intr] = g_train.nodes().clone().int()
+
+    id_inte = g_test.ndata['org_id']
+    graph.ndata['id_inte'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).int()
+    graph.ndata['id_inte'][id_inte] = g_test.nodes().clone().int()
+
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
     if (args.submode == 'density') and (args.density != 1.0):
