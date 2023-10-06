@@ -1,5 +1,6 @@
 import torch
 import torchmetrics
+import numpy as np
 from tqdm import tqdm
 from dgl.dataloading import transforms
 from dgl.dataloading.base import NID
@@ -9,6 +10,7 @@ from Data.read import init_loader
 from Models.init import init_optimizer
 from Runs.run_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
+from rich.pretty import pretty_repr
 
 def get_entropy(pred):
     pass
@@ -321,9 +323,34 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
             grad_overall = torch.cat((grad_overall, grad_sh), dim=0)
 
     if pos:
-
-        rprint(f"For {name_dt}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average smape diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}, average norm in target graph {sum(norm_tr) / (len(norm_tr) + 1e-12)}, average norm in shadow graph {sum(norm) / (len(norm) + 1e-12)} ")
-    
+        cos = np.array(cos)
+        diff_norm = np.array(diff_norm)
+        norm_diff = np.array(norm_diff)
+        norm_tr = np.array(norm_tr)
+        norm_sh = np.array(norm_sh)
+        res_dict = {
+            'cosine': {
+                'mean': np.mean(cos),
+                'std': np.std(cos)
+            },
+            'difference in norm': {
+                'mean': np.mean(diff_norm),
+                'std': np.std(diff_norm)
+            },
+            'eucleadean distance': {
+                'mean': np.mean(norm_diff),
+                'std': np.std(norm_diff)
+            },
+            'Average norm of gradient computed in training graph': {
+                'mean': np.mean(norm_tr),
+                'std': np.std(norm_tr)
+            },
+            'Average norm of gradient computed in shadow graph': {
+                'mean': np.mean(norm_sh),
+                'std': np.std(norm_sh)
+            }
+        }   
+        rprint(f"Result: {pretty_repr(res_dict)}") 
     return grad_overall, norm
 
 def sample_blocks(nodes, graph, n_layer, device, fout):
