@@ -36,7 +36,7 @@ def run(args, current_time, device):
             exist_data = True
             rprint(f"History exist, exist_data set to: {exist_data}")
         
-        train_g, val_g, test_g, graph = read_data(args=args, data_name=args.dataset, history=data_hist, exist=exist_data)
+        train_g, val_g, test_g, graph = read_data(args=args, history=data_hist, exist=exist_data)
         if args.att_mode == 'blackbox':
             shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
         else:
