@@ -277,9 +277,11 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
         pred_target = model.full(g=target_graph, x=target_graph.ndata['feat'])
         label_target = target_graph.ndata['label']
         loss_tr = criterion(pred_target, label_target)
+        norm_tr = []
 
     grad_overall = torch.Tensor([]).to(device)
     norm = []
+
 
     for i, los in enumerate(loss_sh):
 
@@ -305,12 +307,13 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
                         grad_tr = torch.cat((grad_tr, new_grad.flatten()), dim=0)
                 model.zero_grad()
             
-                c = (grad_sh*grad_tr).sum().item() / (grad_sh.norm(p=2).item() + grad_tr.norm(p=2).item() + 1e-12)
-                n1 = (grad_sh.norm() - grad_tr.norm()).abs().item() / ((grad_sh.norm() + grad_tr.norm()).item() + 1e-12)
-                n2 = (grad_sh - grad_tr).norm().item()
+                c = (grad_sh.detach().clone()*grad_tr.detach().clone()).sum().item() / (grad_sh.detach().clone().norm(p=2).item() + grad_tr.detach().clone().norm(p=2).item() + 1e-12)
+                n1 = (grad_sh.detach().clone().norm() - grad_tr.detach().clone().norm()).abs().item() / ((grad_sh.detach().clone().norm() + grad_tr.detach().clone().norm()).item() + 1e-12)
+                n2 = (grad_sh.detach().clone() - grad_tr.detach().clone()).norm().item()
                 cos.append(c)
                 diff_norm.append(n1)
                 norm_diff.append(n2)
+                norm_tr.append(grad_tr.norm().detach().item())
 
 
             grad_sh = torch.unsqueeze(grad_sh, dim=0)
@@ -319,7 +322,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
 
     if pos:
 
-        rprint(f"For {name_dt}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average smape diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}")
+        rprint(f"For {name_dt}: average cosine {sum(cos) / (len(cos) + 1e-12)}, average smape diff in norm {sum(diff_norm) / (len(diff_norm) + 1e-12)}, average norm of diff {sum(norm_diff) / (len(norm_diff) + 1e-12)}, average norm in target graph {sum(norm_tr) / (len(norm_tr) + 1e-12)}")
     
     return grad_overall, norm
 
