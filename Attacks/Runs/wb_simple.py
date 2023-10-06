@@ -26,7 +26,7 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 
 def run(args, graph, model, device, history, name):
 
-    train_g, val_g, test_g, shadow_graph, graph_org = graph
+    train_g, val_g, test_g, shadow_graph = graph
     model_hist, att_hist = history
 
     with timeit(logger=logger, task='init-target-model'):
@@ -36,7 +36,6 @@ def run(args, graph, model, device, history, name):
             model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
             model, model_hist = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, model=model, 
                                         device=device, history=model_hist, name=model_name[:-3])
-            
             target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
             target_model_path = args.res_path + target_model_name
             save_dict(path=target_model_path, dct=model_hist)
@@ -167,53 +166,3 @@ def run(args, graph, model, device, history, name):
     
     return model_hist, att_hist
 
-
-# pca = PCA()
-# pipe = Pipeline([('scaler', StandardScaler()), ('pca', pca)])
-
-# # PCA on train
-
-# X = torch.cat((grad_pos, grad_neg), dim=0).detach().cpu().numpy()
-# y = torch.cat((torch.ones(grad_pos.size(dim=0)), torch.zeros(grad_neg.size(dim=0))), dim=0).numpy()
-
-# pipe.fit(X)
-
-# X_pos_tr = grad_pos_tr.detach().cpu().numpy()
-# Xt = pipe.transform(X_pos_tr)
-# plt.figure()
-# plot = plt.scatter(Xt[:,0], Xt[:,1])
-# plt.savefig('grad_pos_tr.jpg', bbox_inches='tight')
-
-# X_neg_tr = grad_neg_tr.detach().cpu().numpy()
-# Xt = pipe.transform(X_neg_tr)
-# plt.figure()
-# plot = plt.scatter(Xt[:,0], Xt[:,1])
-# plt.savefig('grad_neg_tr.jpg', bbox_inches='tight')
-
-# X_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim = 0).detach().cpu().numpy()
-# y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0).numpy()
-# Xt = pipe.transform(X_tr)
-# plt.figure()
-# plot = plt.scatter(Xt[:,0], Xt[:,1], c=y_tr)
-# plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
-# plt.savefig('grad_in_tr.jpg', bbox_inches='tight')
-
-# X_pos_te = grad_pos_te.detach().cpu().numpy()
-# Xt = pipe.transform(X_pos_te)
-# plt.figure()
-# plot = plt.scatter(Xt[:,0], Xt[:,1])
-# plt.savefig('grad_pos_te.jpg', bbox_inches='tight')
-
-# X_neg_te = grad_neg_te.detach().cpu().numpy()
-# Xt = pipe.transform(X_neg_te)
-# plt.figure()
-# plot = plt.scatter(Xt[:,0], Xt[:,1])
-# plt.savefig('grad_neg_te.jpg', bbox_inches='tight')
-
-# X_te = torch.cat((grad_pos_te, grad_neg_te), dim = 0).detach().cpu().numpy()
-# y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0).numpy()
-# Xt = pipe.transform(X_te)
-# plt.figure()
-# plot = plt.scatter(Xt[:,0], Xt[:,1], c=y_te)
-# plt.legend(handles=plot.legend_elements()[0], labels=['pos', 'neg'])
-# plt.savefig('grad_in_te.jpg', bbox_inches='tight')

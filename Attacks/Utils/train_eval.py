@@ -7,7 +7,7 @@ from Models.train_eval import EarlyStopping
 from rich import print as rprint
 from Data.read import init_loader
 from Models.init import init_optimizer
-from Runs.run_clean import run as run_clean
+from Runs.run_grad_clean import run as run_clean
 from Runs.run_nodedp import run as run_nodedp
 
 def get_entropy(pred):

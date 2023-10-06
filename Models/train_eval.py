@@ -342,29 +342,31 @@ def train_fn_grad_inspect(args, dataloader, model, criterion, optimizer, device,
     model.to(device)
     model.train()
     train_loss = 0
-    num_data = 0.0
-    grad_norm = {}
-    grad_norm['avg_grad'] = []
-    for i in range(args.num_class):
-        grad_norm[f'label_{i}'] = []
+    num_data = 0
+    grad_norm = 0
+    grad_vec = None
 
     for bi, d in enumerate(dataloader):
-        target, pred, loss, grad = update_clean_grad_inspect(args=args, model=model, optimizer=optimizer, 
-                                                             objective=criterion, batch=d, device=device)
+        target, pred, loss, grad_v, grad_n = update_clean_grad_inspect(args=args, model=model, optimizer=optimizer, 
+                                                                            objective=criterion, batch=d, device=device)
+        if bi == 0:
+            grad_vec = grad_v
+        else:
+            grad_vec = grad_vec + grad_v
+
+        grad_norm = grad_norm + grad_n
+
         if scheduler is not None:
             scheduler.step()
         metric.update(pred, target)
         num_data += pred.size(dim=0)
         train_loss += loss.mean().item()*pred.size(dim=0)
-        for i in range(args.num_class):
-            grad_norm[f'label_{i}'].append(grad[f'label_{i}'])
-        grad_norm['avg_grad'].append(grad['avg_grad'])
     
     for i in range(args.num_class):
         grad_norm[f'label_{i}'] = sum(grad_norm[f'label_{i}'])/len(grad_norm[f'label_{i}'])
     performance = metric.compute()
     metric.reset()
-    return train_loss / num_data, performance, grad_norm
+    return train_loss / num_data, performance, grad_norm.sqrt().item() / num_data, grad_vec / num_data
  
 def update_nodedp_grad_inspect(args, model, model_clean, optimizer, objective, objective_clean, batch, g, clip_grad, clip_node, 
                                ns, trim_rule, history, step, device):
@@ -489,40 +491,58 @@ def update_clean_grad_inspect(args, model, optimizer, objective, batch, device):
     labels = mfgs[-1].dstdata["label"]
     predictions = model(mfgs, inputs)
     loss = objective(predictions, labels)
+    loss.backward()
+    num_data = predictions.size(dim=0)
+    grad_vec = torch.Tensor([]).to(device)
+    grad_norm = 0
 
-    grad = {}
-    for i in range(args.num_class):
-        grad[f'label_{i}'] = []
-
-    saved_var = dict()
     for tensor_name, tensor in model.named_parameters():
-        saved_var[tensor_name] = torch.zeros_like(tensor).to(device)
 
-    for i, l in enumerate(loss):
-        l.backward(retain_graph=True)
-        g = 0
-        for tensor_name, tensor in model.named_parameters():
-            if tensor.grad is not None:
-                new_grad = tensor.grad
-                saved_var[tensor_name].add_(new_grad)
-                g += tensor.grad.detach().norm(p=2)**2
-        lab = labels[i].detach().item()
-        grad[f'label_{lab}'].append(g.sqrt().item())
-        model.zero_grad()
-
-    for i in range(args.num_class):
-        if len(grad[f'label_{i}']) > 0:
-            grad[f'label_{i}'] = sum(grad[f'label_{i}'])/len(grad[f'label_{i}']) 
-        else:
-            grad[f'label_{i}'] = 0
-    
-    clean_grad = 0
-    for tensor_name, tensor in model.named_parameters():
         if tensor.grad is not None:
-            tensor.grad = saved_var[tensor_name].clone() / predictions.size(dim=0)
-            clean_grad += saved_var[tensor_name].clone().detach().norm(p=2)**2
-            
-    grad['avg_grad'] = clean_grad.sqrt().item() / predictions.size(dim=0)
+            new_grad = tensor.grad.detach().clone().flatten()
+            grad_vec = torch.cat((grad_vec, new_grad), dim=0)
 
+    grad_vec = grad_vec * num_data
+    grad_norm = (grad_vec.norm(p=2) * num_data)**2
     optimizer.step()
-    return labels, predictions, loss, grad
+    return labels, predictions, loss, grad_vec, grad_norm
+
+def eval_grad_inspect_fn(data_loader, model, criterion, metric, device):
+    model.to(device)
+    loss_eval = 0
+    model.eval()
+    num_point = 0
+    grad_norm = 0
+    grad_vec = None
+    for bi, d in enumerate(data_loader):
+        target, pred, loss, grad_v = eval_grad_clean(model=model, objective=criterion, batch=d, device=device)
+        num_pt = pred.size(dim=0)
+        if bi == 0:
+            grad_vec = grad_v.clone()*num_pt
+        else:
+            grad_vec = grad_vec + grad_v*num_pt
+        grad_norm = grad_norm + (grad_v.norm(p=2)*num_pt)**2
+        loss_eval += loss.item() * num_pt
+        num_point += num_pt
+        metric.update(pred, target)
+        model.zero_grad()
+    performance = metric.compute()
+    metric.reset()
+    model.zero_grad()
+    return loss_eval / num_point, performance, grad_vec / num_point, grad_norm.sqrt().item() / num_point
+
+
+
+def eval_grad_clean(model, objective, batch, device):
+    grad_vec = torch.Tensor([]).to(device)
+    input_nodes, output_nodes, mfgs = batch
+    inputs = mfgs[0].srcdata["feat"]
+    labels = mfgs[-1].dstdata["label"]
+    predictions = model(mfgs, inputs)
+    loss = objective(predictions, labels)
+    loss.backward()
+    for name, p in model.named_parameters():
+        if p.grad is not None:
+            grad = p.grad.detach().clone().flatten()
+            grad_vec = torch.cat((grad_vec, grad), dim=0)
+    return labels, predictions.argmax(1), loss, grad_vec

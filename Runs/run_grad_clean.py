@@ -15,19 +15,19 @@ logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", le
 # args, tr_info, va_info, te_info, model, optimizer, name, device
 
 def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history):
+
     print(f'Data has {args.num_feat} features and {args.num_class} classes')
-    graph, tr_loader = tr_info
+
+    _, tr_loader = tr_info
     va_loader = va_info
     _, te_loader = te_info
+
     model_name = '{}.pt'.format(name)
 
     model_clean = deepcopy(model)
     model.to(device)
     model_clean.to(device)
     # DEfining criterion
-
-    criter = torch.nn.CrossEntropyLoss(reduction='none')
-    criter.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()
     criterion.to(device)
@@ -51,32 +51,29 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
     # THE ENGINE LOOP
     tk0 = tqdm(range(args.epochs), total=args.epochs, position=0, colour='green',
                bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}')
-    
-    history['avg_grad'] = []
-    for i in range(args.num_class):
-        history[f'grad_label_{i}'] = []
+
     
     with timeit(logger=logger, task="training-process"):
+
         for epoch in tk0:
             states = model.state_dict()
             model_clean.load_state_dict(states)
             t0 = time.time()
-            tr_loss, tr_acc, clean_grad = train_fn_grad_inspect(args=args, dataloader=tr_loader, model=model, 
-                                                                criterion=criter, optimizer=optimizer, device=device, 
+            tr_loss, tr_acc, grad_ntr, grad_vtr = train_fn_grad_inspect(args=args, dataloader=tr_loader, model=model, 
+                                                                criterion=criterion, optimizer=optimizer, device=device, 
                                                                 metric=metrics, scheduler=None)
             t1 = time.time()
             t = t1 - t0
-            history['avg_grad'].append(clean_grad['avg_grad'])
-            for i in range(args.num_class):
-                history[f'grad_label_{i}'].append(clean_grad[f'label_{i}'])
 
             # scheduler.step()
-            va_loss, va_acc = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
+            va_loss, va_acc, grad_vva, grad_nva = eval_fn(data_loader=va_loader, model=model, criterion=criterion,
                                     metric=metrics, device=device)
-            te_loss, te_acc = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
+            te_loss, te_acc, grad_vte, grad_nte = eval_fn(data_loader=te_loader, model=model, criterion=criterion,
                                     metric=metrics, device=device)
 
-            # scheduler.step(va_loss)
+            cons = (grad_vtr*grad_vte).sum().item() / (grad_vtr.norm(p=2).item() * grad_vte.norm(p=2).item() + 1e-12)
+
+            rprint(f"At epoch {epoch}: norm of avg grad in train {grad_ntr}, norm of avg grad in test {grad_nte}, cosine between two vec: {cons}")
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_ACC=te_acc.item())
 

@@ -64,9 +64,6 @@ def run(args, current_time, device):
             target_model_name = f"{md5(name['data'].encode()).hexdigest()}.pkl"
             target_model_path = args.res_path + target_model_name
             model_hist = read_pickel(file=target_model_path)
-            if (os.path.exists(data_path)) & (args.retrain == 0):
-                data_hist = read_pickel(file=data_path)
-                exist_data = True
 
         model = init_model(args=args)
         if exist_model: 
@@ -82,7 +79,7 @@ def run(args, current_time, device):
     elif args.att_mode == 'whitebox':
         model_hist, att_hist = whitebox(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
     elif args.att_mode == 'wanal':
-        model_hist, att_hist = wanal(args=args, graph=(train_g, val_g, test_g, shadow_graph, graph), model=model, device=device, history=history, name=name)
+        model_hist, att_hist = wanal(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
 
     general_hist = {
         'data': data_hist,
