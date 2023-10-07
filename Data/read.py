@@ -159,6 +159,8 @@ def node_split(graph, val_size, test_size):
         val_mask[id_val] = 1
         test_mask[id_test] = 1
 
+        rprint(f"Num nodes {len(node_id)}, overlaping {torch.logical_xor(input=train_mask, other=test_mask).sum().item()}")
+
         graph.ndata['train_mask'] = train_mask.int()
         graph.ndata['val_mask'] = val_mask.int()
         graph.ndata['test_mask'] = test_mask.int()
