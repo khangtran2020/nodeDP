@@ -43,6 +43,7 @@ def run(args, graph, model, device, history, name):
     with timeit(logger=logger, task='preparing-shadow-data'):
         
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
+        shadow_graph = shadow_graph.to(device)
 
         shadow_graph_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
 
