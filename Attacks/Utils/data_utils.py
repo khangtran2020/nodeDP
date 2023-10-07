@@ -442,6 +442,12 @@ def read_data(args, history, exist=False):
     else:
         g_train, g_val, g_test = graph_split(graph=graph, drop=True)
 
+    rprint(f"Training graph average node degree: {g_train.in_degrees().sum() / (len(g_train.in_degrees()) + 1e-12)}")
+    rprint(f"Valid graph average node degree: {g_val.in_degrees().sum() / (len(g_val.in_degrees()) + 1e-12)}")
+    rprint(f"Testing graph average node degree: {g_test.in_degrees().sum() / (len(g_test.in_degrees()) + 1e-12)}")
+
+
+
     train_mask = torch.zeros(graph.nodes().size(dim=0))
     val_mask = torch.zeros(graph.nodes().size(dim=0))
     test_mask = torch.zeros(graph.nodes().size(dim=0))
