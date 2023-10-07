@@ -190,12 +190,24 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
+
     mask = shadow_graph.ndata['pos_mask']
     index = get_index_by_value(a=mask, val=1)
     org_id = shadow_graph.ndata['org_id'][index]
     train_mask = shadow_graph.ndata['train_mask'][index]
+    id_intr = shadow_graph.ndata['id_intr'][index]
     rprint(f"Distribution of org_id in pos_mask: {org_id.unique(return_counts=True)}")
     rprint(f"Distribution of org_id in train_mask: {train_mask.unique(return_counts=True)}")
+    rprint(f"Distribution of id_intr in pos_mask: {id_intr.unique(return_counts=True)}")
+
+    mask = shadow_graph.ndata['neg_mask']
+    index = get_index_by_value(a=mask, val=1)
+    org_id = shadow_graph.ndata['org_id'][index]
+    train_mask = shadow_graph.ndata['train_mask'][index]
+    id_intr = shadow_graph.ndata['id_intr'][index]
+    rprint(f"Distribution of org_id in neg_mask: {org_id.unique(return_counts=True)}")
+    rprint(f"Distribution of org_id in train_mask: {train_mask.unique(return_counts=True)}")
+    rprint(f"Distribution of id_intr in id_intr: {id_intr.unique(return_counts=True)}")
 
     # if diag:
     #     pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
