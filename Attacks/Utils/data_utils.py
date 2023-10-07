@@ -190,12 +190,12 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
-    sh_org_node = shadow_graph.ndata['org_id']
-    
-    temp = torch.isin(sh_org_node, shadow_nodes)
-
-
-    rprint(f"Shadow graph org node allign with shaddow nodes: {(sh_org_node - shadow_nodes).sum().item()}")
+    mask = shadow_graph.ndata['pos_mask']
+    index = get_index_by_value(a=mask, val=1)
+    org_id = shadow_graph.ndata['org_id'][index]
+    train_mask = shadow_graph.ndata['train_mask'][index]
+    rprint(f"Distribution of org_id in pos_mask: {org_id.unique(return_counts=True)}")
+    rprint(f"Distribution of org_id in train_mask: {train_mask.unique(return_counts=True)}")
 
     # if diag:
     #     pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
