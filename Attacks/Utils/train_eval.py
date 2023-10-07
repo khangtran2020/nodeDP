@@ -395,6 +395,7 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         std_conf_intr = tr_conf[id_intr].std().item()
 
         result['pos_mask_tr'] = {
+            'num_node': id_intr.size(dim=0),
             'Mean confidence in shadow': mean_conf_insha,
             'Std confidence in shadow': std_conf_insha,
             'Mean confidence in target': mean_conf_intr,
@@ -404,29 +405,31 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         mask = shadow_graph.ndata['pos_mask_te']
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
-        id_inte = shadow_graph.ndata['id_inte'][nodes].long()
+        id_intr = shadow_graph.ndata['id_intr'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
-        mean_conf_inte = te_conf[id_inte].mean().item()
-        std_conf_inte = te_conf[id_inte].std().item()
+        mean_conf_inte = te_conf[id_intr].mean().item()
+        std_conf_inte = te_conf[id_intr].std().item()
 
         result['pos_mask_te'] = {
+            'num_node': id_intr.size(dim=0),
             'Mean confidence in shadow': mean_conf_insha,
             'Std confidence in shadow': std_conf_insha,
-            'Mean confidence in test': mean_conf_inte,
-            'Std confidence in test': std_conf_inte,
+            'Mean confidence in target': mean_conf_inte,
+            'Std confidence in target': std_conf_inte,
         }
 
         mask = shadow_graph.ndata['neg_mask_tr']
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
-        id_intr = shadow_graph.ndata['id_intr'][nodes].long()
+        id_inte = shadow_graph.ndata['id_inte'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
-        mean_conf_intr = tr_conf[id_intr].mean().item()
-        std_conf_intr = tr_conf[id_intr].std().item()
+        mean_conf_intr = tr_conf[id_inte].mean().item()
+        std_conf_intr = tr_conf[id_inte].std().item()
 
         result['neg_mask_tr'] = {
+            'num_node': id_inte.size(dim=0),
             'Mean confidence in shadow': mean_conf_insha,
             'Std confidence in shadow': std_conf_insha,
             'Mean confidence in target': mean_conf_intr,
