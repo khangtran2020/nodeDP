@@ -44,7 +44,7 @@ def run(args, graph, model, device, history, name):
         
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
 
-        shadow_graph_nohop = generate_nohop_graph(graph=shadow_graph)
+        shadow_graph_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
 
         get_conf(shadow_graph=shadow_graph_nohop, target_graph=train_g, 
                  test_graph=test_g, model=model, device=device)
