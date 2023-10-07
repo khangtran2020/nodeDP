@@ -460,7 +460,22 @@ def read_data(args, history, exist=False):
     else:
         g_train, g_val, g_test = graph_split(graph=graph, drop=True)
 
+    train_mask = torch.zeros(graph.nodes().size(dim=0))
+    val_mask = torch.zeros(graph.nodes().size(dim=0))
+    test_mask = torch.zeros(graph.nodes().size(dim=0))
+
     id_intr = g_train.ndata['org_id']
+    id_inva = g_val.ndata['org_id']
+    id_inte = g_test.ndata['org_id']
+
+    train_mask[id_intr] = 1
+    val_mask[id_inva] = 1
+    test_mask[id_inte] = 1
+
+    graph.ndata['train_mask'] = train_mask
+    graph.ndata['train_mask'] = train_mask
+    graph.ndata['train_mask'] = train_mask
+
     graph.ndata['id_intr'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).int()
     graph.ndata['id_intr'][id_intr] = g_train.nodes().clone().int()
     tr_nodes = g_train.nodes().clone().int()
