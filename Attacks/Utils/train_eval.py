@@ -388,8 +388,7 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         mask = shadow_graph.ndata['pos_mask_tr']
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
-        id_intr = shadow_graph.ndata['id_intr'][nodes].int()
-        print(id_intr)
+        id_intr = shadow_graph.ndata['id_intr'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
         mean_conf_intr = tr_conf[id_intr].mean().item()
@@ -405,7 +404,7 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         mask = shadow_graph.ndata['pos_mask_te']
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
-        id_inte = shadow_graph.ndata['id_inte'][nodes].int()
+        id_inte = shadow_graph.ndata['id_inte'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
         mean_conf_inte = te_conf[id_inte].mean().item()
@@ -421,7 +420,7 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         mask = shadow_graph.ndata['neg_mask_tr']
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
-        id_intr = shadow_graph.ndata['id_intr'][nodes].int()
+        id_intr = shadow_graph.ndata['id_intr'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
         mean_conf_intr = tr_conf[id_intr].mean().item()
@@ -437,7 +436,7 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         mask = shadow_graph.ndata['neg_mask_te']
         indx = get_index_by_value(a=mask, val=1)
         nodes = shadow_graph.nodes()[indx]
-        id_inte = shadow_graph.ndata['id_inte'][nodes].int()
+        id_inte = shadow_graph.ndata['id_inte'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
         mean_conf_inte = tr_conf[id_inte].mean().item()
