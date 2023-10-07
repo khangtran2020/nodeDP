@@ -193,7 +193,7 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
 
     if diag:
         pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
-        neg_id = get_index_by_value(a=shadow_graph.ndata['_mask'], val=1)
+        neg_id = get_index_by_value(a=shadow_graph.ndata['neg_mask'], val=1)
         rprint(f"Uniqueness of id_intr: {shadow_graph.ndata['id_intr'][pos_id].unique(return_counts=True)}")
         rprint(f"Uniqueness of id_inte: {shadow_graph.ndata['id_inte'][neg_id].unique(return_counts=True)}")
         pos_mask = shadow_graph.ndata['pos_mask'].clone()
