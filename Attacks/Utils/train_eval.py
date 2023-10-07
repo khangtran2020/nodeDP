@@ -408,8 +408,8 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         id_intr = shadow_graph.ndata['id_intr'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
-        mean_conf_inte = te_conf[id_intr].mean().item()
-        std_conf_inte = te_conf[id_intr].std().item()
+        mean_conf_inte = tr_conf[id_intr].mean().item()
+        std_conf_inte = tr_conf[id_intr].std().item()
 
         result['pos_mask_te'] = {
             'num_node': id_intr.size(dim=0),
@@ -425,8 +425,8 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         id_inte = shadow_graph.ndata['id_inte'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
-        mean_conf_intr = tr_conf[id_inte].mean().item()
-        std_conf_intr = tr_conf[id_inte].std().item()
+        mean_conf_intr = te_conf[id_inte].mean().item()
+        std_conf_intr = te_conf[id_inte].std().item()
 
         result['neg_mask_tr'] = {
             'num_node': id_inte.size(dim=0),
@@ -442,8 +442,8 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         id_inte = shadow_graph.ndata['id_inte'][nodes].long()
         mean_conf_insha = sh_conf[indx].mean().item()
         std_conf_insha = sh_conf[indx].std().item()
-        mean_conf_inte = tr_conf[id_inte].mean().item()
-        std_conf_inte = tr_conf[id_inte].std().item()
+        mean_conf_inte = te_conf[id_inte].mean().item()
+        std_conf_inte = te_conf[id_inte].std().item()
 
         result['neg_mask_te'] = {
             'Mean confidence in shadow': mean_conf_insha,
