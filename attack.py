@@ -42,8 +42,6 @@ def run(args, current_time, device):
         else:
             shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
 
-        sys.exit()
-
         if exist_data == False:
             save_dict(path=data_path, dct=data_hist)
 

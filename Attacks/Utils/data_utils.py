@@ -478,12 +478,7 @@ def read_data(args, history, exist=False):
 
     graph.ndata['id_intr'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).int()
     graph.ndata['id_intr'][id_intr] = g_train.nodes().clone().int()
-    tr_nodes = g_train.nodes().clone().int()
-    index = get_index_by_value(a=graph.ndata['train_mask'], val=1)
-    rprint(f"Len of tr node {tr_nodes.size(dim=0)}, len of index {index.size(dim=0)}")
-    rprint(f"Distribution of id_intr in org: {graph.ndata['id_intr'][index].unique(return_counts=True)}")
 
-    id_inte = g_test.ndata['org_id']
     graph.ndata['id_inte'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).int()
     graph.ndata['id_inte'][id_inte] = g_test.nodes().clone().int()
 
