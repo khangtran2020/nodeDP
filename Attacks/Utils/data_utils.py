@@ -191,47 +191,29 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     
     shadow_graph = graph.subgraph(shadow_nodes)
 
-    mask = shadow_graph.ndata['pos_mask']
-    index = get_index_by_value(a=mask, val=1)
-    org_id = shadow_graph.ndata['org_id'][index]
-    train_mask = shadow_graph.ndata['train_mask'][index]
-    id_intr = shadow_graph.ndata['id_intr'][index]
-    rprint(f"Distribution of org_id in pos_mask: {org_id.unique(return_counts=True)}")
-    rprint(f"Distribution of org_id in train_mask: {train_mask.unique(return_counts=True)}")
-    rprint(f"Distribution of id_intr in pos_mask: {id_intr.unique(return_counts=True)}")
-
-    mask = shadow_graph.ndata['neg_mask']
-    index = get_index_by_value(a=mask, val=1)
-    org_id = shadow_graph.ndata['org_id'][index]
-    train_mask = shadow_graph.ndata['train_mask'][index]
-    id_intr = shadow_graph.ndata['id_intr'][index]
-    rprint(f"Distribution of org_id in neg_mask: {org_id.unique(return_counts=True)}")
-    rprint(f"Distribution of org_id in train_mask: {train_mask.unique(return_counts=True)}")
-    rprint(f"Distribution of id_intr in id_intr: {id_intr.unique(return_counts=True)}")
-
-    # if diag:
-    #     pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
-    #     neg_id = get_index_by_value(a=shadow_graph.ndata['_mask'], val=1)
-    #     rprint(f"Uniqueness of id_intr: {shadow_graph.ndata['id_intr'][pos_id].unique(return_counts=True)}")
-    #     rprint(f"Uniqueness of id_inte: {shadow_graph.ndata['id_inte'][neg_id].unique(return_counts=True)}")
-    #     pos_mask = shadow_graph.ndata['pos_mask'].clone()
-    #     train_mask = shadow_graph.ndata['train_mask'].clone()
-    #     neg_mask = shadow_graph.ndata['neg_mask'].clone()
-    #     test_mask = shadow_graph.ndata['test_mask'].clone()
-    #     rprint(f"Positive mask unique: {pos_mask.unique(return_counts=True)}, Train mask in shadow graph {train_mask.unique(return_counts=True)}")
-    #     rprint(f"Positive mask unique: {neg_mask.unique(return_counts=True)}, Train mask in shadow graph {test_mask.unique(return_counts=True)}")
-    #     rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
-    #     per = partial(percentage_pos, graph=shadow_graph)
-    #     percentage = []
-    #     for node in shadow_graph.nodes():
-    #         percentage.append(per(node))
-    #     percentage = torch.Tensor(percentage)
-    #     rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
-    #     rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
-    #     temp_pos = percentage*shadow_graph.ndata['pos_mask']
-    #     temp_neg = percentage*shadow_graph.ndata['neg_mask']
-    #     rprint(f"Shadow graph average percentage neighbor is pos of pos: {temp_pos.mean().item() / (len(temp_pos) + 1e-12)}")
-    #     rprint(f"Shadow graph average percentage neighbor is pos of neg: {temp_neg.mean().item() / (len(temp_neg) + 1e-12)}")
+    if diag:
+        pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
+        neg_id = get_index_by_value(a=shadow_graph.ndata['_mask'], val=1)
+        rprint(f"Uniqueness of id_intr: {shadow_graph.ndata['id_intr'][pos_id].unique(return_counts=True)}")
+        rprint(f"Uniqueness of id_inte: {shadow_graph.ndata['id_inte'][neg_id].unique(return_counts=True)}")
+        pos_mask = shadow_graph.ndata['pos_mask'].clone()
+        train_mask = shadow_graph.ndata['train_mask'].clone()
+        neg_mask = shadow_graph.ndata['neg_mask'].clone()
+        test_mask = shadow_graph.ndata['test_mask'].clone()
+        rprint(f"Positive mask unique: {pos_mask.unique(return_counts=True)}, Train mask in shadow graph {train_mask.unique(return_counts=True)}")
+        rprint(f"Positive mask unique: {neg_mask.unique(return_counts=True)}, Train mask in shadow graph {test_mask.unique(return_counts=True)}")
+        rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
+        per = partial(percentage_pos, graph=shadow_graph)
+        percentage = []
+        for node in shadow_graph.nodes():
+            percentage.append(per(node))
+        percentage = torch.Tensor(percentage)
+        rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
+        rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
+        temp_pos = percentage*shadow_graph.ndata['pos_mask']
+        temp_neg = percentage*shadow_graph.ndata['neg_mask']
+        rprint(f"Shadow graph average percentage neighbor is pos of pos: {temp_pos.mean().item() / (len(temp_pos) + 1e-12)}")
+        rprint(f"Shadow graph average percentage neighbor is pos of neg: {temp_neg.mean().item() / (len(temp_neg) + 1e-12)}")
     return shadow_graph
 
 def percentage_pos(node, graph):
