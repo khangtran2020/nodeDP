@@ -793,6 +793,9 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         graph.ndata['neg_mask_te'] = neg_mask_te
 
         src_edge, dst_edge = g.edges()
+        for key in graph.ndata.keys():
+            g.ndata[key] = graph.ndata[key].clone()
+
 
         history['sha_tr'] = train_mask.tolist()
         history['sha_src_edge'] = src_edge.tolist()
