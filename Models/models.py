@@ -20,13 +20,13 @@ class GraphSAGE(nn.Module):
                 self.layers.append(dglnn.SAGEConv(n_hidden, n_hidden, aggregator_type))
             self.layers.append(dglnn.SAGEConv(n_hidden, n_classes, aggregator_type))
             self.dropout = nn.Dropout(dropout)
-            self.activation = torch.nn.SELU()
+            self.activation = torch.nn.ReLU()
             self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
             print(f"Using activation for last layer {self.last_activation}")
         else:
             self.layer = dglnn.SAGEConv(in_feats, n_classes, aggregator_type)
             self.dropout = nn.Dropout(dropout)
-            self.activation = torch.nn.SELU()
+            self.activation = torch.nn.ReLU()
             self.last_activation = torch.nn.Softmax(dim=1) if n_classes > 1 else torch.nn.Sigmoid()
             print(f"Using activation for last layer {self.last_activation}")
 
