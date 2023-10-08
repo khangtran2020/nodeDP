@@ -45,19 +45,19 @@ def run(args, graph, model, device, history, name):
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
         shadow_graph = shadow_graph.to(device)
 
-        shadow_graph_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
+        # shadow_graph_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
 
-        get_conf(shadow_graph=shadow_graph_nohop, target_graph=train_g, 
+        get_conf(shadow_graph=shadow_graph, target_graph=train_g, 
                  test_graph=test_g, model=model, device=device)
 
         # get grad from shadow graph
-        grad_pos_tr, norm_pos_tr = get_grad(shadow_graph=shadow_graph_nohop, target_graph=train_g, model=model, criterion=criterion, device=device, 
+        grad_pos_tr, norm_pos_tr = get_grad(shadow_graph=shadow_graph, target_graph=train_g, model=model, criterion=criterion, device=device, 
                                mask='pos_mask_tr', pos=True, name_dt='pos_tr')
-        grad_pos_te, norm_pos_te = get_grad(shadow_graph=shadow_graph_nohop, target_graph=train_g, model=model, criterion=criterion, device=device, 
+        grad_pos_te, norm_pos_te = get_grad(shadow_graph=shadow_graph, target_graph=train_g, model=model, criterion=criterion, device=device, 
                                mask='pos_mask_te', pos=True, name_dt='pos_te')
-        grad_neg_tr, norm_neg_tr = get_grad(shadow_graph=shadow_graph_nohop, target_graph=None, model=model, criterion=criterion, device=device, 
+        grad_neg_tr, norm_neg_tr = get_grad(shadow_graph=shadow_graph, target_graph=None, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_tr')
-        grad_neg_te, norm_neg_te = get_grad(shadow_graph=shadow_graph_nohop, target_graph=None, model=model, criterion=criterion, device=device, 
+        grad_neg_te, norm_neg_te = get_grad(shadow_graph=shadow_graph, target_graph=None, model=model, criterion=criterion, device=device, 
                                mask='neg_mask_te')
         
         rprint(f"Grad pos tr avg norm: {grad_pos_tr.norm() / grad_pos_tr.size(dim=0)}, neg tr avg norm: {grad_neg_tr.norm() / grad_neg_tr.size(dim=0)}")
