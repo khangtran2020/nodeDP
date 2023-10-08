@@ -16,12 +16,12 @@ def init_model(args):
     return model
 
 
-def init_optimizer(optimizer_name, model, lr):
+def init_optimizer(optimizer_name, model, lr, weight_decay=0.0):
     print("Optimizing with optimizer {}".format(optimizer_name))
     if optimizer_name == 'adam':
-        optimizer = Adam(model.parameters(), lr=lr)
+        optimizer = Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer_name == 'adamw':
-        optimizer = AdamW(model.parameters(), lr=lr)
+        optimizer = AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     elif optimizer_name == 'sgd':
-        optimizer = SGD(model.parameters(), lr=lr)
+        optimizer = SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
     return optimizer

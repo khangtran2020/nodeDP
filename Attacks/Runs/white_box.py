@@ -91,7 +91,7 @@ def run(args, graph, model, device, history, name):
         att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, out_dim_list=out_dim, grad_dim_list=grad_dim, 
                                out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
         att_model.to(device)
-        att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
+        att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr, weight_decay=0.01)
         att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, weight=lab_weight, 
                                     attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
                                     name=name['att'], device=device, history=att_hist)
