@@ -224,8 +224,8 @@ def percentage_pos(node, graph):
     frontier = graph.sample_neighbors(node, -1)
     mask = torch.zeros_like(frontier.nodes())
     src, dst = frontier.edges()
-    mask[src.unique()] = 1
-    mask[dst.unique()] = 1
+    mask[src.unique().long()] = 1
+    mask[dst.unique().long()] = 1
     index = get_index_by_value(a=mask, val=1)
     nodes_id = frontier.nodes()[index]
     num_pos = graph.ndata['pos_mask'][nodes_id].sum()
