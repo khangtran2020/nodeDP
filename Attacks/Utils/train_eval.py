@@ -296,7 +296,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
             grad_sh = torch.Tensor([]).to(device)
 
             for name, p in model.named_parameters():
-                if (p.grad is not None) & ('fc_self' in name):
+                if (p.grad is not None) & ('0.fc_self' in name):
                     new_grad = p.grad.detach().clone()
                     grad_sh = torch.cat((grad_sh, new_grad.flatten()), dim=0)
             model.zero_grad()
@@ -307,7 +307,7 @@ def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=Fal
                 grad_tr = torch.Tensor([]).to(device)
                 loss_tr[id_tr].backward(retain_graph=True)
                 for name, p in model.named_parameters():
-                    if (p.grad is not None) & ('fc_self' in name):
+                    if (p.grad is not None) & ('0.fc_self' in name):
                         new_grad = p.grad.detach().clone()
                         grad_tr = torch.cat((grad_tr, new_grad.flatten()), dim=0)
                 model.zero_grad()
