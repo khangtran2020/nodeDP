@@ -643,7 +643,6 @@ def shadow_split_whitebox_extreme(graph, ratio, history=None, exist=False, diag=
 def sample_blocks(graph, nodes, n_layer, max_nei=2):
     blocks = []
     seed_nodes = nodes
-    rprint(f"Sampling for nodes: {seed_nodes}")
     for i in reversed(range(n_layer)):
         frontier = graph.sample_neighbors(seed_nodes, max_nei)
         block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=True)
@@ -692,8 +691,8 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
 
         for i in range(n_layer):
 
-            src_pos = block_pos.srcdata['org_id']
-            dst_pos = block_pos.dstdata['org_id']
+            src_pos = block_pos[i].srcdata['org_id']
+            dst_pos = block_pos[i].dstdata['org_id']
             sha_pos_nodes = torch.cat((sha_nodes, src_pos, dst_pos), dim=0)
 
             src_pos_edge, dst_pos_edge = block_pos.edges()
@@ -704,8 +703,8 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
             dst_edge = torch.cat((dst_edge, dst_pos_edge), dim=0)
 
 
-            src_neg = block_neg.srcdata['org_id']
-            dst_neg = block_neg.dstdata['org_id']
+            src_neg = block_neg[i].srcdata['org_id']
+            dst_neg = block_neg[i].dstdata['org_id']
             sha_neg_nodes = torch.cat((sha_nodes, src_neg, dst_neg), dim=0)
 
             src_neg_edge, dst_neg_edge = block_neg.edges()
