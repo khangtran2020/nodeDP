@@ -677,6 +677,8 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         shaneg_nodes = tr_node[perm[:num_shadow]]
 
         num_half = min(int(shapos_nodes.size(dim=0)*0.4), int(shaneg_nodes.size(dim=0)*0.4))
+        
+        sys.exit("To line 687")
 
         id_intr = graph.ndata['id_intr'][shapos_nodes]
         id_inte = graph.ndata['id_inte'][shaneg_nodes]
@@ -684,7 +686,6 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         block_pos = sample_blocks(graph=tr_graph, nodes=id_intr, n_layer=n_layer, max_nei=max_nei)
         block_neg = sample_blocks(graph=te_graph, nodes=id_inte, n_layer=n_layer, max_nei=max_nei)
 
-        sys.exit("To line 687")
         src_edge = torch.Tensor([])
         dst_edge = torch.Tensor([])
         sha_pos_nodes = torch.Tensor([])
