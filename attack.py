@@ -11,7 +11,7 @@ from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
 from Attacks.Runs.wb_simple import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
-from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox, read_data, shadow_split_wbextreme
+from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox, read_data
 from Models.init import init_model
 from hashlib import md5
 
@@ -39,8 +39,6 @@ def run(args, current_time, device):
         train_g, val_g, test_g, graph = read_data(args=args, history=data_hist, exist=exist_data)
         if args.att_mode == 'blackbox':
             shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
-        elif args.att_mode == 'wbextreme':
-            shadow_graph = shadow_split_wbextreme(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
         else:
             shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
 
@@ -67,7 +65,6 @@ def run(args, current_time, device):
             model_hist = read_pickel(file=target_model_path)
 
         model = init_model(args=args)
-        rprint(f"Origninal model: aggregator {model.aggregator}, params {model}")
         if exist_model: 
             model.load_state_dict(torch.load(model_path))
             rprint(f"Model exist, loaded previous trained model")
@@ -80,7 +77,7 @@ def run(args, current_time, device):
         model_hist, att_hist = blackbox(args=args, graph=(train_g, val_g, test_g), model=model, device=device, history=history, name=name)
     elif args.att_mode == 'whitebox':
         model_hist, att_hist = whitebox(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
-    elif args.att_mode in ['wanal', 'wbextreme']:
+    elif args.att_mode == 'wanal':
         model_hist, att_hist = wanal(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
 
     general_hist = {
