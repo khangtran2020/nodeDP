@@ -1,3 +1,4 @@
+import sys
 import dgl
 import torch
 import numpy as np
@@ -683,6 +684,7 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         block_pos = sample_blocks(graph=tr_graph, nodes=id_intr, n_layer=n_layer, max_nei=max_nei)
         block_neg = sample_blocks(graph=te_graph, nodes=id_inte, n_layer=n_layer, max_nei=max_nei)
 
+        sys.exit("To line 687")
         src_edge = torch.Tensor([])
         dst_edge = torch.Tensor([])
         sha_pos_nodes = torch.Tensor([])
