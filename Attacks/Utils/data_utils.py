@@ -468,10 +468,10 @@ def read_data(args, history, exist=False):
     graph.ndata['train_mask'] = train_mask
 
     graph.ndata['id_intr'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).long()
-    graph.ndata['id_intr'][id_intr] = g_train.nodes().clone().int()
+    graph.ndata['id_intr'][id_intr] = g_train.nodes().clone().long()
 
     graph.ndata['id_inte'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).long()
-    graph.ndata['id_inte'][id_inte] = g_test.nodes().clone().int()
+    graph.ndata['id_inte'][id_inte] = g_test.nodes().clone().long()
 
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
