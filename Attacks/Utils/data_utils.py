@@ -561,6 +561,7 @@ def shadow_split_wbextreme(graph, ratio, history=None, exist=False, diag=False):
 
         shadow_pos_graph = graph.subgraph(shatr_nodes)
         shadow_neg_graph = graph.subgraph(te_node)
+        shadow_nodes = torch.cat((shatr_nodes, te_node), dim=0)
         shadow_graph = dgl.merge([shadow_pos_graph, shadow_neg_graph])
 
         history['sha_tr'] = train_mask.tolist()
