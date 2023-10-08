@@ -95,81 +95,79 @@ def run(args, graph, model, device, history, name):
         x_te = x_te[arr].reshape(-1, 1) 
         y_te = y_te[arr]
 
-        lr = LogisticRegression()
-        lr.fit(X=x_tr, y=y_tr)
-        rprint("Score for logistic regression:", lr.score(X=x_te, y=y_te))
+        # lr = LogisticRegression()
+        # lr.fit(X=x_tr, y=y_tr)
+        # rprint("Score for logistic regression:", lr.score(X=x_te, y=y_te))
 
         
-    #     plot_PCA(gtrpos=grad_pos_tr, gtrneg=grad_neg_tr, gtepos=grad_pos_te, gteneg=grad_neg_te)
+        # plot_PCA(gtrpos=grad_pos_tr, gtrneg=grad_neg_tr, gtepos=grad_pos_te, gteneg=grad_neg_te)
+
+        x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
+        y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
+
+        x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
+        y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
+
+        id_xtr = range(x_tr.size(dim=0))
+        id_ytr = y_tr.tolist()
+
+        id_tr, id_val, y_tr_id, y_va_id = train_test_split(id_xtr, id_ytr, test_size=0.2, stratify=id_ytr)
         
-    #     
+        x_va = x_tr[id_val]
+        y_va = y_tr[id_val]
+        perm = torch.randperm(x_va.size(dim=0)).to(device)
+        x_va = x_va[perm]
+        y_va = y_va[perm]
 
-    #     x_tr = torch.cat((grad_pos_tr, grad_neg_tr), dim=0)
-    #     y_tr = torch.cat((torch.ones(grad_pos_tr.size(dim=0)), torch.zeros(grad_neg_tr.size(dim=0))), dim=0)
+        x_tr = x_tr[id_tr]
+        y_tr = y_tr[id_tr]
+        perm = torch.randperm(x_tr.size(dim=0)).to(device)
+        x_tr = x_tr[perm]
+        y_tr = y_tr[perm]
 
-    #     x_te = torch.cat((grad_pos_te, grad_neg_te), dim=0)
-    #     y_te = torch.cat((torch.ones(grad_pos_te.size(dim=0)), torch.zeros(grad_neg_te.size(dim=0))), dim=0)
+        test_distribution_shift(x_tr=x_tr, x_te=x_va)
 
-    #     id_xtr = range(x_tr.size(dim=0))
-    #     id_ytr = y_tr.tolist()
+        perm = torch.randperm(x_te.size(dim=0)).to(device)
+        x_te = x_te[perm]
+        y_te = y_te[perm]
 
-    #     id_tr, id_val, y_tr_id, y_va_id = train_test_split(id_xtr, id_ytr, test_size=0.2, stratify=id_ytr)
-        
-    #     x_va = x_tr[id_val]
-    #     y_va = y_tr[id_val]
-    #     perm = torch.randperm(x_va.size(dim=0)).to(device)
-    #     x_va = x_va[perm]
-    #     y_va = y_va[perm]
-
-    #     x_tr = x_tr[id_tr]
-    #     y_tr = y_tr[id_tr]
-    #     perm = torch.randperm(x_tr.size(dim=0)).to(device)
-    #     x_tr = x_tr[perm]
-    #     y_tr = y_tr[perm]
-
-    #     test_distribution_shift(x_tr=x_tr, x_te=x_va)
-
-    #     perm = torch.randperm(x_te.size(dim=0)).to(device)
-    #     x_te = x_te[perm]
-    #     y_te = y_te[perm]
-
-    #     shtr_dataset = Data(X=x_tr, y=y_tr)
-    #     shva_dataset = Data(X=x_va, y=y_va)
-    #     shte_dataset = Data(X=x_te, y=y_te)
+        shtr_dataset = Data(X=x_tr, y=y_tr)
+        shva_dataset = Data(X=x_va, y=y_va)
+        shte_dataset = Data(X=x_te, y=y_te)
         
 
-    # # # device = torch.device('cpu')
-    # with timeit(logger=logger, task='train-attack-model'):
+    # # device = torch.device('cpu')
+    with timeit(logger=logger, task='train-attack-model'):
         
-    #     tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs,
-    #                                             drop_last=True, shuffle=True)
+        tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs,
+                                                drop_last=True, shuffle=True)
 
-    #     va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_bs,
-    #                                             shuffle=False, drop_last=False)
+        va_loader = torch.utils.data.DataLoader(shva_dataset, batch_size=args.att_bs,
+                                                shuffle=False, drop_last=False)
 
-    #     te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs,
-    #                                             shuffle=False, drop_last=False)
+        te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs,
+                                                shuffle=False, drop_last=False)
 
-    #     att_model = NN(input_dim=x_tr.size(dim=1), hidden_dim=args.att_hid_dim, output_dim=1, n_layer=args.att_layers, dropout=0.2)
-    #     att_model.to(device)
-    #     att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
-    #     att_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
-    #                              attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, name=name['att'],
-    #                              device=device, history=att_hist)
+        att_model = NN(input_dim=x_tr.size(dim=1), hidden_dim=args.att_hid_dim, output_dim=1, n_layer=args.att_layers, dropout=0.2)
+        att_model.to(device)
+        att_opt = init_optimizer(optimizer_name=args.optimizer, model=att_model, lr=args.att_lr)
+        att_model = train_attack(args=args, tr_loader=tr_loader, va_loader=va_loader, te_loader=te_loader,
+                                 attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt, name=name['att'],
+                                 device=device, history=att_hist)
 
-    # att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
-    # metric = ['auc', 'acc', 'pre', 'rec', 'f1']
-    # metric_dict = {
-    #     'auc': torchmetrics.classification.BinaryAUROC().to(device),
-    #     'acc': torchmetrics.classification.BinaryAccuracy().to(device),
-    #     'pre': torchmetrics.classification.BinaryPrecision().to(device),
-    #     'rec': torchmetrics.classification.BinaryRecall().to(device),
-    #     'f1': torchmetrics.classification.BinaryF1Score().to(device)
-    # }
-    # for met in metric:
-    #     te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
-    #                                        metrics=metric_dict[met], criterion=torch.nn.BCEWithLogitsLoss().to(device))
-    #     rprint(f"Attack {met}: {te_auc}")
+    att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
+    metric = ['auc', 'acc', 'pre', 'rec', 'f1']
+    metric_dict = {
+        'auc': torchmetrics.classification.BinaryAUROC().to(device),
+        'acc': torchmetrics.classification.BinaryAccuracy().to(device),
+        'pre': torchmetrics.classification.BinaryPrecision().to(device),
+        'rec': torchmetrics.classification.BinaryRecall().to(device),
+        'f1': torchmetrics.classification.BinaryF1Score().to(device)
+    }
+    for met in metric:
+        te_loss, te_auc = eval_attack_step(model=att_model, device=device, loader=te_loader, 
+                                           metrics=metric_dict[met], criterion=torch.nn.BCEWithLogitsLoss().to(device))
+        rprint(f"Attack {met}: {te_auc}")
     
     return model_hist, att_hist
 
