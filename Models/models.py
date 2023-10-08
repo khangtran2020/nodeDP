@@ -11,7 +11,7 @@ class GraphSAGE(nn.Module):
     def __init__(self, in_feats, n_hidden, n_classes, n_layers, dropout=0.2, aggregator_type='mean'):
         
         super().__init__()
-
+        self.aggregator = aggregator_type
         self.n_layers = n_layers
         if n_layers > 1:
             self.layers = nn.ModuleList()

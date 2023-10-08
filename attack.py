@@ -65,7 +65,7 @@ def run(args, current_time, device):
             model_hist = read_pickel(file=target_model_path)
 
         model = init_model(args=args)
-        rprint(f"Origninal model: {model}")
+        rprint(f"Origninal model: aggregator {model.aggregator}, params {model}")
         if exist_model: 
             model.load_state_dict(torch.load(model_path))
             rprint(f"Model exist, loaded previous trained model")
