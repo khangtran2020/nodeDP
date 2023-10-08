@@ -714,7 +714,8 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
             src_edge = torch.cat((src_edge, src_neg_edge), dim=0)
             dst_edge = torch.cat((dst_edge, dst_neg_edge), dim=0)
 
-        rprint(f"Src edge {src_edge}, Dst edge {dst_edge}")
+        src_edge = src_edge.int()
+        dst_edge = dst_edge.int()
 
         g = dgl.graph((src_edge, dst_edge), num_nodes=graph.nodes().size(dim=0))
         for key in graph.ndata.keys():
