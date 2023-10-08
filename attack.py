@@ -11,7 +11,7 @@ from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
 from Attacks.Runs.wb_simple import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
-from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox_extreme, read_data
+from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox_extreme, shadow_split_whitebox, read_data, shadow_split_whitebox_subgraph
 from Models.init import init_model
 from hashlib import md5
 
@@ -37,10 +37,15 @@ def run(args, current_time, device):
             rprint(f"History exist, exist_data set to: {exist_data}")
         
         train_g, val_g, test_g, graph = read_data(args=args, history=data_hist, exist=exist_data)
-        if args.att_mode == 'blackbox':
+        if args.att_submode == 'blackbox':
             shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
-        else:
+        elif args.att_submode == 'whitebox':
+            shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+        elif args.att_submode == 'wbextreme':
             shadow_graph = shadow_split_whitebox_extreme(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+        elif args.att_submode == 'wbsubgraph':
+            shadow_graph = shadow_split_whitebox_subgraph(graph=graph, tr_graph=train_g, te_graph=test_g, n_layer=args.n_layers,
+                                                          max_nei=args.n_neighbor, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
 
         if exist_data == False:
             save_dict(path=data_path, dct=data_hist)
