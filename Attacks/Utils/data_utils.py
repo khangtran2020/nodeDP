@@ -675,7 +675,7 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         shapos_nodes = tr_node[perm[:num_shadow]]
 
         perm = torch.randperm(te_node.size(dim=0))
-        shaneg_nodes = tr_node[perm[:num_shadow]]
+        shaneg_nodes = te_node[perm[:num_shadow]]
 
         num_half = min(int(shapos_nodes.size(dim=0)*0.4), int(shaneg_nodes.size(dim=0)*0.4))
 
