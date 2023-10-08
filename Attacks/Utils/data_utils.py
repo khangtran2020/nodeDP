@@ -465,8 +465,8 @@ def read_data(args, history, exist=False):
     test_mask[id_inte] = 1
 
     graph.ndata['train_mask'] = train_mask
-    graph.ndata['train_mask'] = train_mask
-    graph.ndata['train_mask'] = train_mask
+    graph.ndata['test_mask'] = val_mask
+    graph.ndata['test_mask'] = test_mask
 
     graph.ndata['id_intr'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).long()
     graph.ndata['id_intr'][id_intr] = g_train.nodes().clone().long()
@@ -479,6 +479,7 @@ def read_data(args, history, exist=False):
     if (args.submode == 'density') and (args.density != 1.0):
         graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
+
     return g_train, g_val, g_test, graph
 
 def shadow_split_whitebox_extreme(graph, ratio, history=None, exist=False, diag=False):
