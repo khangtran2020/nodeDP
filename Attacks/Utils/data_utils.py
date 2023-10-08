@@ -642,6 +642,7 @@ def shadow_split_whitebox_extreme(graph, ratio, history=None, exist=False, diag=
 def sample_blocks(graph, nodes, n_layer, max_nei=2):
     blocks = []
     seed_nodes = nodes
+    rprint(f"Sampling for nodes: {seed_nodes}")
     for i in reversed(range(n_layer)):
         frontier = graph.sample_neighbors(seed_nodes, max_nei)
         block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=True)
@@ -682,7 +683,6 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         id_inte = graph.ndata['id_inte'][shaneg_nodes]
         block_pos = sample_blocks(graph=tr_graph, nodes=id_intr, n_layer=n_layer, max_nei=max_nei)
         block_neg = sample_blocks(graph=te_graph, nodes=id_inte, n_layer=n_layer, max_nei=max_nei)
-        sys.exit("To line 685")
 
         src_edge = torch.Tensor([])
         dst_edge = torch.Tensor([])
