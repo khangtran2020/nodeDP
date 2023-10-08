@@ -753,6 +753,11 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
 
         membership_label = torch.zeros(g_nodes.size(dim=0))
 
+        sha_pos_tr = sha_pos_tr.long()
+        sha_neg_tr = sha_neg_tr.long()
+        sha_pos_te = sha_pos_te.long()
+        sha_neg_te = sha_neg_te.long()
+
         train_mask[sha_pos_tr] = 1
         train_mask[sha_neg_tr] = 1
 
