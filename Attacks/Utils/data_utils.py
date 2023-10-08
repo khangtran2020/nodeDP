@@ -693,7 +693,7 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
 
             src_pos = block_pos[i].srcdata['org_id']
             dst_pos = block_pos[i].dstdata['org_id']
-            sha_pos_nodes = torch.cat((sha_nodes, src_pos, dst_pos), dim=0)
+            sha_pos_nodes = torch.cat((sha_pos_nodes, src_pos, dst_pos), dim=0)
 
             src_pos_edge, dst_pos_edge = block_pos.edges()
             src_pos_edge = src_pos[src_pos_edge]
@@ -705,7 +705,7 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
 
             src_neg = block_neg[i].srcdata['org_id']
             dst_neg = block_neg[i].dstdata['org_id']
-            sha_neg_nodes = torch.cat((sha_nodes, src_neg, dst_neg), dim=0)
+            sha_neg_nodes = torch.cat((sha_neg_nodes, src_neg, dst_neg), dim=0)
 
             src_neg_edge, dst_neg_edge = block_neg.edges()
             src_neg_edge = src_neg[src_neg_edge]
@@ -721,7 +721,7 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         g = dgl.to_simple(g, return_counts='cnt', writeback_mapping=False)
         sha_pos_nodes = sha_pos_nodes.unique()
         sha_neg_nodes = sha_neg_nodes.unique()
-        sha_nodes = torch.cat((sha_pos_nodes, sha_neg_nodes), dim=0)
+        shadow_nodes = torch.cat((sha_pos_nodes, sha_neg_nodes), dim=0)
 
 
         perm = torch.randperm(sha_pos_nodes.size(dim=0))
