@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from torch_geometric.transforms import Compose, RandomNodeSplit
-from Utils.utils import get_index_by_value
+from Utils.utils import get_index_by_value, get_index_bynot_value
 from sklearn.linear_model import LogisticRegression
 from rich import print as rprint
 from functools import partial
@@ -476,3 +476,161 @@ def read_data(args, history, exist=False):
         graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
     return g_train, g_val, g_test, graph
+
+def shadow_split_whitebox_extreme(graph, ratio, history=None, exist=False, diag=False):
+
+    org_nodes = graph.nodes()
+    tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+    rprint(f"Orginal graph: {graph}")
+
+    if exist == False:
+
+        tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+        te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
+
+        te_node = org_nodes[te_org_idx]
+        tr_node = org_nodes[tr_org_idx]
+
+        num_shadow = int(ratio * tr_node.size(dim=0))
+        perm = torch.randperm(tr_node.size(dim=0))
+        shatr_nodes = tr_node[perm[:num_shadow]]
+
+        num_half = min(int(te_node.size(dim=0)*0.4), int(shatr_nodes.size(dim=0)*0.4))
+        # print("Half", num_half)
+
+        perm = torch.randperm(shatr_nodes.size(dim=0))
+        sha_pos_te = shatr_nodes[perm[:num_half]]
+        sha_pos_tr = shatr_nodes[perm[num_half:]]
+
+        perm = torch.randperm(te_node.size(dim=0))
+        sha_neg_te = te_node[perm[:num_half]]
+        sha_neg_tr = te_node[perm[num_half:]]
+
+        rprint(f"Shadow positive nodes to train: {sha_pos_tr.size(dim=0)}, to test: {sha_pos_te.size(dim=0)}")
+        rprint(f"Shadow negative nodes to train: {sha_neg_tr.size(dim=0)}, to test: {sha_neg_te.size(dim=0)}")
+
+        train_mask = torch.zeros(org_nodes.size(dim=0))
+        test_mask = torch.zeros(org_nodes.size(dim=0))
+
+        pos_mask_tr = torch.zeros(org_nodes.size(dim=0))
+        pos_mask_te = torch.zeros(org_nodes.size(dim=0))
+
+        neg_mask_tr = torch.zeros(org_nodes.size(dim=0))
+        neg_mask_te = torch.zeros(org_nodes.size(dim=0))
+        
+        pos_mask = torch.zeros(org_nodes.size(dim=0))
+        neg_mask = torch.zeros(org_nodes.size(dim=0))
+
+        membership_label = torch.zeros(org_nodes.size(dim=0))
+
+        train_mask[sha_pos_tr] = 1
+        train_mask[sha_neg_tr] = 1
+
+        test_mask[sha_pos_te] = 1
+        test_mask[sha_neg_te] = 1
+
+        pos_mask_tr[sha_pos_tr] = 1
+        pos_mask_te[sha_pos_te] = 1
+
+        neg_mask_tr[sha_neg_tr] = 1
+        neg_mask_te[sha_neg_te] = 1
+
+        pos_mask[sha_pos_tr] = 1
+        pos_mask[sha_pos_te] = 1
+
+        neg_mask[sha_neg_tr] = 1
+        neg_mask[sha_neg_te] = 1
+
+        membership_label[sha_pos_tr] = 1
+        membership_label[sha_pos_te] = 1
+
+        membership_label[sha_neg_tr] = -1
+        membership_label[sha_neg_te] = -1
+
+        graph.ndata['str_mask'] = train_mask
+        graph.ndata['ste_mask'] = test_mask
+        graph.ndata['sha_label'] = membership_label
+        graph.ndata['pos_mask'] = pos_mask
+        graph.ndata['neg_mask'] = neg_mask
+        graph.ndata['pos_mask_tr'] = pos_mask_tr
+        graph.ndata['pos_mask_te'] = pos_mask_te
+        graph.ndata['neg_mask_tr'] = neg_mask_tr
+        graph.ndata['neg_mask_te'] = neg_mask_te
+
+        shadow_nodes = torch.cat((shatr_nodes, te_node), dim=0)
+
+        history['sha_tr'] = train_mask.tolist()
+        history['sha_te'] = test_mask.tolist()
+        history['sha_label'] = membership_label.tolist()
+        history['shadow_nodes'] = shadow_nodes.tolist()
+        history['pos_mask'] = pos_mask.tolist()
+        history['neg_mask'] = neg_mask.tolist()
+        history['pos_mask_tr'] = pos_mask_tr.tolist()
+        history['pos_mask_te'] = pos_mask_te.tolist()
+        history['neg_mask_tr'] = neg_mask_tr.tolist()
+        history['neg_mask_te'] = neg_mask_te.tolist()
+    else:    
+
+        train_mask = torch.LongTensor(history['sha_tr'])
+        test_mask = torch.LongTensor(history['sha_te'])
+        shadow_nodes = torch.LongTensor(history['shadow_nodes'])
+        pos_mask = torch.LongTensor(history['pos_mask'])
+        neg_mask = torch.LongTensor(history['neg_mask'])
+        pos_mask_tr = torch.LongTensor(history['pos_mask_tr'])
+        pos_mask_te = torch.LongTensor(history['pos_mask_te'])
+        neg_mask_tr = torch.LongTensor(history['neg_mask_tr'])
+        neg_mask_te = torch.LongTensor(history['neg_mask_te'])
+
+        graph.ndata['str_mask'] = train_mask
+        graph.ndata['ste_mask'] = test_mask
+        graph.ndata['sha_label'] = torch.Tensor(history['sha_label'])
+        graph.ndata['pos_mask'] = pos_mask
+        graph.ndata['neg_mask'] = neg_mask
+        graph.ndata['pos_mask_tr'] = pos_mask_tr
+        graph.ndata['pos_mask_te'] = pos_mask_te
+        graph.ndata['neg_mask_tr'] = neg_mask_tr
+        graph.ndata['neg_mask_te'] = neg_mask_te
+    
+    temp_shadow_graph = graph.subgraph(shadow_nodes)
+
+    pos_mask = temp_shadow_graph.ndata['pos_mask'].clone()
+    src_edge, dst_edge = temp_shadow_graph.edges()
+    src_edge_pos = pos_mask[src_edge].int().clone()
+    dst_edge_pos = pos_mask[dst_edge].int().clone()
+    same_pos = torch.logical_not(torch.logical_xor(src_edge_pos, dst_edge_pos)).int()
+    indx = get_index_bynot_value(a=same_pos,val=0)
+    src_edge = src_edge[indx].clone()
+    dst_edge = dst_edge[indx].clone()
+
+    neg_mask = temp_shadow_graph.ndata['neg_mask'].clone()
+    src_edge_neg = neg_mask[src_edge].int().clone()
+    dst_edge_neg = neg_mask[dst_edge].int().clone()
+    same_neg = torch.logical_not(torch.logical_xor(src_edge_neg, dst_edge_neg)).int()
+    indx = get_index_bynot_value(a=same_neg,val=0)
+    src_edge = src_edge[indx].clone()
+    dst_edge = dst_edge[indx].clone()
+
+    shadow_graph = dgl.graph((src_edge, dst_edge), num_nodes=temp_shadow_graph.nodes().size(dim=0))
+    for key in temp_shadow_graph.ndata.keys():
+        shadow_graph.ndata[key] = temp_shadow_graph.ndata[key].clone()
+    del temp_shadow_graph
+    del src_edge
+    del dst_edge
+    del pos_mask
+    del neg_mask
+
+    if diag:
+        rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
+        per = partial(percentage_pos, graph=shadow_graph)
+        percentage = []
+        for node in shadow_graph.nodes():
+            percentage.append(per(node))
+        percentage = torch.Tensor(percentage)
+        rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
+        rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
+        temp_pos = percentage*shadow_graph.ndata['pos_mask']
+        temp_neg = percentage*shadow_graph.ndata['neg_mask']
+        rprint(f"Shadow graph average percentage neighbor is pos of pos: {temp_pos.mean().item() / (len(temp_pos) + 1e-12)}")
+        rprint(f"Shadow graph average percentage neighbor is pos of neg: {temp_neg.mean().item() / (len(temp_neg) + 1e-12)}")
+    return shadow_graph
