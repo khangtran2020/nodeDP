@@ -724,7 +724,7 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
         g = dgl.to_simple(g, return_counts='cnt', writeback_mapping=False)
         sha_pos_nodes = sha_pos_nodes.unique()
         sha_neg_nodes = sha_neg_nodes.unique()
-        shadow_nodes = torch.cat((sha_pos_nodes, sha_neg_nodes), dim=0).long()
+        shadow_nodes = torch.cat((sha_pos_nodes, sha_neg_nodes), dim=0).int()
 
 
         perm = torch.randperm(sha_pos_nodes.size(dim=0))
