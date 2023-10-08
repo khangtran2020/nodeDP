@@ -333,7 +333,7 @@ def generate_attack_samples(graph, conf, nohop_conf, mode, device, te_graph=None
 def generate_nohop_graph(graph, device):
     
     nodes = graph.nodes().tolist()
-    g = dgl.graph((nodes, nodes), num_nodes=len(nodes)).to(device)
+    g = dgl.graph(([], []), num_nodes=len(nodes)).to(device)
     for key in graph.ndata.keys():
         g.ndata[key] = graph.ndata[key].clone()
     
