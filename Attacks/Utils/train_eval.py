@@ -131,6 +131,9 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
     criterion = torch.nn.BCEWithLogitsLoss(reduction='mean', pos_weight=weight[0]/weight[1])
     criterion.to(device)
 
+    criter = torch.nn.BCELoss(reduction='mean')
+    criter.to(device)
+
     metrics = torchmetrics.classification.BinaryAUROC().to(device)
 
     # DEfining Early Stopping Object
@@ -142,7 +145,7 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
         tr_loss, tr_acc = upd_att_wb_step(model=attack_model, device=device, loader=tr_loader, metrics=metrics,
                                              criterion=criterion, optimizer=optimizer)
         te_loss, te_acc = eval_att_wb_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
-                                           criterion=criterion)
+                                           criterion=criter)
         
         rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc.item()}, te_loss {te_loss}, te_acc {te_acc.item()}")
 
@@ -255,9 +258,9 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
         features, target = d
         target = target.to(device)
         predictions = model(features)
+        predictions = torch.nn.functional.sigmoid(predictions)
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
-        rprint(f"Value of prediction: {predictions.cpu()}")
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
         val_loss += loss.item()*predictions.size(dim=0)
