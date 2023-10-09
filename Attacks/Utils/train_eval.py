@@ -257,11 +257,13 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
         predictions = torch.nn.functional.sigmoid(predictions)
+        rprint(f"Value of prediction: {predictions}")
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
         val_loss += loss.item()*predictions.size(dim=0)
     performance = metrics.compute()
     metrics.reset()
+    model.zero_grad()
     return val_loss/num_data, performance
 
 def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False, name_dt=None):
