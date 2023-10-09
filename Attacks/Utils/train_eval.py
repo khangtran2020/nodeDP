@@ -248,6 +248,7 @@ def upd_att_wb_step(model, device, loader, metrics, criterion, optimizer):
 def eval_att_wb_step(model, device, loader, metrics, criterion):
     model.to(device)
     model.eval()
+    model.zero_grad()
     val_loss = 0
     num_data = 0.0
     for bi, d in enumerate(loader):
