@@ -98,7 +98,7 @@ def run(args, graph, model, device, history, name):
 
     rprint("\n\n============== BEGIN EVALUATING ==============")
     att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
-    rprint(f"Attack model: {att_model}")
+    # rprint(f"Attack model: {att_model}")
     metric = ['auc', 'acc', 'pre', 'rec', 'f1']
     metric_dict = {
         'auc': torchmetrics.classification.BinaryAUROC().to(device),
