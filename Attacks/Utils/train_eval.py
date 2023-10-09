@@ -257,7 +257,7 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
         predictions = model(features)
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
-        rprint(f"Value of prediction: {predictions}")
+        rprint(f"Value of prediction: {predictions.cpu()}")
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
         val_loss += loss.item()*predictions.size(dim=0)
