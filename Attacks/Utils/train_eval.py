@@ -254,10 +254,9 @@ def eval_att_wb_step(model, device, loader, metrics, criterion):
         features, target = d
         target = target.to(device)
         predictions = model(features)
-        predictions = torch.squeeze(predictions, dim=-1)
-        rprint(f"Value of prediction: {predictions}")
-        loss = criterion(predictions, target.float())
+        predictions = torch.squeeze(predictions, dim=-1).zero_grad()
         predictions = torch.nn.functional.sigmoid(predictions)
+        loss = criterion(predictions, target.float())
         metrics.update(predictions, target)
         num_data += predictions.size(dim=0)
         val_loss += loss.item()*predictions.size(dim=0)
