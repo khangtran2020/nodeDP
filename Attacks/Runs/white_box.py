@@ -96,6 +96,7 @@ def run(args, graph, model, device, history, name):
                                     attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
                                     name=name['att'], device=device, history=att_hist)
 
+    rprint("\n\n============== BEGIN EVALUATING ==============")
     att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
     metric = ['auc', 'acc', 'pre', 'rec', 'f1']
     metric_dict = {
