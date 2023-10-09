@@ -246,7 +246,8 @@ class WbAttacker(nn.Module):
                                      nn.ReLU(),
                                      nn.Dropout(p=0.2),
                                      nn.Linear(64, 1))
-        
+        self.last_activation = torch.nn.Sigmoid()
+
     def forward(self, x):
 
         label, loss, out_dict, grad_dict = x
@@ -266,7 +267,11 @@ class WbAttacker(nn.Module):
 
         pred = self.encoder(overall_emb)
         return pred
-        
+    
+    def predict(self, x):
+        pred = self.forward(x=x)
+        return self.last_activation(pred)
+
 class DotPredictor(nn.Module):
     def forward(self, g, h):
         with g.local_scope():
