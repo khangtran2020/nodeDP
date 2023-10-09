@@ -875,7 +875,7 @@ def shadow_split_whitebox_drop(graph, ratio, history=None, exist=False, diag=Fal
         perm = torch.randperm(tr_node.size(dim=0))
         shatr_nodes = tr_node[perm[:num_shadow]]
         
-        num_half = min(int(te_node.size(dim=0)*0.3), int(shatr_nodes.size(dim=0)*0.3))
+        num_half = min(int(te_node.size(dim=0)*0.2), int(shatr_nodes.size(dim=0)*0.2))
 
         perm = torch.randperm(shatr_nodes.size(dim=0))
         sha_pos_te = shatr_nodes[perm[:num_half]]
