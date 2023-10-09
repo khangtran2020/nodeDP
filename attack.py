@@ -11,7 +11,7 @@ from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
 from Attacks.Runs.wb_simple import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
-from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox_extreme, shadow_split_whitebox, read_data, shadow_split_whitebox_subgraph
+from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox_extreme, shadow_split_whitebox, read_data, shadow_split_whitebox_subgraph, shadow_split_whitebox_drop
 from Models.init import init_model
 from hashlib import md5
 
@@ -46,6 +46,8 @@ def run(args, current_time, device):
         elif args.att_submode == 'wbsubgraph':
             shadow_graph = shadow_split_whitebox_subgraph(graph=graph, tr_graph=train_g, te_graph=test_g, n_layer=args.n_layers,
                                                           max_nei=args.n_neighbor, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+        elif args.att_submode == 'drop':
+            shadow_graph = shadow_split_whitebox_drop(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
 
         if exist_data == False:
             save_dict(path=data_path, dct=data_hist)

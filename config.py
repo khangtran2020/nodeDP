@@ -14,7 +14,6 @@ def add_general_group(group):
     group.add_argument("--performance_metric", type=str, default='acc', help="Metrics of performance")
     group.add_argument("--mlp_mode", type=str, default='clean', help="Mode of running MLP ['clean', 'dp']")
 
-
 def add_data_group(group):
     group.add_argument('--data_path', type=str, default='Data/', help="dir path to dataset")
     group.add_argument('--dataset', type=str, default='cora', help="name of dataset")
@@ -29,7 +28,6 @@ def add_analysis_group(group):
     group.add_argument('--seed_info', type=str, default='', help="")
     group.add_argument("--analyze_mode", type=str, default='struct')
 
-
 def add_model_group(group):
     group.add_argument("--model_type", type=str, default='sage', help="Model type")
     group.add_argument("--lr", type=float, default=0.001, help="learning rate")
@@ -43,7 +41,6 @@ def add_model_group(group):
     group.add_argument("--aggregator_type", type=str, default='gcn')
     group.add_argument("--epochs", type=int, default=100, help='training step')
 
-
 def add_dp_group(group):
     group.add_argument("--tar_eps", type=float, default=1.0, help="targeted epsilon")
     group.add_argument('--tar_delt', type=float, default=1e-4, help='targeted delta')
@@ -52,7 +49,6 @@ def add_dp_group(group):
     group.add_argument("--clip_node", type=int, default=4, help='number of allowed appearance')
     group.add_argument("--trim_rule", type=str, default='adhoc', help='trimming rule')
     group.add_argument('--sampling_rate', type=float, default=0.08, help="batch size for training process")
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -101,7 +97,6 @@ def add_model_attack_group(group):
     group.add_argument("--attack_epochs", type=int, default=100, help='training step')
     group.add_argument("--shaddow_epochs", type=int, default=100, help='training step')
     group.add_argument("--num_shadow_model", type=int, default=2, help='training step')
-
 
 def parse_args_attack():
     parser = argparse.ArgumentParser()

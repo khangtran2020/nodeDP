@@ -21,7 +21,7 @@ class Data(Dataset):
 
 class ShadowData(Dataset):
     
-    def __init__(self, graph, model, num_layer, device, mode='train'):
+    def __init__(self, graph, model, num_layer, device, mode='train', weight=None, nnei=-1):
          
         # get nodes
         self.graph = graph.to(device)
@@ -36,6 +36,8 @@ class ShadowData(Dataset):
         self.criterion = torch.nn.CrossEntropyLoss(reduction='none')
         self.model.zero_grad()
         self.label_weight = self.membership_label.unique(return_counts=True)
+        self.weight = weight
+        self.nnei = nnei
         rprint(f"Membership label distribution of shadow {mode}: {self.membership_label.unique(return_counts=True)}")
 
     def __getitem__(self, index):
@@ -58,11 +60,12 @@ class ShadowData(Dataset):
         return self.nodes.size(dim=0)
 
     def sample_blocks(self, seed_nodes):
-
         blocks = []
-
         for i in reversed(range(self.num_layer)):
-            frontier = self.graph.sample_neighbors(seed_nodes, -1, output_device=self.device)
+            if self.weight is not None:
+                frontier = self.graph.sample_neighbors(seed_nodes, self.nnei, output_device=self.device, prob=self.weight)
+            else:
+                frontier = self.graph.sample_neighbors(seed_nodes, self.nnei, output_device=self.device)
             block = transforms.to_block(frontier, seed_nodes, include_dst_in_src=True)
             seed_nodes = block.srcdata[NID]
             blocks.insert(0, block)
