@@ -1149,6 +1149,9 @@ def shadow_split_whitebox_drop_ratio(graph, ratio, history=None, exist=False, di
 
     pos_mask = temp_shadow_graph.ndata['pos_mask'].clone()
     src_edge, dst_edge = temp_shadow_graph.edges()
+
+    rprint(f"Original shadow graph has {src_edge.size(dim=0)} edges")
+
     src_edge_pos = pos_mask[src_edge].int().clone()
     dst_edge_pos = pos_mask[dst_edge].int().clone()
     diff_pos = torch.logical_xor(src_edge_pos, dst_edge_pos)
@@ -1175,6 +1178,8 @@ def shadow_split_whitebox_drop_ratio(graph, ratio, history=None, exist=False, di
 
     src_edge = src_edge[indx].clone()
     dst_edge = dst_edge[indx].clone()
+
+    rprint(f"Now shadow graph has {src_edge.size(dim=0)} edges")
 
     shadow_graph = dgl.graph((src_edge, dst_edge), num_nodes=temp_shadow_graph.nodes().size(dim=0))
     for key in temp_shadow_graph.ndata.keys():
