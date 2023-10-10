@@ -36,27 +36,8 @@ def run(args, graph, model, device, history, name):
     with timeit(logger=logger, task='preparing-shadow-data'):
         shadow_graph = shadow_graph.to(device)
         if args.att_submode == 'drop':
-
-            with torch.no_grad():
-                model.to(device)
-                shadow_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
-                pred = model.full(g=shadow_nohop, x=shadow_nohop.ndata['feat'])
-                conf = get_entropy(pred=pred)
-                src_edge, dst_edge = shadow_graph.edges()
-                src_conf = conf[src_edge]
-                dst_conf = conf[dst_edge]
-                conf_exp = torch.exp(-1*torch.abs(src_conf - dst_conf))
-                sample = torch.zeros_like(conf_exp).float()
-                for node in dst_edge.unique():
-                    index = get_index_by_value(a=dst_edge, val=node)
-                    conf_exp[index] = conf_exp[index] / (conf_exp[index].sum() + 1e-12)
-                    # rprint(f"Median for node {node}: {conf_exp[index] > conf_exp[index].median()}")
-                    sample[index] = (conf_exp[index] > conf_exp[index].median()).float()
-                shadow_graph.edata['weight'] = conf_exp.to(device)
-                shadow_graph.edata['sample'] = sample.to(device)
-
-            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='weight', nnei=4)
-            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='sample', nnei=4)
+            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='drop', nnei=4)
+            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='drop', nnei=4)
         else:
             shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
             shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
