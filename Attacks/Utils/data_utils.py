@@ -995,13 +995,13 @@ def shadow_split_whitebox_drop(graph, ratio, history=None, exist=False, diag=Fal
     dst_edge_inpos_te = te_pos_mask[dst_edge]
     pos_inte_edges = torch.logical_or(src_edge_inpos_te, dst_edge_inpos_te).int()
     index = get_index_bynot_value(a=pos_inte_edges, val=0)
-    edge_weight[index] = 0.5
+    edge_weight[index] = 1
 
     src_edge_inneg_te = te_neg_mask[src_edge]
     dst_edge_inneg_te = te_neg_mask[dst_edge]
     neg_inte_edges = torch.logical_or(src_edge_inneg_te, dst_edge_inneg_te).int()
     index = get_index_bynot_value(a=neg_inte_edges, val=0)
-    edge_weight[index] = 0.5
+    edge_weight[index] = 1
 
     index_keep = get_index_bynot_value(a=edge_weight, val=0)
     src_edge = src_edge[index_keep]
