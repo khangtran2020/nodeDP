@@ -367,12 +367,8 @@ def reduce_desity(g, dens_reduction):
         dst_edge_undirected = torch.cat((dst_edge_new, src_edge_new), dim=0)
 
         new_g = dgl.graph((src_edge_undirected, dst_edge_undirected), num_nodes=num_node)
-        new_g.ndata['feat'] = g.ndata['feat'].clone()
-        new_g.ndata['label'] = g.ndata['label'].clone()
-        new_g.ndata['train_mask'] = g.ndata['train_mask'].clone()
-        new_g.ndata['val_mask'] = g.ndata['val_mask'].clone()
-        new_g.ndata['test_mask'] = g.ndata['test_mask'].clone()
-        new_g.ndata['label_mask'] = g.ndata['label_mask'].clone()
+        for key in g.ndata.keys():
+            new_g.ndata[key] = g.ndata[key].clone()
         # new_g = drop_isolated_node(graph=new_g)
         print(f"Old # edges: {num_edge}, New # edges: {src_edge_new.size(dim=0)}")
     return new_g
