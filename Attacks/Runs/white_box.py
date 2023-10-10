@@ -45,14 +45,16 @@ def run(args, graph, model, device, history, name):
                 src_conf = conf[src_edge]
                 dst_conf = conf[dst_edge]
                 conf_exp = torch.exp(-1*torch.abs(src_conf - dst_conf))
+                sample = torch.zeros_like(conf_exp)
                 for node in dst_edge.unique():
                     index = get_index_by_value(a=dst_edge, val=node)
                     conf_exp[index] = conf_exp[index] / (conf_exp[index].sum() + 1e-12)
-                rprint(f"Confidence exp: {conf_exp}")
-                os.exit()
+                    sample[index] = (conf_exp[index] > conf_exp[index].median()).int()
+                shadow_graph.edata['weight'] = conf_exp
+                shadow_graph.edata['sample'] = sample
 
-            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='drop', nnei=-1)
-            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='drop', nnei=-1)
+            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='weight', nnei=-1)
+            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='sample', nnei=-1)
         else:
             shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
             shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
