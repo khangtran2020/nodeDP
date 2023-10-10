@@ -49,7 +49,7 @@ def run(args, current_time, device):
         elif args.att_submode == 'drop':
             shadow_graph = shadow_split_whitebox_drop(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
         elif args.att_submode == 'dropdens':
-            shadow_graph = shadow_split_whitebox_drop_ratio(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True, density=0.3)
+            shadow_graph = shadow_split_whitebox_drop_ratio(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True, density=0)
 
         if exist_data == False:
             save_dict(path=data_path, dct=data_hist)
