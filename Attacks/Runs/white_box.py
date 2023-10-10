@@ -52,8 +52,8 @@ def run(args, graph, model, device, history, name):
                     conf_exp[index] = conf_exp[index] / (conf_exp[index].sum() + 1e-12)
                     # rprint(f"Median for node {node}: {conf_exp[index] > conf_exp[index].median()}")
                     sample[index] = (conf_exp[index] > conf_exp[index].median()).int()
-                shadow_graph.edata['weight'] = conf_exp
-                shadow_graph.edata['sample'] = sample
+                shadow_graph.edata['weight'] = conf_exp.to(device)
+                shadow_graph.edata['sample'] = sample.to(device)
 
             shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='weight', nnei=-1)
             shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='sample', nnei=-1)
