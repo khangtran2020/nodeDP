@@ -1166,13 +1166,13 @@ def shadow_split_whitebox_drop_ratio(graph, ratio, history=None, exist=False, di
     indx_same_neg = get_index_bynot_value(a=same_neg,val=0)
     indx_diff_neg = get_index_bynot_value(a=diff_neg,val=0)
     
-    indx_same = torch.cat((same_pos, same_neg), dim=0).unique()
-    indx_diff = torch.cat((diff_pos, diff_neg), dim=0).unique()
+    indx_same = torch.cat((indx_same_pos, indx_same_neg), dim=0).unique()
+    indx_diff = torch.cat((indx_diff_pos, indx_diff_neg), dim=0).unique()
     perm = torch.randperm(indx_diff.size(dim=0))
     indx_diff = indx_diff[perm[:int(density*indx_diff.size(dim=0))]]
 
-    indx = torch.cat((indx_same, indx_diff), dim=0)
-    
+    indx = torch.cat((indx_same, indx_diff), dim=0).long()
+
     src_edge = src_edge[indx].clone()
     dst_edge = dst_edge[indx].clone()
 
