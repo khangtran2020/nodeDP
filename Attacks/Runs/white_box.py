@@ -50,7 +50,7 @@ def run(args, graph, model, device, history, name):
                 for node in dst_edge.unique():
                     index = get_index_by_value(a=dst_edge, val=node)
                     conf_exp[index] = conf_exp[index] / (conf_exp[index].sum() + 1e-12)
-                    rprint(f"Median for node {node}: {conf_exp[index].median()}")
+                    rprint(f"Median for node {node}: {conf_exp[index] > conf_exp[index].median()}")
                     sample[index] = (conf_exp[index] > conf_exp[index].median()).int()
                 shadow_graph.edata['weight'] = conf_exp
                 shadow_graph.edata['sample'] = sample
