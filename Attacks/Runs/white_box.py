@@ -55,8 +55,8 @@ def run(args, graph, model, device, history, name):
                 shadow_graph.edata['weight'] = conf_exp.to(device)
                 shadow_graph.edata['sample'] = sample.to(device)
 
-            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='weight', nnei=-1)
-            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='sample', nnei=-1)
+            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='weight', nnei=4)
+            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='sample', nnei=4)
         else:
             shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
             shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
