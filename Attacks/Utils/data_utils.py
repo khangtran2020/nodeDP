@@ -441,10 +441,10 @@ def read_data(args, history, exist=False):
     if args.submode == 'density':
         graph = reduce_desity(g=graph, dens_reduction=args.density)
 
-    if (args.submode == 'density') and (args.density == 1.0):
-        g_train, g_val, g_test = graph_split(graph=graph, drop=False)
-    else:
-        g_train, g_val, g_test = graph_split(graph=graph, drop=True)
+    # if (args.submode == 'density') and (args.density == 1.0):
+    g_train, g_val, g_test = graph_split(graph=graph, drop=False)
+    # else:
+    #     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
 
     rprint(f"Training graph average node degree: {g_train.in_degrees().sum() / (len(g_train.in_degrees()) + 1e-12)}")
     rprint(f"Valid graph average node degree: {g_val.in_degrees().sum() / (len(g_val.in_degrees()) + 1e-12)}")
