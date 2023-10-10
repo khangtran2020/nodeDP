@@ -39,8 +39,8 @@ def run(args, graph, model, device, history, name):
             shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='drop', nnei=4)
             shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='drop', nnei=4)
         else:
-            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train')
-            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test')
+            shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', nnei=4)
+            shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', nnei=4)
 
         label, weight = shtr_dataset.label_weight
         lab_weight = 1 - weight / weight.sum()
