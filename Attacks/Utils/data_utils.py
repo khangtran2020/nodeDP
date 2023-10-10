@@ -476,8 +476,8 @@ def read_data(args, history, exist=False):
 
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
-    if (args.submode == 'density') and (args.density != 1.0):
-        graph = drop_isolated_node(graph)
+    # if (args.submode == 'density') and (args.density != 1.0):
+    #     graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
 
     return g_train, g_val, g_test, graph
