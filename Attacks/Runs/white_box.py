@@ -1,3 +1,4 @@
+import os
 import sys
 import torch
 import torchmetrics
@@ -5,36 +6,51 @@ from loguru import logger
 from hashlib import md5
 from rich import print as rprint
 from rich.pretty import pretty_repr
-from Utils.utils import timeit
+from Utils.utils import timeit, get_index_by_value
 from Models.models import WbAttacker
 from Models.init import init_model, init_optimizer
+from Attacks.Utils.data_utils import generate_nohop_graph
 from Attacks.Utils.utils import save_dict
 from Attacks.Utils.dataset import Data, ShadowData, custom_collate
-from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain
+from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_entropy
 from functools import partial
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
-
 
 def run(args, graph, model, device, history, name):
 
     train_g, val_g, test_g, shadow_graph = graph
     model_hist, att_hist = history
 
-    # with timeit(logger=logger, task='init-target-model'):
+    with timeit(logger=logger, task='init-target-model'):
 
-    #     if args.exist_model == False:
-    #         rprint(f"Model is {args.exist_model} to exist, need to retrain")
-    #         model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
-    #         model, model_hist = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, model=model, 
-    #                                     device=device, history=model_hist, name=model_name[:-3])      
-    #         target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
-    #         target_model_path = args.res_path + target_model_name
-    #         save_dict(path=target_model_path, dct=model_hist)
+        if args.exist_model == False:
+            rprint(f"Model is {args.exist_model} to exist, need to retrain")
+            model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
+            model, model_hist = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, model=model, 
+                                        device=device, history=model_hist, name=model_name[:-3])      
+            target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
+            target_model_path = args.res_path + target_model_name
+            save_dict(path=target_model_path, dct=model_hist)
         
     with timeit(logger=logger, task='preparing-shadow-data'):
         
         if args.att_submode == 'drop':
+
+            with torch.no_grad():
+                shadow_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
+                pred = model.full(g=shadow_nohop, x=shadow_nohop.ndata['feat'])
+                conf = get_entropy(pred=pred)
+                src_edge, dst_edge = shadow_graph.edges()
+                src_conf = conf[src_edge]
+                dst_conf = conf[dst_edge]
+                conf_exp = torch.exp(-1*torch.abs(src_conf - dst_conf))
+                for node in dst_edge.unique():
+                    index = get_index_by_value(a=dst_edge, val=node)
+                    conf_exp[index] = conf_exp[index] / (conf_exp[index].sum() + 1e-12)
+                rprint(f"Confidence exp: {conf_exp}")
+                os.exit()
+
             shtr_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='train', weight='drop', nnei=-1)
             shte_dataset = ShadowData(graph=shadow_graph, model=model, num_layer=args.n_layers, device=device, mode='test', weight='drop', nnei=-1)
         else:
@@ -87,8 +103,6 @@ def run(args, graph, model, device, history, name):
             rprint(f"Grad dict at key {key} has size: {grad_dict[key].size()}")
         # sys.exit()
         
-
-    # device = torch.device('cpu')
     with timeit(logger=logger, task='train-attack-model'):
         
         att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, out_dim_list=out_dim, grad_dim_list=grad_dim, 
