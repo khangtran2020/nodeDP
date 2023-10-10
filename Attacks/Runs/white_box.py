@@ -38,6 +38,7 @@ def run(args, graph, model, device, history, name):
         if args.att_submode == 'drop':
 
             with torch.no_grad():
+                model.to(device)
                 shadow_nohop = generate_nohop_graph(graph=shadow_graph, device=device)
                 pred = model.full(g=shadow_nohop, x=shadow_nohop.ndata['feat'])
                 conf = get_entropy(pred=pred)
