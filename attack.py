@@ -50,13 +50,13 @@ def run(args, current_time, device):
             shadow_graph = shadow_split_whitebox_drop_ratio(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True, density=0.1)
         
         sha_src_edge, sha_dst_edge = shadow_graph.edges()
-        sha_nodes = shadow_graph.nodes
+        sha_nodes = shadow_graph.nodes()
 
         tr_src_edge, tr_dst_edge = train_g.edges()
-        tr_nodes = train_g.nodes
+        tr_nodes = train_g.nodes()
 
         te_src_edge, te_dst_edge = test_g.edges()
-        te_nodes = test_g.nodes
+        te_nodes = test_g.nodes()
 
         rprint(f"TRAIN graph has: Average degree {train_g.in_degrees().float().mean().item()}, {tr_nodes.size(dim=0)} nodes, {tr_src_edge.size(dim=0)} edges => density {tr_src_edge.size(dim=0) / tr_nodes.size(dim=0) + 1e-12}.")
         rprint(f"TEST graph has: Average degree {test_g.in_degrees().float().mean().item()}, {te_nodes.size(dim=0)} nodes, {te_src_edge.size(dim=0)} edges => density {te_src_edge.size(dim=0) / te_nodes.size(dim=0) + 1e-12}.")
