@@ -1033,25 +1033,24 @@ def shadow_split_whitebox_drop(graph, ratio, history=None, exist=False, diag=Fal
 def shadow_split_whitebox_drop_ratio(graph, ratio, history=None, exist=False, diag=False, density=0.5):
 
     org_nodes = graph.nodes()
+    tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
+    te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
     rprint(f"Orginal graph: {graph}")
-
+    
     if exist == False:
 
         tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
         te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
 
-        num_train = tr_org_idx.size(dim=0)
-        num_test = te_org_idx.size(dim=0)
-
         te_node = org_nodes[te_org_idx]
         tr_node = org_nodes[tr_org_idx]
 
-        num_shadow = min(int(ratio * num_train), num_test)
-
+        num_shadow = int(ratio * tr_node.size(dim=0))
         perm = torch.randperm(tr_node.size(dim=0))
         shatr_nodes = tr_node[perm[:num_shadow]]
-        
-        num_half = min(int(te_node.size(dim=0)*0.2), int(shatr_nodes.size(dim=0)*0.2))
+
+        num_half = min(int(te_node.size(dim=0)*0.4), int(shatr_nodes.size(dim=0)*0.4))
+        # print("Half", num_half)
 
         perm = torch.randperm(shatr_nodes.size(dim=0))
         sha_pos_te = shatr_nodes[perm[:num_half]]
@@ -1124,7 +1123,8 @@ def shadow_split_whitebox_drop_ratio(graph, ratio, history=None, exist=False, di
         history['pos_mask_te'] = pos_mask_te.tolist()
         history['neg_mask_tr'] = neg_mask_tr.tolist()
         history['neg_mask_te'] = neg_mask_te.tolist()
-    else:
+    else:    
+
         train_mask = torch.LongTensor(history['sha_tr'])
         test_mask = torch.LongTensor(history['sha_te'])
         shadow_nodes = torch.LongTensor(history['shadow_nodes'])
@@ -1145,55 +1145,45 @@ def shadow_split_whitebox_drop_ratio(graph, ratio, history=None, exist=False, di
         graph.ndata['neg_mask_tr'] = neg_mask_tr
         graph.ndata['neg_mask_te'] = neg_mask_te
     
-    temp_shgraph = graph.subgraph(shadow_nodes)
-    src_edge, dst_edge = temp_shgraph.edges()
-    edge_weight = torch.zeros(src_edge.size(dim=0))
+    temp_shadow_graph = graph.subgraph(shadow_nodes)
 
-    tr_pos_mask = temp_shgraph.ndata['pos_mask_tr']
-    tr_neg_mask = temp_shgraph.ndata['neg_mask_tr']
+    pos_mask = temp_shadow_graph.ndata['pos_mask'].clone()
+    src_edge, dst_edge = temp_shadow_graph.edges()
+    src_edge_pos = pos_mask[src_edge].int().clone()
+    dst_edge_pos = pos_mask[dst_edge].int().clone()
+    diff_pos = torch.logical_xor(src_edge_pos, dst_edge_pos)
+    same_pos = torch.logical_not(diff_pos).int()
+    indx_same_pos = get_index_bynot_value(a=same_pos,val=0)
+    indx_diff_pos = get_index_bynot_value(a=diff_pos,val=0)
+    # src_edge = src_edge[indx].clone()
+    # dst_edge = dst_edge[indx].clone()
 
-    src_edge_inpos = tr_pos_mask[src_edge]
-    dst_edge_inpos = tr_pos_mask[dst_edge]
-    pos_intr_edges = torch.logical_and(src_edge_inpos, dst_edge_inpos).int()
-    index = get_index_bynot_value(a=pos_intr_edges, val=0)
-    edge_weight[index] = 1
+    neg_mask = temp_shadow_graph.ndata['neg_mask'].clone()
+    src_edge_neg = neg_mask[src_edge].int().clone()
+    dst_edge_neg = neg_mask[dst_edge].int().clone()
+    diff_neg = torch.logical_xor(src_edge_neg, dst_edge_neg)
+    same_neg = torch.logical_not(diff_neg).int()
+    indx_same_neg = get_index_bynot_value(a=same_neg,val=0)
+    indx_diff_neg = get_index_bynot_value(a=diff_neg,val=0)
+    
+    indx_same = torch.cat((same_pos, same_neg), dim=0).unique()
+    indx_diff = torch.cat((diff_pos, diff_neg), dim=0).unique()
+    perm = torch.randperm(indx_diff.size(dim=0))
+    indx_diff = indx_diff[perm[:int(density*indx_diff.size(dim=0))]]
 
-    src_edge_inneg = tr_neg_mask[src_edge]
-    dst_edge_inneg = tr_neg_mask[dst_edge]
-    neg_intr_edges = torch.logical_and(src_edge_inneg, dst_edge_inneg).int()
-    index = get_index_bynot_value(a=neg_intr_edges, val=0)
-    edge_weight[index] = 1
+    indx = torch.cat((indx_same, indx_diff), dim=0)
+    
+    src_edge = src_edge[indx].clone()
+    dst_edge = dst_edge[indx].clone()
 
-    te_pos_mask = temp_shgraph.ndata['pos_mask_te']
-    te_neg_mask = temp_shgraph.ndata['neg_mask_te']
-
-    src_edge_inpos_te = te_pos_mask[src_edge]
-    dst_edge_inpos_te = te_pos_mask[dst_edge]
-    pos_inte_edges = torch.logical_or(src_edge_inpos_te, dst_edge_inpos_te).int()
-    index = get_index_bynot_value(a=pos_inte_edges, val=0)
-    perm = torch.randperm(index.size(dim=0))
-    index = index[perm[:int(index.size(dim=0) * density)]]
-    edge_weight[index] = 1
-
-    src_edge_inneg_te = te_neg_mask[src_edge]
-    dst_edge_inneg_te = te_neg_mask[dst_edge]
-    neg_inte_edges = torch.logical_or(src_edge_inneg_te, dst_edge_inneg_te).int()
-    index = get_index_bynot_value(a=neg_inte_edges, val=0)
-    perm = torch.randperm(index.size(dim=0))
-    index = index[perm[:int(index.size(dim=0) * density)]]
-    edge_weight[index] = 1
-
-    index_keep = get_index_bynot_value(a=edge_weight, val=0)
-    src_edge = src_edge[index_keep]
-    dst_edge = dst_edge[index_keep]
-    edge_weight = edge_weight[index_keep]
-    rprint(f"Distribution of edge_weight: {edge_weight.unique(return_counts=True)}")
-
-    shadow_graph = dgl.graph((src_edge, dst_edge), num_nodes=temp_shgraph.nodes().size(dim=0))
-    for key in temp_shgraph.ndata.keys():
-        shadow_graph.ndata[key] = temp_shgraph.ndata[key].clone()
-
-    shadow_graph.edata['prob'] = edge_weight
+    shadow_graph = dgl.graph((src_edge, dst_edge), num_nodes=temp_shadow_graph.nodes().size(dim=0))
+    for key in temp_shadow_graph.ndata.keys():
+        shadow_graph.ndata[key] = temp_shadow_graph.ndata[key].clone()
+    del temp_shadow_graph
+    del src_edge
+    del dst_edge
+    del pos_mask
+    del neg_mask
 
     if diag:
         rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
