@@ -90,16 +90,20 @@ def get_name(args, current_date):
 
     date_str = f'{current_date.day}{current_date.month}{current_date.year}-{current_date.hour}{current_date.minute}'
 
-    data_key = ['dataset', 'seed']
+    if args.submode == 'density':
+        data_key = ['dataset', 'seed', 'submode', 'density']
+    else:
+        data_key = ['dataset', 'seed', 'submode']
+
     model_key = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'lr', 'n_layers', 
                  'hid_dim', 'epochs', 'optimizer']
     dp_key = ['clip', 'clip_node', 'trim_rule', 'ns', 'sampling_rate']
 
     if args.mode == 'nodedp':
-        gen_keys = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'n_layers', 'clip', 'clip_node', 'trim_rule', 'ns',
+        gen_keys = ['dataset', 'mode', 'submode', 'density', 'seed', 'n_neighbor', 'model_type', 'n_layers', 'clip', 'clip_node', 'trim_rule', 'ns',
                 'sampling_rate', 'att_mode', 'sha_ratio']
     else:
-        gen_keys = ['dataset', 'mode', 'seed', 'n_neighbor', 'model_type', 'n_layers', 'att_mode', 'sha_ratio']
+        gen_keys = ['dataset', 'mode', 'submode', 'density',  'seed', 'n_neighbor', 'model_type', 'n_layers', 'att_mode', 'sha_ratio']
 
     if args.att_mode == 'blackbox':
         att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 
@@ -121,6 +125,10 @@ def get_name(args, current_date):
     for key in model_key:
         model_str += f"{key}_{getattr(args, key)}_"
 
+    att_str = ''
+    for key in att_key:
+        att_str += f"{key}_{getattr(args, key)}_"
+
     dp_str = ''
     if args.mode == 'nodedp':
         for key in dp_key:
@@ -128,10 +136,9 @@ def get_name(args, current_date):
     
     if args.mode == 'nodedp':
         model_str += dp_str
+        att_str += dp_str
 
-    att_str = ''
-    for key in att_key:
-        att_str += f"{key}_{getattr(args, key)}_"
+
 
     name = {
         'data': data_str[:-1],
