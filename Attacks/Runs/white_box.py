@@ -34,7 +34,7 @@ def run(args, graph, model, device, history, name):
             save_dict(path=target_model_path, dct=model_hist)
         
     with timeit(logger=logger, task='preparing-shadow-data'):
-        
+        shadow_graph = shadow_graph.to(device)
         if args.att_submode == 'drop':
 
             with torch.no_grad():
