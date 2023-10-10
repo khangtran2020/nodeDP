@@ -46,11 +46,11 @@ def run(args, graph, model, device, history, name):
                 src_conf = conf[src_edge]
                 dst_conf = conf[dst_edge]
                 conf_exp = torch.exp(-1*torch.abs(src_conf - dst_conf))
-                sample = torch.zeros_like(conf_exp)
+                sample = torch.zeros_like(conf_exp).int()
                 for node in dst_edge.unique():
                     index = get_index_by_value(a=dst_edge, val=node)
                     conf_exp[index] = conf_exp[index] / (conf_exp[index].sum() + 1e-12)
-                    rprint(f"Median for node {node}: {conf_exp[index] > conf_exp[index].median()}")
+                    # rprint(f"Median for node {node}: {conf_exp[index] > conf_exp[index].median()}")
                     sample[index] = (conf_exp[index] > conf_exp[index].median()).int()
                 shadow_graph.edata['weight'] = conf_exp
                 shadow_graph.edata['sample'] = sample
