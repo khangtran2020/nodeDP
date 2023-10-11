@@ -110,11 +110,21 @@ def run(args, graph, model, device, history, name):
         'rec': torchmetrics.classification.BinaryRecall().to(device),
         'f1': torchmetrics.classification.BinaryF1Score().to(device)
     }
+    id_dict = {}
+
     for met in metric:
         te_loss, te_auc, org_id  = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
                                            metrics=metric_dict[met], criterion=torch.nn.BCELoss(), mode='best')
+        
+        for i in org_id:
+            if i in id_dict.keys():
+                id_dict[i] += 1
+            else:
+                id_dict[i] = 1
+
         wandb.summary[f'BEST TEST {met}'] = te_auc
-        wandb.summary[f'Node expose at {met}'] = org_id.detach().cpu().tolist()
         rprint(f"Attack {met}: {te_auc}")
+
     
+    wandb.summary[f'Node Correct / times'] = id_dict
     return model_hist, att_hist
