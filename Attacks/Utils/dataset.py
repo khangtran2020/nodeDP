@@ -26,9 +26,11 @@ class ShadowData(Dataset):
         # get nodes
         self.graph = graph.to(device)
         org_nodes = self.graph.nodes()
+        idx_org = self.graph.ndata['org_id']
         mask = 'str_mask' if mode == 'train' else 'ste_mask'
         idx = get_index_by_value(a=self.graph.ndata[mask], val=1)
         self.nodes = org_nodes[idx]
+        self.org_id = idx_org[idx]
         self.num_layer = num_layer
         self.model = model.to(device)
         self.device = device
@@ -43,6 +45,7 @@ class ShadowData(Dataset):
     def __getitem__(self, index):
         membership_label = self.membership_label[index]
         node = self.nodes[index]
+        org_id = self.org_id[index]
         blocks = self.sample_blocks(seed_nodes=node)
         label = blocks[-1].dstdata["label"]
         out_dict, pred = self.model.forwardout(blocks=blocks, x=blocks[0].srcdata["feat"])
@@ -53,7 +56,7 @@ class ShadowData(Dataset):
             if p.grad is not None:
                 grad_dict[name.replace('.', '-')] = p.grad.clone()
         self.model.zero_grad()
-        return (loss, label, out_dict, grad_dict), membership_label
+        return (org_id, loss, label, out_dict, grad_dict), membership_label
 
     def __len__(self):
 
@@ -75,6 +78,7 @@ class ShadowData(Dataset):
 def custom_collate(batch, out_key, model_key, device, num_class):
 
     membership_label = torch.Tensor([]).to(device)
+    org_id_list = torch.Tensor([]).to(device)
     label = torch.Tensor([]).to(device)
     loss = torch.Tensor([]).to(device)
     out_dict = {}
@@ -87,11 +91,13 @@ def custom_collate(batch, out_key, model_key, device, num_class):
 
     for i, item in enumerate(batch):
         x, y = item
-        it_loss, it_label, it_out_dict, it_grad_dict = x
+        org_id, it_loss, it_label, it_out_dict, it_grad_dict = x
 
         # membership label
         y = torch.Tensor([(y.item()+1)/2]).to(device)
         membership_label = torch.cat((membership_label, y), dim=0)
+
+        org_id_list = torch.cat((org_id_list, org_id.detach()), dim=0)
 
         # true label 
         label = torch.cat((label, it_label.detach()), dim=0)
@@ -115,6 +121,6 @@ def custom_collate(batch, out_key, model_key, device, num_class):
     loss = torch.unsqueeze(loss, dim=-1)
     for key in model_key:
         grad_dict[key] = torch.unsqueeze(grad_dict[key], dim=1)
-    return (label, loss, out_dict, grad_dict), membership_label
+    return (org_id_list, label, loss, out_dict, grad_dict), membership_label
 
     # return filtered_data, filtered_target

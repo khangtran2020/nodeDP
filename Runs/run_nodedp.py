@@ -2,6 +2,7 @@ import sys
 import time
 import torch
 import torchmetrics
+import wandb
 from rich import print as rprint
 from rich.pretty import pretty_repr
 from tqdm import tqdm
@@ -69,6 +70,16 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
             # scheduler.step(va_loss)
 
+            metrics = {"Target train/loss": tr_loss, 
+                       f"Target train/{args.performance_metric}": tr_acc.item(), 
+                       "Target val/loss": va_loss, 
+                       f"Target val/{args.performance_metric}": va_acc.item(),
+                       "Target test/loss": te_loss, 
+                       f"Target test/{args.performance_metric}": te_acc.item(),
+            }
+            
+            wandb.log({**metrics})
+
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
             history['train_history_loss'].append(tr_loss)
@@ -77,11 +88,13 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
             history['val_history_acc'].append(va_acc.item())
             history['test_history_loss'].append(te_loss)
             history['test_history_acc'].append(te_acc.item())
-            es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
-            # torch.save(model.state_dict(), args.save_path + model_name)
+            # es(epoch=epoch, epoch_score=va_acc.item(), model=model, model_path=args.save_path + model_name)
+            torch.save(model.state_dict(), args.save_path + model_name)
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, te_acc = eval_fn(te_loader, model, criterion, metric=metrics, device=device)
+    wandb.summary[f'BEST TEST {args.performance_metric}'] = te_acc
+    wandb.summary[f'BEST TEST LOSS'] = test_loss
     history['best_test'] = te_acc.item()
     if args.debug:
         rprint(pretty_repr(history))

@@ -2,7 +2,7 @@ import dgl
 import sys
 import torch
 import torchmetrics
-
+import wandb
 from tqdm import tqdm
 from Models.train_eval import EarlyStopping, train_fn, eval_fn, performace_eval
 from Utils.utils import get_name, save_res
@@ -53,6 +53,16 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
+            metrics = {"Target train/loss": tr_loss, 
+                       f"Target train/{args.performance_metric}": tr_acc.item(), 
+                       "Target val/loss": va_loss, 
+                       f"Target val/{args.performance_metric}": va_acc.item(),
+                       "Target test/loss": te_loss, 
+                       f"Target test/{args.performance_metric}": te_acc.item(),
+            }
+            
+            wandb.log({**metrics})
+
             history['train_history_loss'].append(tr_loss)
             history['train_history_acc'].append(tr_acc.item())
             history['val_history_loss'].append(va_loss)
@@ -65,6 +75,8 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
     model.load_state_dict(torch.load(args.save_path + model_name))
     test_loss, te_acc = eval_fn(te_loader, model, criterion, metric=metrics, device=device)
+    wandb.summary[f'BEST TEST {args.performance_metric}'] = te_acc
+    wandb.summary[f'BEST TEST LOSS'] = test_loss
     history['best_test'] = te_acc.item()
     save_res(name=name, args=args, dct=history)
     return model, history

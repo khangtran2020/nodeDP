@@ -1,6 +1,7 @@
 import torch
 import torchmetrics
 import numpy as np
+import wandb
 from tqdm import tqdm
 from dgl.dataloading import transforms
 from dgl.dataloading.base import NID
@@ -107,7 +108,7 @@ def train_attack(args, tr_loader, va_loader, te_loader, attack_model, epochs, op
         te_loss, te_acc = eval_attack_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
                                            criterion=criterion)
         
-        # rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc}, va_loss {va_loss}, va_acc {va_acc}")
+        rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc}, va_loss {va_loss}, va_acc {va_acc}")
 
         history['attr_loss'].append(tr_loss)
         history['attr_perf'].append(tr_acc)
@@ -147,12 +148,20 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
         te_loss, te_acc = eval_att_wb_step(model=attack_model, device=device, loader=te_loader, metrics=metrics,
                                            criterion=criter)
         
-        rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc.item()}, te_loss {te_loss}, te_acc {te_acc.item()}")
+        # rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc.item()}, te_loss {te_loss}, te_acc {te_acc.item()}")
 
         history['attr_loss'].append(tr_loss)
         history['attr_perf'].append(tr_acc)
         history['atte_loss'].append(te_loss)
         history['atte_perf'].append(te_acc)
+
+        metrics = {"Attack train/loss": tr_loss, 
+                    f"Attack train/{args.performance_metric}": tr_acc.item(),
+                    "Attack test/loss": te_loss, 
+                    f"Attack test/{args.performance_metric}": te_acc.item(),
+        }
+        
+        wandb.log({**metrics})
         
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
@@ -236,8 +245,10 @@ def upd_att_wb_step(model, device, loader, metrics, criterion, optimizer):
     for bi, d in enumerate(loader):
         optimizer.zero_grad()
         features, target = d
+        _, label, loss_tensor, out_dict, grad_dict = features
+        feat = (label, loss_tensor, out_dict, grad_dict)
         target = torch.unsqueeze(target, dim=1).to(device)
-        predictions = model(features)
+        predictions = model(feat)
         loss = criterion(predictions, target.float())
         loss.backward()
         optimizer.step()
@@ -248,26 +259,62 @@ def upd_att_wb_step(model, device, loader, metrics, criterion, optimizer):
     metrics.reset()
     return train_loss / num_data, performance
 
-def eval_att_wb_step(model, device, loader, metrics, criterion):
+def eval_att_wb_step(model, device, loader, metrics, criterion, mode='train'):
+
     model.to(device)
     model.eval()
     model.zero_grad()
     val_loss = 0
     num_data = 0.0
-    for bi, d in enumerate(loader):
-        features, target = d
-        target = target.to(device)
-        predictions = model(features)
-        predictions = torch.nn.functional.sigmoid(predictions)
-        predictions = torch.squeeze(predictions, dim=-1)
-        loss = criterion(predictions, target.float())
-        metrics.update(predictions, target)
-        num_data += predictions.size(dim=0)
-        val_loss += loss.item()*predictions.size(dim=0)
-    performance = metrics.compute()
-    metrics.reset()
-    model.zero_grad()
-    return val_loss/num_data, performance
+    if mode == 'train':
+        for bi, d in enumerate(loader):
+            features, target = d
+            _, label, loss_tensor, out_dict, grad_dict = features
+            feat = (label, loss_tensor, out_dict, grad_dict)
+            target = target.to(device)
+            predictions = model(feat)
+            predictions = torch.nn.functional.sigmoid(predictions)
+            predictions = torch.squeeze(predictions, dim=-1)
+            loss = criterion(predictions, target.float())
+            metrics.update(predictions, target)
+            num_data += predictions.size(dim=0)
+            val_loss += loss.item()*predictions.size(dim=0)
+        performance = metrics.compute()
+        metrics.reset()
+        model.zero_grad()
+        return val_loss/num_data, performance
+    else:
+
+        idx = torch.Tensor([]).to(device)
+        pred = torch.Tensor([]).to(device)
+        mem_lab = torch.Tensor([]).to(device)
+
+        for bi, d in enumerate(loader):
+            features, target = d
+            org_id, label, loss_tensor, out_dict, grad_dict = features
+            feat = (label, loss_tensor, out_dict, grad_dict)
+            target = target.to(device)
+            predictions = model(feat)
+            predictions = torch.nn.functional.sigmoid(predictions)
+            predictions = torch.squeeze(predictions, dim=-1)
+            loss = criterion(predictions, target.float())
+            metrics.update(predictions, target)
+            num_data += predictions.size(dim=0)
+            val_loss += loss.item()*predictions.size(dim=0)
+
+            idx = torch.cat((idx, org_id.detach()), dim=0)
+            pred = torch.cat((pred, predictions.detach().round()), dim=0)
+            mem_lab = torch.cat((mem_lab, target.detach()), dim=0)
+
+        correct = torch.logical_not(torch.logical_xor(pred.int(), mem_lab.int()))
+        index = get_index_by_value(a=correct, val=1)
+        correct_id = org_id[index]
+
+        performance = metrics.compute()
+        metrics.reset()
+        model.zero_grad()
+        return val_loss/num_data, performance, correct_id
+
 
 def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False, name_dt=None):
 

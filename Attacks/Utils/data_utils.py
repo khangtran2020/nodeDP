@@ -497,13 +497,15 @@ def read_data(args, history, exist=False):
     graph.ndata['id_inte'] = (torch.zeros(graph.nodes().size(dim=0)) - 1).long()
     graph.ndata['id_inte'][id_inte] = g_test.nodes().clone().long()
 
-    idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
+    idx = torch.cat((id_intr, id_inva, id_inte), dim=0)
     graph = graph.subgraph(torch.LongTensor(idx))
-    if (args.submode == 'density') and (args.density != 1.0):
-        graph = drop_isolated_node(graph)
+    if (args.submode == 'density') and (args.density == 1.0):
+        args.num_data_point = len(g_train.nodes())
+        return g_train, g_val, g_test, graph
+    
+    graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
-
-    return g_train, g_val, g_test, graph
+    return g_train, g_val, g_test, graph    
 
 def shadow_split_whitebox_extreme(graph, ratio, history=None, exist=False, diag=False):
 
@@ -890,8 +892,8 @@ def shadow_split_whitebox_subgraph(graph, tr_graph, te_graph, n_layer, max_nei,
 
 def shadow_split_whitebox_drop(graph, ratio, history=None, exist=False, diag=False):
 
+    prop_dict = {}
     org_nodes = graph.nodes()
-    rprint(f"Orginal graph: {graph}")
 
     if exist == False:
 
@@ -904,7 +906,7 @@ def shadow_split_whitebox_drop(graph, ratio, history=None, exist=False, diag=Fal
         te_node = org_nodes[te_org_idx]
         tr_node = org_nodes[tr_org_idx]
 
-        num_shadow = min(int(ratio * num_train), num_test)
+        num_shadow = min(int(ratio * num_train), int(ratio * num_test))
 
         perm = torch.randperm(tr_node.size(dim=0))
         shatr_nodes = tr_node[perm[:num_shadow]]

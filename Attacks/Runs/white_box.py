@@ -1,6 +1,7 @@
 import os
 import sys
 import torch
+import wandb
 import torchmetrics
 from loguru import logger
 from hashlib import md5
@@ -26,10 +27,10 @@ def run(args, graph, model, device, history, name):
 
         if args.exist_model == False:
             rprint(f"Model is {args.exist_model} to exist, need to retrain")
-            model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
+            model_name = f"{name['model']}.pt"
             model, model_hist = retrain(args=args, train_g=train_g, val_g=val_g, test_g=test_g, model=model, 
                                         device=device, history=model_hist, name=model_name[:-3])      
-            target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
+            target_model_name = f"{name['model']}.pkl"
             target_model_path = args.res_path + target_model_name
             save_dict(path=target_model_path, dct=model_hist)
         
@@ -110,8 +111,10 @@ def run(args, graph, model, device, history, name):
         'f1': torchmetrics.classification.BinaryF1Score().to(device)
     }
     for met in metric:
-        te_loss, te_auc = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
-                                           metrics=metric_dict[met], criterion=torch.nn.BCELoss())
+        te_loss, te_auc, org_id  = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
+                                           metrics=metric_dict[met], criterion=torch.nn.BCELoss(), mode='best')
+        wandb.summary[f'BEST TEST {met}'] = te_auc
+        wandb.summary[f'Node expose at {met}'] = org_id.detach().cpu().tolist()
         rprint(f"Attack {met}: {te_auc}")
     
     return model_hist, att_hist

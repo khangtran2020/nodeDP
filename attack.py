@@ -4,6 +4,7 @@ import sys
 import torch
 import datetime
 import warnings
+import wandb
 from loguru import logger
 from rich import print as rprint
 from rich.columns import Columns
@@ -17,13 +18,15 @@ from Attacks.Runs.wb_simple import run as wanal
 from Attacks.Utils.utils import print_args, init_history, get_name, save_dict
 from Attacks.Utils.data_utils import shadow_split, shadow_split_whitebox_extreme, shadow_split_whitebox, read_data, shadow_split_whitebox_subgraph, shadow_split_whitebox_drop, shadow_split_whitebox_drop_ratio
 from Models.init import init_model
-from hashlib import md5
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
 warnings.filterwarnings("ignore")
 
 def run(args, current_time, device):
 
+    """
+        INIT DATA
+    """
     data_hist, model_hist, att_hist = init_history(args=args)
     name = get_name(args=args, current_date=current_time)
     exist_data = False
@@ -31,7 +34,7 @@ def run(args, current_time, device):
 
     # read data 
     console.rule("[bold red] READ DATA")
-    data_name = f"{md5(name['data'].encode()).hexdigest()}.pkl"
+    data_name = f"{name['data']}.pkl"
     data_path = args.res_path + data_name
     if (os.path.exists(data_path)) & (args.retrain == 0):
         data_hist = read_pickel(file=data_path)
@@ -78,24 +81,6 @@ def run(args, current_time, device):
         shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
     elif args.att_submode == 'whitebox':
         shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-    elif args.att_submode == 'wbextreme':
-        shadow_graph = shadow_split_whitebox_extreme(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-    elif args.att_submode == 'wbsubgraph':
-        shadow_graph = shadow_split_whitebox_subgraph(graph=graph, tr_graph=train_g, te_graph=test_g, n_layer=args.n_layers,
-                                                        max_nei=args.n_neighbor, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-    elif args.att_submode == 'drop':
-        shadow_graph = shadow_split_whitebox_drop(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-    elif args.att_submode == 'dropdens':
-            shadow_graph = shadow_split_whitebox_drop_ratio(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True, density=0.1)
-        
-    sha_src_edge, sha_dst_edge = shadow_graph.edges()
-    sha_nodes = shadow_graph.nodes()
-
-    tr_src_edge, tr_dst_edge = train_g.edges()
-    tr_nodes = train_g.nodes()
-
-    te_src_edge, te_dst_edge = test_g.edges()
-    te_nodes = test_g.nodes()
 
     if exist_data == False:
         save_dict(path=data_path, dct=data_hist)
@@ -103,24 +88,26 @@ def run(args, current_time, device):
     train_g = train_g.to(device)
     val_g = val_g.to(device)
     test_g = test_g.to(device)
-    
-    with timeit(logger, 'init-model'):
-        model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
-        model_path = args.save_path + model_name
-        target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
+
+    """
+        INIT TARGET MODEL
+    """
+
+    model_name = f"{name['model']}.pt"
+    model_path = args.save_path + model_name
+    target_model_name = f"{name['model']}.pkl"
+    target_model_path = args.res_path + target_model_name
+
+    if (os.path.exists(model_path)) & (args.retrain == 0) & (os.path.exists(target_model_path)): 
+        exist_model = True
+        target_model_name = f"{name['model']}.pkl"
         target_model_path = args.res_path + target_model_name
+        model_hist = read_pickel(file=target_model_path)
 
-        if (os.path.exists(model_path)) & (args.retrain == 0) & (os.path.exists(target_model_path)): 
-            exist_model = True
-            rprint(f"Model exist, exist_model set to: {exist_model}")
-            target_model_name = f"{md5(name['data'].encode()).hexdigest()}.pkl"
-            target_model_path = args.res_path + target_model_name
-            model_hist = read_pickel(file=target_model_path)
-
-        model = init_model(args=args)
-        if exist_model: 
-            model.load_state_dict(torch.load(model_path))
-            rprint(f"Model exist, loaded previous trained model")
+    model = init_model(args=args)
+    if exist_model: 
+        model.load_state_dict(torch.load(model_path))
+        console.log(f"Model exist, loaded previous trained model")
 
     args.exist_data = exist_data
     args.exist_model = exist_model
@@ -132,6 +119,10 @@ def run(args, current_time, device):
         model_hist, att_hist = whitebox(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
     elif args.att_mode == 'wanal':
         model_hist, att_hist = wanal(args=args, graph=(train_g, val_g, test_g, shadow_graph), model=model, device=device, history=history, name=name)
+
+    """
+        SAVE RUNNING HISTORY TO FILE
+    """
 
     general_hist = {
         'data': data_hist,
@@ -146,7 +137,17 @@ if __name__ == "__main__":
     console.rule("[bold red] PARSING ARGUMENTS")
     current_time = datetime.datetime.now()
     args = parse_args()
-    print_args(args=args)
+    arg_dict = print_args(args=args)
+
+    if args.mode == 'clean':
+        project_name = f"{args.att_mode}-attack-on-{args.dataset}-mode-{args.mode}-run-{args.seed}"
+    else:
+        project_name = f"{args.att_mode}-attack-on-{args.dataset}-mode-{args.mode}-trim-rule-{args.trim_rule}-run-{args.seed}"
+
+    wandb.init(
+        project=project_name,
+        config=arg_dict)
+    
     args.debug = True if args.debug == 1 else False
     seed_everything(args.seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
