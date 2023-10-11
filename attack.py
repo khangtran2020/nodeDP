@@ -6,6 +6,7 @@ import warnings
 from loguru import logger
 from rich import print as rprint
 from Utils.utils import seed_everything, timeit, read_pickel
+from Utils.console import console
 from Attacks.config import parse_args
 from Attacks.Runs.black_box import run as blackbox
 from Attacks.Runs.white_box import run as whitebox
@@ -110,6 +111,7 @@ def run(args, current_time, device):
     rprint(f"Saved result at path {general_path}")
 
 if __name__ == "__main__":
+    console.rule("[bold green] PARSING ARGUMENTS")
     current_time = datetime.datetime.now()
     args = parse_args()
     print_args(args=args)
@@ -118,5 +120,5 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if args.device == 'cpu':
         device = torch.device('cpu')
-    rprint(f"DEVICE USING: {device}")
+    sys.exit()
     run(args=args, current_time=current_time, device=device)

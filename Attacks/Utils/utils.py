@@ -3,6 +3,9 @@ import pickle
 import matplotlib.pyplot as plt
 from rich import print as rprint
 from rich.pretty import pretty_repr
+from Utils.console import console
+from rich.columns import Columns
+from rich.panel import Panel
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -31,11 +34,9 @@ def print_args(args):
         keys = ['mode', 'seed', 'performance_metric', 'dataset', 'batch_size', 'n_neighbor', 'model_type', 
                 'lr', 'n_layers', 'hid_dim', 'epochs', 'debug', 'device', 'optimizer', 'att_mode', 'att_submode', 
                 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
-        
-    for key in keys:
-        arg_dict[key] = getattr(args, key)
-
-    rprint("Running experiments with hyper-parameters as follows: \n", pretty_repr(arg_dict))
+    
+    arg_renderable = [Panel(f"[bold green]{key}[/b]:\t[yellow]{getattr(args, key)}", expand=True) for key in keys]
+    console.log(Columns(arg_renderable))
 
 def init_history(args):
 
