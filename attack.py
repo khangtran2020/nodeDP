@@ -97,10 +97,6 @@ def run(args, current_time, device):
     te_src_edge, te_dst_edge = test_g.edges()
     te_nodes = test_g.nodes()
 
-    rprint(f"TRAIN graph has: Average degree {train_g.in_degrees().float().mean().item()}, {tr_nodes.size(dim=0)} nodes, {tr_src_edge.size(dim=0)} edges => density {tr_src_edge.size(dim=0) / tr_nodes.size(dim=0) + 1e-12}.")
-    rprint(f"TEST graph has: Average degree {test_g.in_degrees().float().mean().item()}, {te_nodes.size(dim=0)} nodes, {te_src_edge.size(dim=0)} edges => density {te_src_edge.size(dim=0) / te_nodes.size(dim=0) + 1e-12}.")
-    rprint(f"SHADOW graph has: Average degree {shadow_graph.in_degrees().float().mean().item()}, {sha_nodes.size(dim=0)} nodes, {sha_src_edge.size(dim=0)} edges => density {sha_src_edge.size(dim=0) / sha_nodes.size(dim=0) + 1e-12}.")
-
     if exist_data == False:
         save_dict(path=data_path, dct=data_hist)
 
@@ -113,8 +109,6 @@ def run(args, current_time, device):
         model_path = args.save_path + model_name
         target_model_name = f"{md5(name['model'].encode()).hexdigest()}.pkl"
         target_model_path = args.res_path + target_model_name
-
-        rprint(f"Model pt exist {os.path.exists(model_path)}, Retraining {bool(args.retrain)}, Target model dict exist: {os.path.exists(target_model_path)}")
 
         if (os.path.exists(model_path)) & (args.retrain == 0) & (os.path.exists(target_model_path)): 
             exist_model = True
