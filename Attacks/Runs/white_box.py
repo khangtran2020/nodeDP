@@ -79,7 +79,7 @@ def run(args, graph, model, device, history, name):
         rprint(f"Out dim: {out_dim}")
         rprint(f"Grad dim: {grad_dim}")
         x, y = next(iter(tr_loader))
-        label, loss, out_dict, grad_dict = x
+        _, label, loss, out_dict, grad_dict = x
         rprint(f"Label size: {label.size()}")
         rprint(f"Loss size: {loss.size()}")
         rprint(f"Membership Label size: {y.size()}")
