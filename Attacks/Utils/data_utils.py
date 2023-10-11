@@ -5,8 +5,11 @@ import numpy as np
 from torch.utils.data import Dataset
 from torch_geometric.transforms import Compose, RandomNodeSplit
 from Utils.utils import get_index_by_value, get_index_bynot_value, get_index_by_list
+from Utils.console import console
 from sklearn.linear_model import LogisticRegression
 from rich import print as rprint
+from rich.columns import Columns
+from rich.panel import Panel
 from functools import partial
 from dgl.dataloading import transforms
 from dgl.dataloading.base import NID
@@ -414,6 +417,27 @@ def get_graph(data_name):
 def read_data(args, history, exist=False):
 
     graph, list_of_label = get_graph(data_name=args.dataset)
+    
+    x = graph.ndata['feat']
+    y = graph.ndata['label']
+    nodes = graph.nodes()
+    src_edge, dst_edge = graph.edges()
+    
+    console.log("[green] ORIGINAL GRAPH's PROPERTIES")
+
+    prop = {
+        '# nodes': nodes.size(dim=0),
+        '# edges': int(src_edge.size(dim=0) / 2),
+        'Average degree': graph.in_degrees().float().mean().item(),
+        'Node homophily': dgl.node_homophily(graph=graph, y=y),
+        '# features': x.size(dim=1),
+        '# labels': y.max().item() + 1 
+    }
+
+    prop_renderable = [Panel(f"[bold green]{key}[/bold green]:\t[yellow]{prop[key]}", expand=True) for key in prop.keys()]
+    console.log(Columns(prop_renderable))
+
+
     args.num_class = len(list_of_label)
     args.num_feat = graph.ndata['feat'].shape[1]
     graph = dgl.remove_self_loop(graph)
