@@ -112,8 +112,12 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         sha_neg_te = te_node[perm[:num_half]]
         sha_neg_tr = te_node[perm[num_half:]]
 
-        rprint(f"Shadow positive nodes to train: {sha_pos_tr.size(dim=0)}, to test: {sha_pos_te.size(dim=0)}")
-        rprint(f"Shadow negative nodes to train: {sha_neg_tr.size(dim=0)}, to test: {sha_neg_te.size(dim=0)}")
+        prop_dict['# positive training nodes'] = sha_pos_tr.size(dim=0)
+        prop_dict['# positive testing nodes'] = sha_pos_te.size(dim=0)
+        prop_dict['# negative training nodes'] = sha_neg_tr.size(dim=0)
+        prop_dict['# negative testing nodes'] = sha_neg_te.size(dim=0)
+        # rprint(f"Shadow positive nodes to train: {sha_pos_tr.size(dim=0)}, to test: {sha_pos_te.size(dim=0)}")
+        # rprint(f"Shadow negative nodes to train: {sha_neg_tr.size(dim=0)}, to test: {sha_neg_te.size(dim=0)}")
 
         train_mask = torch.zeros(org_nodes.size(dim=0))
         test_mask = torch.zeros(org_nodes.size(dim=0))
@@ -198,30 +202,33 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
         graph.ndata['neg_mask_te'] = neg_mask_te
     
     shadow_graph = graph.subgraph(shadow_nodes)
+    y = shadow_graph.ndata['label']
+    y_mem = shadow_graph.ndata['sha_label']
+    nodes = shadow_graph.nodes()
+    src_edge, dst_edge = shadow_graph.edges()
 
-    if diag:
-        # pos_id = get_index_by_value(a=shadow_graph.ndata['pos_mask'], val=1)
-        # neg_id = get_index_by_value(a=shadow_graph.ndata['neg_mask'], val=1)
-        # rprint(f"Uniqueness of id_intr: {shadow_graph.ndata['id_intr'][pos_id].unique(return_counts=True)}")
-        # rprint(f"Uniqueness of id_inte: {shadow_graph.ndata['id_inte'][neg_id].unique(return_counts=True)}")
-        # pos_mask = shadow_graph.ndata['pos_mask'].clone()
-        # train_mask = shadow_graph.ndata['train_mask'].clone()
-        # neg_mask = shadow_graph.ndata['neg_mask'].clone()
-        # test_mask = shadow_graph.ndata['test_mask'].clone()
-        # rprint(f"Positive mask unique: {pos_mask.unique(return_counts=True)}, Train mask in shadow graph {train_mask.unique(return_counts=True)}")
-        # rprint(f"Positive mask unique: {neg_mask.unique(return_counts=True)}, Train mask in shadow graph {test_mask.unique(return_counts=True)}")
-        rprint(f"Shadow graph average node degree: {shadow_graph.in_degrees().sum() / (len(shadow_graph.in_degrees()) + 1e-12)}")
-        per = partial(percentage_pos, graph=shadow_graph)
-        percentage = []
-        for node in shadow_graph.nodes():
-            percentage.append(per(node))
-        percentage = torch.Tensor(percentage)
-        rprint(f"Shadow graph average percentage neighbor is pos: {percentage.sum().item() / (len(percentage) + 1e-12)}, with histogram {np.histogram(percentage.tolist(), bins=5)}")
-        rprint(f"Shadow graph average percentage neighbor is neg: {1 - percentage.sum().item() / (len(percentage) + 1e-12)}")
-        temp_pos = percentage*shadow_graph.ndata['pos_mask']
-        temp_neg = percentage*shadow_graph.ndata['neg_mask']
-        rprint(f"Shadow graph average percentage neighbor is pos of pos: {temp_pos.mean().item() / (len(temp_pos) + 1e-12)}")
-        rprint(f"Shadow graph average percentage neighbor is pos of neg: {temp_neg.mean().item() / (len(temp_neg) + 1e-12)}")
+    prop_dict['# nodes'] = nodes.size(dim=0)
+    prop_dict['# edges'] = int(src_edge.size(dim=0) / 2)
+    prop_dict['Average degree'] = shadow_graph.in_degrees().float().mean().item()
+    prop_dict['Node homophily'] = dgl.node_homophily(graph=shadow_graph, y=y)
+    prop_dict['Membership homophily'] = dgl.node_homophily(graph=shadow_graph, y=y_mem)
+    prop_dict['# labels'] = y.max().item() + 1 
+
+    per = partial(percentage_pos, graph=shadow_graph)
+    percentage = []
+    for node in shadow_graph.nodes():
+        percentage.append(per(node))
+    percentage = torch.Tensor(percentage)
+    temp_pos = percentage*shadow_graph.ndata['pos_mask']
+    temp_neg = percentage*shadow_graph.ndata['neg_mask']
+    prop_dict['Average % neighbor is positive'] = percentage.sum().item() / (len(percentage) + 1e-12)
+    prop_dict['Average % neighbor is negative'] = 1 - percentage.sum().item() / (len(percentage) + 1e-12)
+    prop_dict['Average % neighbor is positive of positive nodes'] = temp_pos.mean().item() / (len(temp_pos) + 1e-12)
+    prop_dict['Average % neighbor is positive of negative nodes'] = temp_neg.mean().item() / (len(temp_neg) + 1e-12)
+
+    console.log("[green] SHADOW GRAPH's PROPERTIES")
+    prop_renderable = [Panel(f"[bold green]{key}[/bold green]:\t[yellow]{prop_dict[key]}", expand=True) for key in prop_dict.keys()]
+    console.log(Columns(prop_renderable))
     return shadow_graph
 
 def percentage_pos(node, graph):
