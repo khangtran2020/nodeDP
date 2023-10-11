@@ -27,48 +27,48 @@ def run(args, current_time, device):
     exist_model = False
 
     # read data 
-    with timeit(logger, 'init-data'):
-        data_name = f"{md5(name['data'].encode()).hexdigest()}.pkl"
-        data_path = args.res_path + data_name
-        if (os.path.exists(data_path)) & (args.retrain == 0):
-            data_hist = read_pickel(file=data_path)
-            exist_data = True
-            rprint(f"History exist, exist_data set to: {exist_data}")
-        
-        train_g, val_g, test_g, graph = read_data(args=args, history=data_hist, exist=exist_data)
-        if args.att_submode == 'blackbox':
-            shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
-        elif args.att_submode == 'whitebox':
-            shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-        elif args.att_submode == 'wbextreme':
-            shadow_graph = shadow_split_whitebox_extreme(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-        elif args.att_submode == 'wbsubgraph':
-            shadow_graph = shadow_split_whitebox_subgraph(graph=graph, tr_graph=train_g, te_graph=test_g, n_layer=args.n_layers,
-                                                          max_nei=args.n_neighbor, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-        elif args.att_submode == 'drop':
-            shadow_graph = shadow_split_whitebox_drop(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
-        elif args.att_submode == 'dropdens':
+    console.rule("[bold red] PARSING ARGUMENTS")
+    data_name = f"{md5(name['data'].encode()).hexdigest()}.pkl"
+    data_path = args.res_path + data_name
+    if (os.path.exists(data_path)) & (args.retrain == 0):
+        data_hist = read_pickel(file=data_path)
+        exist_data = True
+        console.log(f"History exist, exist_data set to: {exist_data}")
+    
+    train_g, val_g, test_g, graph = read_data(args=args, history=data_hist, exist=exist_data)
+    if args.att_submode == 'blackbox':
+        shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
+    elif args.att_submode == 'whitebox':
+        shadow_graph = shadow_split_whitebox(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+    elif args.att_submode == 'wbextreme':
+        shadow_graph = shadow_split_whitebox_extreme(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+    elif args.att_submode == 'wbsubgraph':
+        shadow_graph = shadow_split_whitebox_subgraph(graph=graph, tr_graph=train_g, te_graph=test_g, n_layer=args.n_layers,
+                                                        max_nei=args.n_neighbor, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+    elif args.att_submode == 'drop':
+        shadow_graph = shadow_split_whitebox_drop(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True)
+    elif args.att_submode == 'dropdens':
             shadow_graph = shadow_split_whitebox_drop_ratio(graph=graph, ratio=args.sha_ratio, history=data_hist, exist=exist_data, diag=True, density=0.1)
         
-        sha_src_edge, sha_dst_edge = shadow_graph.edges()
-        sha_nodes = shadow_graph.nodes()
+    sha_src_edge, sha_dst_edge = shadow_graph.edges()
+    sha_nodes = shadow_graph.nodes()
 
-        tr_src_edge, tr_dst_edge = train_g.edges()
-        tr_nodes = train_g.nodes()
+    tr_src_edge, tr_dst_edge = train_g.edges()
+    tr_nodes = train_g.nodes()
 
-        te_src_edge, te_dst_edge = test_g.edges()
-        te_nodes = test_g.nodes()
+    te_src_edge, te_dst_edge = test_g.edges()
+    te_nodes = test_g.nodes()
 
-        rprint(f"TRAIN graph has: Average degree {train_g.in_degrees().float().mean().item()}, {tr_nodes.size(dim=0)} nodes, {tr_src_edge.size(dim=0)} edges => density {tr_src_edge.size(dim=0) / tr_nodes.size(dim=0) + 1e-12}.")
-        rprint(f"TEST graph has: Average degree {test_g.in_degrees().float().mean().item()}, {te_nodes.size(dim=0)} nodes, {te_src_edge.size(dim=0)} edges => density {te_src_edge.size(dim=0) / te_nodes.size(dim=0) + 1e-12}.")
-        rprint(f"SHADOW graph has: Average degree {shadow_graph.in_degrees().float().mean().item()}, {sha_nodes.size(dim=0)} nodes, {sha_src_edge.size(dim=0)} edges => density {sha_src_edge.size(dim=0) / sha_nodes.size(dim=0) + 1e-12}.")
+    rprint(f"TRAIN graph has: Average degree {train_g.in_degrees().float().mean().item()}, {tr_nodes.size(dim=0)} nodes, {tr_src_edge.size(dim=0)} edges => density {tr_src_edge.size(dim=0) / tr_nodes.size(dim=0) + 1e-12}.")
+    rprint(f"TEST graph has: Average degree {test_g.in_degrees().float().mean().item()}, {te_nodes.size(dim=0)} nodes, {te_src_edge.size(dim=0)} edges => density {te_src_edge.size(dim=0) / te_nodes.size(dim=0) + 1e-12}.")
+    rprint(f"SHADOW graph has: Average degree {shadow_graph.in_degrees().float().mean().item()}, {sha_nodes.size(dim=0)} nodes, {sha_src_edge.size(dim=0)} edges => density {sha_src_edge.size(dim=0) / sha_nodes.size(dim=0) + 1e-12}.")
 
-        if exist_data == False:
-            save_dict(path=data_path, dct=data_hist)
+    if exist_data == False:
+        save_dict(path=data_path, dct=data_hist)
 
-        train_g = train_g.to(device)
-        val_g = val_g.to(device)
-        test_g = test_g.to(device)
+    train_g = train_g.to(device)
+    val_g = val_g.to(device)
+    test_g = test_g.to(device)
     
     with timeit(logger, 'init-model'):
         model_name = f"{md5(name['model'].encode()).hexdigest()}.pt"
@@ -111,7 +111,7 @@ def run(args, current_time, device):
     rprint(f"Saved result at path {general_path}")
 
 if __name__ == "__main__":
-    console.rule("[bold green] PARSING ARGUMENTS")
+    console.rule("[bold red] PARSING ARGUMENTS")
     current_time = datetime.datetime.now()
     args = parse_args()
     print_args(args=args)
@@ -120,5 +120,4 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if args.device == 'cpu':
         device = torch.device('cpu')
-    sys.exit()
     run(args=args, current_time=current_time, device=device)
