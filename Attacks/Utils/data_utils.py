@@ -219,13 +219,8 @@ def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
     for node in shadow_graph.nodes():
         percentage.append(per(node))
     percentage = torch.Tensor(percentage)
-    temp_pos = percentage*shadow_graph.ndata['pos_mask']
-    temp_neg = percentage*shadow_graph.ndata['neg_mask']
     prop_dict['Average % neighbor is positive'] = percentage.sum().item() / (len(percentage) + 1e-12)
     prop_dict['Average % neighbor is negative'] = 1 - percentage.sum().item() / (len(percentage) + 1e-12)
-    prop_dict['Average % neighbor is positive of positive nodes'] = temp_pos.mean().item() / (len(temp_pos) + 1e-12)
-    prop_dict['Average % neighbor is positive of negative nodes'] = temp_neg.mean().item() / (len(temp_neg) + 1e-12)
-
     console.log("[green] SHADOW GRAPH's PROPERTIES")
     prop_renderable = [Panel(f"[bold green]{key}[/bold green]:\t[yellow]{prop_dict[key]}", expand=True) for key in prop_dict.keys()]
     console.log(Columns(prop_renderable))
