@@ -83,10 +83,11 @@ def shadow_split(graph, ratio, train_ratio=0.6, test_ratio=0.4, history=None, ex
 
 def shadow_split_whitebox(graph, ratio, history=None, exist=False, diag=False):
 
+    prop_dict = {}
     org_nodes = graph.nodes()
     tr_org_idx = get_index_by_value(a=graph.ndata['train_mask'], val=1)
     te_org_idx = get_index_by_value(a=graph.ndata['test_mask'], val=1)
-    rprint(f"Orginal graph: {graph}")
+    # rprint(f"Orginal graph: {graph}")
 
     if exist == False:
 
@@ -444,12 +445,12 @@ def read_data(args, history, exist=False):
     graph.ndata['org_id'] = graph.nodes().clone()
 
     if exist == False:
-        rprint(f"History is {exist} to exist, need to reinitialize")
+        # rprint(f"History is {exist} to exist, need to reinitialize")
         history['tr_id'] = graph.ndata['train_mask'].tolist()
         history['va_id'] = graph.ndata['val_mask'].tolist()
         history['te_id'] = graph.ndata['test_mask'].tolist()
     else:
-        rprint(f"History is {exist} to exist, assigning masks according to previous run")
+        # rprint(f"History is {exist} to exist, assigning masks according to previous run")
         del(graph.ndata['train_mask'])
         del(graph.ndata['val_mask'])
         del(graph.ndata['test_mask'])
@@ -465,14 +466,10 @@ def read_data(args, history, exist=False):
     if args.submode == 'density':
         graph = reduce_desity(g=graph, dens_reduction=args.density)
 
-    # if (args.submode == 'density') and (args.density == 1.0):
-    g_train, g_val, g_test = graph_split(graph=graph, drop=False)
-    # else:
-    #     g_train, g_val, g_test = graph_split(graph=graph, drop=True)
-
-    rprint(f"Training graph average node degree: {g_train.in_degrees().sum() / (len(g_train.in_degrees()) + 1e-12)}")
-    rprint(f"Valid graph average node degree: {g_val.in_degrees().sum() / (len(g_val.in_degrees()) + 1e-12)}")
-    rprint(f"Testing graph average node degree: {g_test.in_degrees().sum() / (len(g_test.in_degrees()) + 1e-12)}")
+    if (args.submode == 'density') and (args.density == 1.0):
+        g_train, g_val, g_test = graph_split(graph=graph, drop=False)
+    else:
+        g_train, g_val, g_test = graph_split(graph=graph, drop=True)
 
 
 
@@ -500,8 +497,8 @@ def read_data(args, history, exist=False):
 
     idx = torch.index_select(graph.nodes(), 0, graph.ndata['label_mask'].nonzero().squeeze()).numpy()
     graph = graph.subgraph(torch.LongTensor(idx))
-    # if (args.submode == 'density') and (args.density != 1.0):
-    #     graph = drop_isolated_node(graph)
+    if (args.submode == 'density') and (args.density != 1.0):
+        graph = drop_isolated_node(graph)
     args.num_data_point = len(g_train.nodes())
 
     return g_train, g_val, g_test, graph
