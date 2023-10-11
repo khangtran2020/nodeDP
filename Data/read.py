@@ -259,7 +259,7 @@ def tree_generate(graph):
 
 def filter_class_by_count(graph, min_count):
     target = deepcopy(graph.ndata['label'])
-    print(target.unique(return_counts=True)[1])
+    # print(target.unique(return_counts=True)[1])
     counts = target.unique(return_counts=True)[1] > min_count
     index = get_index_by_value(a=counts, val=True)
     label_dict = dict(zip(index.tolist(), range(len(index))))

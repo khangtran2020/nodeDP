@@ -1,10 +1,13 @@
 import os
+import dgl
 import sys
 import torch
 import datetime
 import warnings
 from loguru import logger
 from rich import print as rprint
+from rich.columns import Columns
+from rich.panel import Panel
 from Utils.utils import seed_everything, timeit, read_pickel
 from Utils.console import console
 from Attacks.config import parse_args
@@ -27,7 +30,7 @@ def run(args, current_time, device):
     exist_model = False
 
     # read data 
-    console.rule("[bold red] PARSING ARGUMENTS")
+    console.rule("[bold red] READ DATA")
     data_name = f"{md5(name['data'].encode()).hexdigest()}.pkl"
     data_path = args.res_path + data_name
     if (os.path.exists(data_path)) & (args.retrain == 0):
@@ -36,6 +39,41 @@ def run(args, current_time, device):
         console.log(f"History exist, exist_data set to: {exist_data}")
     
     train_g, val_g, test_g, graph = read_data(args=args, history=data_hist, exist=exist_data)
+
+    y = train_g.ndata['label']
+    nodes = train_g.nodes()
+    src_edge, dst_edge = train_g.edges()
+    
+    console.log("[green] TRAIN GRAPH's PROPERTIES")
+
+    prop = {
+        '# nodes': nodes.size(dim=0),
+        '# edges': int(src_edge.size(dim=0) / 2),
+        'Average degree': train_g.in_degrees().float().mean().item(),
+        'Node homophily': dgl.node_homophily(graph=train_g, y=y),
+        '# labels': y.max().item() + 1 
+    }
+
+    prop_renderable = [Panel(f"[bold green]{key}[/bold green]:\t[yellow]{prop[key]}", expand=True) for key in prop.keys()]
+    console.log(Columns(prop_renderable))
+
+    y = test_g.ndata['label']
+    nodes = test_g.nodes()
+    src_edge, dst_edge = test_g.edges()
+    
+    console.log("[green] TEST GRAPH's PROPERTIES")
+
+    prop = {
+        '# nodes': nodes.size(dim=0),
+        '# edges': int(src_edge.size(dim=0) / 2),
+        'Average degree': test_g.in_degrees().float().mean().item(),
+        'Node homophily': dgl.node_homophily(graph=test_g, y=y),
+        '# labels': y.max().item() + 1 
+    }
+
+    prop_renderable = [Panel(f"[bold green]{key}[/bold green]:\t[yellow]{prop[key]}", expand=True) for key in prop.keys()]
+    console.log(Columns(prop_renderable))
+
     if args.att_submode == 'blackbox':
         shadow_split(graph=train_g, ratio=args.sha_ratio, history=data_hist, exist=exist_data)
     elif args.att_submode == 'whitebox':
