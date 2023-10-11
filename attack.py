@@ -140,9 +140,9 @@ if __name__ == "__main__":
     arg_dict = print_args(args=args)
 
     if args.mode == 'clean':
-        project_name = f"{args.att_mode}-attack-on-{args.dataset}-mode-{args.mode}-run-{args.seed}"
+        project_name = f"{args.att_mode}-attack-on-{args.dataset}-mode-{args.mode}"
     else:
-        project_name = f"{args.att_mode}-attack-on-{args.dataset}-mode-{args.mode}-trim-rule-{args.trim_rule}-run-{args.seed}"
+        project_name = f"{args.att_mode}-attack-on-{args.dataset}-mode-{args.mode}-trim-rule-{args.trim_rule}"
 
     wandb.init(
         project=project_name,
