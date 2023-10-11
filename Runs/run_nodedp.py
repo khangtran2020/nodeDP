@@ -70,7 +70,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
 
             # scheduler.step(va_loss)
 
-            metrics = {"Target train/loss": tr_loss, 
+            results = {"Target train/loss": tr_loss, 
                        f"Target train/{args.performance_metric}": tr_acc.item(), 
                        "Target val/loss": va_loss, 
                        f"Target val/{args.performance_metric}": va_acc.item(),
@@ -78,7 +78,7 @@ def run(args, tr_info, va_info, te_info, model, optimizer, name, device, history
                        f"Target test/{args.performance_metric}": te_acc.item(),
             }
             
-            wandb.log({**metrics})
+            wandb.log({**results})
 
             tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Va_Loss=va_loss, Va_ACC=va_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 

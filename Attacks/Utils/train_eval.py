@@ -155,13 +155,13 @@ def train_wb_attack(args, tr_loader, te_loader, weight, attack_model, epochs, op
         history['atte_loss'].append(te_loss)
         history['atte_perf'].append(te_acc)
 
-        metrics = {"Attack train/loss": tr_loss, 
+        results = {"Attack train/loss": tr_loss, 
                     f"Attack train/{args.performance_metric}": tr_acc.item(),
                     "Attack test/loss": te_loss, 
                     f"Attack test/{args.performance_metric}": te_acc.item(),
         }
         
-        wandb.log({**metrics})
+        wandb.log({**results})
         
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
@@ -314,7 +314,6 @@ def eval_att_wb_step(model, device, loader, metrics, criterion, mode='train'):
         metrics.reset()
         model.zero_grad()
         return val_loss/num_data, performance, correct_id
-
 
 def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False, name_dt=None):
 
