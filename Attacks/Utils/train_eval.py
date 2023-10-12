@@ -313,7 +313,7 @@ def eval_att_wb_step(model, device, loader, metrics, criterion, mode='train'):
         performance = metrics.compute()
         metrics.reset()
         model.zero_grad()
-        return val_loss/num_data, performance, correct_id
+        return val_loss/num_data, performance, correct_id.tolist()
 
 def get_grad(shadow_graph, target_graph, model, criterion, device, mask, pos=False, name_dt=None):
 
