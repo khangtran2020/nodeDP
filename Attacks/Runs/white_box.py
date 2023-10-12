@@ -117,10 +117,10 @@ def run(args, graph, model, device, history, name):
                                            metrics=metric_dict[met], criterion=torch.nn.BCELoss(), mode='best')
         
         for i in org_id:
-            if i in id_dict.keys():
-                id_dict[i] += 1
+            if f"{int(i)}" in id_dict.keys():
+                id_dict[f"{int(i)}"] += 1
             else:
-                id_dict[i] = 1
+                id_dict[f"{int(i)}"] = 1
 
         wandb.summary[f'BEST TEST {met}'] = te_auc
         rprint(f"Attack {met}: {te_auc}")
