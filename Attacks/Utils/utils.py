@@ -110,11 +110,9 @@ def get_name(args, current_date):
         gen_keys = ['dataset', 'mode', 'submode', 'density',  'seed', 'n_neighbor', 'model_type', 'n_layers', 'att_mode', 'sha_ratio']
 
     if args.att_mode == 'blackbox':
-        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs', 
-                'att_epochs', 'sha_lr', 'sha_epochs', 'sha_ratio']
+        att_key = ['att_mode', 'att_submode', 'seed', 'dataset', 'mode', 'submode', 'sha_ratio']
     else:
-        att_key = ['att_mode', 'att_submode', 'att_layers', 'att_hid_dim', 'att_lr', 'att_bs',
-                    'att_epochs', 'sha_ratio']
+        att_key = ['att_mode', 'att_submode', 'seed', 'dataset', 'mode', 'submode']
     
     general_str = ''
     for key in gen_keys:
