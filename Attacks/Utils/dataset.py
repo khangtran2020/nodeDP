@@ -153,7 +153,7 @@ class ShadowLinkData(Dataset):
             model.zero_grad()
             grad_sh = torch.unsqueeze(grad_sh, dim=0)
             grad_overall = torch.cat((grad_overall, grad_sh), dim=0)
-        self.feat = torch.cat((pred.detach().zero_grad(), grad_overall.detach()), dim=1)
+        self.feat = torch.cat((pred.detach(), grad_overall.detach()), dim=1)
         self.num_feat = self.feat.size(dim=1)
    
     def __getitem__(self, index):
