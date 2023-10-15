@@ -141,7 +141,7 @@ class ShadowLinkData(Dataset):
         pred = model.full(g=self.graph, x=self.graph.ndata['feat'])
         target = self.graph.ndata['label']
         criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
-        loss = criterion(self.pred, target)
+        loss = criterion(pred, target)
         grad_overall = torch.Tensor([]).to(device)
         for los in loss:
             los.backward(retain_graph=True)
