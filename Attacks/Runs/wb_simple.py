@@ -169,10 +169,9 @@ def run(args, graph, model, device, history, name):
                 edge_pred = torch.cat((edge_pred, predictions.round()), dim=0)
         
         idx = get_index_by_value(a=edge_pred.int(), val=1)
-        print(f"Edge prediction index: {idx}")
 
-        src_te = src_te[idx]
-        dst_te = dst_te[idx]
+        src_te = src_edge[idx_te][idx]
+        dst_te = dst_edge[idx_te][idx]
 
         src_edge = torch.cat((src_tr, src_te), dim=0)
         dst_edge = torch.cat((dst_tr, dst_te), dim=0)
