@@ -281,3 +281,19 @@ class DotPredictor(nn.Module):
             g.apply_edges(fn.u_dot_v('h', 'h', 'score'))
             # u_dot_v returns a 1-element vector for each edge so you need to squeeze it.
             return g.edata['score'][:, 0]
+        
+class LinkNN(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, n_layer, dropout=None):
+        super(CustomNN, self).__init__()
+        self.input_dim = input_dim
+        self.block_1 = NN(input_dim=input_dim, hidden_dim= hidden_dim, output_dim=hidden_dim, n_layer=n_layer-1, dropout=dropout)
+        self.block_2 = NN(input_dim=input_dim, hidden_dim= hidden_dim, output_dim=hidden_dim, n_layer=n_layer-1, dropout=dropout)
+        self.final_block = NN(input_dim=int(2*hidden_dim), hidden_dim= hidden_dim, output_dim=output_dim, n_layer=n_layer-1, dropout=dropout)
+        self.last_activation = torch.nn.Softmax(dim=1) if output_dim > 1 else torch.nn.Sigmoid()
+
+    def forward(self, x1, x2):
+        h1 = self.block_1(x1)
+        h2 = self.block_2(x2)
+        h = torch.cat((h1, h2), dim=1)
+        h = self.final_block(h)
+        return self.last_activation(h)

@@ -505,3 +505,94 @@ def get_conf(shadow_graph, target_graph, test_graph, model, device):
         }
 
         rprint(f"Result for: {pretty_repr(result)}")
+
+def train_link_attack(args, tr_loader, te_loader, link_model, epochs, optimizer, name, device, history):
+    
+    model_name = '{}_link.pt'.format(name)
+
+    link_model.to(device)
+    # DEfining criterion
+    criterion = torch.nn.BCELoss(reduction='mean')
+    criterion.to(device)
+
+    metrics = torchmetrics.classification.BinaryAUROC().to(device)
+
+    # DEfining Early Stopping Object
+    es = EarlyStopping(patience=args.patience, verbose=False)
+    history['linktr_loss'] = []
+    history['linktr_perf'] = []
+    history['linkte_loss'] = []
+    history['linkte_perf'] = []
+
+    # THE ENGINE LOOP
+    tk0 = tqdm(range(epochs), total=epochs)
+    for epoch in tk0:
+        tr_loss, tr_acc = upd_link_step(model=link_model, device=device, loader=tr_loader, metrics=metrics,
+                                             criterion=criterion, optimizer=optimizer)
+        te_loss, te_acc = eval_link_step(model=link_model, device=device, loader=te_loader, metrics=metrics,
+                                           criterion=criterion)
+        
+        # rprint(f"At epoch {epoch}: tr_loss {tr_loss}, tr_acc {tr_acc.item()}, te_loss {te_loss}, te_acc {te_acc.item()}")
+
+        history['linktr_loss'].append(tr_loss)
+        history['linktr_perf'].append(tr_acc)
+        history['linkte_loss'].append(te_loss)
+        history['linkte_perf'].append(te_acc)
+
+        results = {"Link train/loss": tr_loss, 
+                    f"Link train/{args.performance_metric}": tr_acc.item(),
+                    "Link test/loss": te_loss, 
+                    f"Link test/{args.performance_metric}": te_acc.item(),
+        }
+        
+        wandb.log({**results})
+        
+        tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
+
+        es(epoch=epoch, epoch_score=te_acc.item(), model=link_model, model_path=args.save_path + model_name)
+        
+    return link_model
+
+def upd_link_step(model, device, loader, metrics, criterion, optimizer):
+    model.to(device)
+    model.train()
+    model.zero_grad()
+    train_loss = 0
+    num_data = 0.0
+    for bi, d in enumerate(loader):
+        optimizer.zero_grad()
+        features, target = d
+        x1, x2 = features
+        predictions = model(x1.to(device), x2.to(device))
+        predictions = torch.squeeze(predictions, dim=-1)
+        loss = criterion(predictions, target.float())
+        loss.backward()
+        optimizer.step()
+        metrics.update(predictions, target)
+        num_data += predictions.size(dim=0)
+        train_loss += loss.item()*predictions.size(dim=0)
+    performance = metrics.compute()
+    metrics.reset()
+    return train_loss / num_data, performance
+
+def eval_link_step(model, device, loader, metrics, criterion):
+
+    model.to(device)
+    model.eval()
+    model.zero_grad()
+    val_loss = 0
+    num_data = 0.0
+    with torch.no_grad():
+        for bi, d in enumerate(loader):
+            features, target = d
+            target = target.to(device)
+            x1, x2 = features
+            predictions = model(x1.to(device), x2.to(device))
+            predictions = torch.squeeze(predictions, dim=-1)
+            loss = criterion(predictions, target.float())
+            metrics.update(predictions, target)
+            num_data += predictions.size(dim=0)
+            val_loss += loss.item()*predictions.size(dim=0)
+    performance = metrics.compute()
+    metrics.reset()
+    return val_loss/num_data, performance

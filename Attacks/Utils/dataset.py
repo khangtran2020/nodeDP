@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 from dgl.dataloading import transforms
 from dgl.dataloading.base import NID
 from Utils.utils import get_index_by_value
+from Attacks.Utils.train_eval import get_grad
 from rich import print as rprint
 
 
@@ -126,3 +127,41 @@ def custom_collate(batch, out_key, model_key, device, num_class):
     return (org_id_list, label, loss, out_dict, grad_dict), membership_label
 
     # return filtered_data, filtered_target
+
+class ShadowLinkData(Dataset):
+    
+    def __init__(self, edge_list, label, graph, model, device):
+         
+        # get nodes
+        self.graph = graph.to(device)
+        self.edge_list = edge_list
+        self.device = device
+        self.label = label
+        model = model.to(device)
+        pred = model.full(g=self.graph, x=self.graph.ndata['feat'])
+        target = self.graph.ndata['label']
+        criterion = torch.nn.CrossEntropyLoss(reduction='none').to(device)
+        loss = criterion(self.pred, target)
+        grad_overall = torch.Tensor([]).to(device)
+        for los in loss:
+            los.backward(retain_graph=True)
+            grad_sh = torch.Tensor([]).to(device)
+            for _, p in model.named_parameters():
+                if p.grad is not None:
+                    new_grad = p.grad.detach().clone()
+                    grad_sh = torch.cat((grad_sh, new_grad.flatten()), dim=0)
+            model.zero_grad()
+            grad_sh = torch.unsqueeze(grad_sh, dim=0)
+            grad_overall = torch.cat((grad_overall, grad_sh), dim=0)
+        self.feat = torch.cat((pred.detach().zero_grad(), grad_overall.detach()), dim=1)
+        self.num_feat = self.feat.size(dim=1)
+   
+    def __getitem__(self, index):
+        src, dst = self.edge_list[index]
+        x1 = self.feat[src]
+        x2 = self.feat[dst]
+        y = self.label[index]
+        return (x1, x2), y
+    
+    def __len__(self):
+        return self.nodes.size(dim=0)
