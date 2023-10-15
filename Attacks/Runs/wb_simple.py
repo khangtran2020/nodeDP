@@ -248,33 +248,5 @@ def run(args, graph, model, device, history, name):
         att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, weight=lab_weight, 
                                     attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
                                     name=name['att'], device=device, history=att_hist)
-
-    # rprint("\n\n============== BEGIN EVALUATING ==============")
-    # att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
-    # # rprint(f"Attack model: {att_model}")
-    # metric = ['auc', 'acc', 'pre', 'rec', 'f1']
-    # metric_dict = {
-    #     'auc': torchmetrics.classification.BinaryAUROC().to(device),
-    #     'acc': torchmetrics.classification.BinaryAccuracy().to(device),
-    #     'pre': torchmetrics.classification.BinaryPrecision().to(device),
-    #     'rec': torchmetrics.classification.BinaryRecall().to(device),
-    #     'f1': torchmetrics.classification.BinaryF1Score().to(device)
-    # }
-    # id_dict = {}
-
-    # for met in metric:
-    #     te_loss, te_auc, org_id  = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
-    #                                        metrics=metric_dict[met], criterion=torch.nn.BCELoss(), mode='best')
         
-    #     for i in org_id:
-    #         if f"{int(i)}" in id_dict.keys():
-    #             id_dict[f"{int(i)}"] += 1
-    #         else:
-    #             id_dict[f"{int(i)}"] = 1
-
-    #     wandb.summary[f'BEST TEST {met}'] = te_auc
-    #     rprint(f"Attack {met}: {te_auc}")
-
-    
-    # wandb.summary[f'Node Correct / times'] = id_dict
     return model_hist, att_hist
