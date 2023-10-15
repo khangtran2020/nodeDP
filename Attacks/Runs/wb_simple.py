@@ -133,8 +133,7 @@ def run(args, graph, model, device, history, name):
 
         y_tr = torch.cat((torch.ones(indx_same_intr.size(dim=0)), torch.zeros(indx_diff_intr.size(dim=0))), dim=0)
         y_te = torch.cat((torch.ones(indx_same_inte.size(dim=0)), torch.zeros(indx_diff_inte.size(dim=0))), dim=0)
-        
-        print(src_edge[idx_tr])
+
 
         src_tr = src_edge[idx_tr].cpu().tolist()
         dst_tr = dst_edge[idx_tr].cpu().tolist()
@@ -142,8 +141,10 @@ def run(args, graph, model, device, history, name):
         src_te = src_edge[idx_te].cpu().tolist()
         dst_te = dst_edge[idx_te].cpu().tolist()
 
-        edge_list_tr = list(zip((src_tr, dst_tr)))
-        edge_list_te = list(zip((src_te, dst_te)))
+        edge_list_tr = zip((src_tr, dst_tr))
+        edge_list_te = zip((src_te, dst_te))
+
+        print(edge_list_tr)
 
         linktr_dataset = ShadowLinkData(edge_list=edge_list_tr, label=y_tr, graph=shadow_graph_nohop, model=model, device=device)
         linkte_dataset = ShadowLinkData(edge_list=edge_list_te, label=y_te, graph=shadow_graph_nohop, model=model, device=device)
