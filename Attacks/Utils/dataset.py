@@ -164,4 +164,4 @@ class ShadowLinkData(Dataset):
         return (x1, x2), y
     
     def __len__(self):
-        return self.nodes.size(dim=0)
+        return len(self.edge_list)
