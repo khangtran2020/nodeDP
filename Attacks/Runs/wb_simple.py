@@ -113,7 +113,7 @@ def run(args, graph, model, device, history, name):
         indx_diff_inte = torch.cat((indx_pos_neg_inte, indx_neg_pos_inte), dim=0)
 
         console.log(f"Index in test pos neg & test neg pos: {torch.isin(indx_pos_neg_inte, indx_neg_pos_inte).sum().item() + torch.isin(indx_neg_pos_inte, indx_pos_neg_inte).sum().item()}")
-        console.log(f"Index in test diff in test: {torch.isin(indx_diff_inte, idx_edge_inte).sum().item() - indx_diff_intr.size(dim=0)}")
+        console.log(f"Index in test diff in test: {torch.isin(indx_diff_inte, idx_edge_inte).sum().item() - indx_diff_inte.size(dim=0)}")
         
     sys.exit()   
 
