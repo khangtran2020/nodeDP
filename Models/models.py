@@ -284,7 +284,7 @@ class DotPredictor(nn.Module):
         
 class LinkNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, n_layer, dropout=None):
-        super(CustomNN, self).__init__()
+        super(LinkNN, self).__init__()
         self.input_dim = input_dim
         self.block_1 = NN(input_dim=input_dim, hidden_dim= hidden_dim, output_dim=hidden_dim, n_layer=n_layer-1, dropout=dropout)
         self.block_2 = NN(input_dim=input_dim, hidden_dim= hidden_dim, output_dim=hidden_dim, n_layer=n_layer-1, dropout=dropout)
