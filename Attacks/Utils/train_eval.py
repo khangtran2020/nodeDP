@@ -566,7 +566,6 @@ def upd_link_step(model, device, loader, metrics, criterion, optimizer):
         predictions = model(x1.to(device), x2.to(device))
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
-        print(predictions, target, loss.item())
         loss.backward()
         optimizer.step()
         metrics.update(predictions, target)

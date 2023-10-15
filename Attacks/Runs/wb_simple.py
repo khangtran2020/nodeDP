@@ -146,8 +146,12 @@ def run(args, graph, model, device, history, name):
         linktr_dataset = ShadowLinkData(edge_list=edge_list_tr, label=y_tr, graph=shadow_graph_nohop, model=model, device=device)
         linkte_dataset = ShadowLinkData(edge_list=edge_list_te, label=y_te, graph=shadow_graph_nohop, model=model, device=device)
 
-        linktr_loader = torch.utils.data.DataLoader(linktr_dataset, batch_size=args.att_bs, drop_last=True, shuffle=True)
-        linkte_loader = torch.utils.data.DataLoader(linkte_dataset, batch_size=args.att_bs, drop_last=False, shuffle=False)
+        linktr_loader = torch.utils.data.DataLoader(linktr_dataset, batch_size=128, drop_last=True, shuffle=True)
+        linkte_loader = torch.utils.data.DataLoader(linkte_dataset, batch_size=125, drop_last=False, shuffle=False)
+
+        feat, lab = next(iter(linktr_loader))
+        print(feat, lab)
+
 
         link_model = LinkNN(input_dim=linktr_dataset.num_feat, hidden_dim=64, output_dim=1, n_layer=3, dropout=0.2)
         link_model.to(device)
