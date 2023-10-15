@@ -135,7 +135,7 @@ class ShadowLinkData(Dataset):
         # get nodes
         self.graph = graph.to(device)
         self.edge_list = edge_list
-        print(self.edge_list)
+        print(self.edge_list[0])
         self.device = device
         self.label = label
         model = model.to(device)
