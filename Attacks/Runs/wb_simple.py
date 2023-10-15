@@ -173,6 +173,9 @@ def run(args, graph, model, device, history, name):
         src_te = src_te[idx]
         dst_te = dst_te[idx]
 
+        src_tr = src_edge[indx_same_intr]
+        dst_tr = dst_edge[indx_same_intr]        
+
         src_edge = torch.cat((src_tr, src_te), dim=0)
         dst_edge = torch.cat((dst_tr, dst_te), dim=0)
 
