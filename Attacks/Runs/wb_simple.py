@@ -9,6 +9,7 @@ from Attacks.Utils.train_eval import retrain
 from Utils.console import console
 from Utils.utils import get_index_by_value
 from functools import partial
+from rich.pretty import pretty_repr
 
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -115,6 +116,14 @@ def run(args, graph, model, device, history, name):
         console.log(f"Index in test pos neg & test neg pos: {torch.isin(indx_pos_neg_inte, indx_neg_pos_inte).sum().item() + torch.isin(indx_neg_pos_inte, indx_pos_neg_inte).sum().item()}")
         console.log(f"Index in test diff in test: {torch.isin(indx_diff_inte, idx_edge_inte).sum().item() - indx_diff_inte.size(dim=0)}")
         
+        edge_dict = {
+            '# train pos': indx_same_intr.size(dim=0), 
+            '# train neg': indx_diff_intr.size(dim=0),
+            '# test pos': indx_same_inte.size(dim=0),
+            '# test neg': indx_diff_inte.size(dim=0)
+        }
+        console.log(f"Edge info: {pretty_repr(edge_dict)}")
+
     sys.exit()   
 
     return model_hist, att_hist
