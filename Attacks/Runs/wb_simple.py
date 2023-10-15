@@ -167,6 +167,7 @@ def run(args, graph, model, device, history, name):
                 predictions = link_model(x1.to(device), x2.to(device))
                 predictions = torch.squeeze(predictions, dim=-1)
                 edge_pred = torch.cat((edge_pred, predictions.round()), dim=0)
+        print(f"Edge prediction: {edge_pred}")
         idx = get_index_by_value(a=edge_pred.int(), val=1)
         
         src_te = src_te[idx]
