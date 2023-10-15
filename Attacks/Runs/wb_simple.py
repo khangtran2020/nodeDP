@@ -141,8 +141,8 @@ def run(args, graph, model, device, history, name):
         src_te = src_edge[idx_te].cpu().tolist()
         dst_te = dst_edge[idx_te].cpu().tolist()
 
-        edge_list_tr = list(zip((src_tr, dst_tr)))
-        edge_list_te = list(zip((src_te, dst_te)))
+        edge_list_tr = list(zip(src_tr, dst_tr))
+        edge_list_te = list(zip(src_te, dst_te))
 
         print(f"edge list train: {edge_list_tr}")
         print(f"edge list test: {edge_list_te}")
