@@ -562,6 +562,7 @@ def upd_link_step(model, device, loader, metrics, criterion, optimizer):
     for bi, d in enumerate(loader):
         optimizer.zero_grad()
         features, target = d
+        target.to(device)
         x1, x2 = features
         predictions = model(x1.to(device), x2.to(device))
         predictions = torch.squeeze(predictions, dim=-1)
