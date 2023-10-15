@@ -141,10 +141,11 @@ def run(args, graph, model, device, history, name):
         src_te = src_edge[idx_te].cpu().tolist()
         dst_te = dst_edge[idx_te].cpu().tolist()
 
-        edge_list_tr = zip((src_tr, dst_tr))
-        edge_list_te = zip((src_te, dst_te))
+        edge_list_tr = list(zip((src_tr, dst_tr)))
+        edge_list_te = list(zip((src_te, dst_te)))
 
-        print(edge_list_tr)
+        print(f"edge list train: {edge_list_tr}")
+        print(f"edge list test: {edge_list_te}")
 
         linktr_dataset = ShadowLinkData(edge_list=edge_list_tr, label=y_tr, graph=shadow_graph_nohop, model=model, device=device)
         linkte_dataset = ShadowLinkData(edge_list=edge_list_te, label=y_te, graph=shadow_graph_nohop, model=model, device=device)
