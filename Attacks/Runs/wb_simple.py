@@ -149,7 +149,7 @@ def run(args, graph, model, device, history, name):
         linktr_loader = torch.utils.data.DataLoader(linktr_dataset, batch_size=128, drop_last=True, shuffle=True)
         linkte_loader = torch.utils.data.DataLoader(linkte_dataset, batch_size=125, drop_last=False, shuffle=False)
 
-        rprint(f"Link train loader: {linktr_loader.dataset}")
+        rprint(f"Link train loader: {linktr_dataset.__getitem__(index=0)}")
 
 
         link_model = LinkNN(input_dim=linktr_dataset.num_feat, hidden_dim=64, output_dim=1, n_layer=3, dropout=0.2)
