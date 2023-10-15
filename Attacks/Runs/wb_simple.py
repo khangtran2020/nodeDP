@@ -133,6 +133,8 @@ def run(args, graph, model, device, history, name):
 
         y_tr = torch.cat((torch.ones(indx_same_intr.size(dim=0)), torch.zeros(indx_diff_intr.size(dim=0))), dim=0)
         y_te = torch.cat((torch.ones(indx_same_inte.size(dim=0)), torch.zeros(indx_diff_inte.size(dim=0))), dim=0)
+        
+        print(src_edge[idx_tr])
 
         src_tr = src_edge[idx_tr].cpu().tolist()
         dst_tr = dst_edge[idx_tr].cpu().tolist()
