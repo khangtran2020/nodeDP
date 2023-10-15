@@ -550,7 +550,7 @@ def train_link_attack(args, tr_loader, te_loader, link_model, epochs, optimizer,
         tk0.set_postfix(Loss=tr_loss, ACC=tr_acc.item(), Te_Loss=te_loss, Te_ACC=te_acc.item())
 
         es(epoch=epoch, epoch_score=te_acc.item(), model=link_model, model_path=args.save_path + model_name)
-        
+
     return link_model
 
 def upd_link_step(model, device, loader, metrics, criterion, optimizer):
@@ -566,6 +566,7 @@ def upd_link_step(model, device, loader, metrics, criterion, optimizer):
         predictions = model(x1.to(device), x2.to(device))
         predictions = torch.squeeze(predictions, dim=-1)
         loss = criterion(predictions, target.float())
+        print(predictions, target, loss.item())
         loss.backward()
         optimizer.step()
         metrics.update(predictions, target)
