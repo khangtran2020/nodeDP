@@ -118,7 +118,7 @@ def run(args, graph, model, device, history, name):
 
     node_dict = {}
 
-    for run in range(10):
+    for run in range(5):
 
         for bi, d in enumerate(te_loader):
             features, target = d
