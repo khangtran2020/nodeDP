@@ -2,18 +2,16 @@ import os
 import sys
 import torch
 import wandb
+import random
 import torchmetrics
 from loguru import logger
-from hashlib import md5
 from rich import print as rprint
-from rich.pretty import pretty_repr
-from Utils.utils import timeit, get_index_by_value
+from Utils.utils import timeit
 from Models.models import WbAttacker
-from Models.init import init_model, init_optimizer
-from Attacks.Utils.data_utils import generate_nohop_graph
+from Models.init import init_optimizer
 from Attacks.Utils.utils import save_dict
-from Attacks.Utils.dataset import Data, ShadowData, custom_collate
-from Attacks.Utils.train_eval import train_wb_attack, eval_att_wb_step, retrain, get_entropy
+from Attacks.Utils.dataset import ShadowData, custom_collate
+from Attacks.Utils.train_eval import train_wb_attack, retrain
 from functools import partial
 
 logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
@@ -74,7 +72,7 @@ def run(args, graph, model, device, history, name):
         tr_loader = torch.utils.data.DataLoader(shtr_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
                                                 drop_last=True, shuffle=True)
         te_loader = torch.utils.data.DataLoader(shte_dataset, batch_size=args.att_bs, collate_fn=collate_fn,
-                                                drop_last=False, shuffle=True)
+                                                drop_last=False, shuffle=False)
         
         rprint(f"Out dim: {out_dim}")
         rprint(f"Grad dim: {grad_dim}")
@@ -90,7 +88,9 @@ def run(args, graph, model, device, history, name):
         # sys.exit()
         
     with timeit(logger=logger, task='train-attack-model'):
-        
+
+        manual_seed = random.randint(0, 100)
+        torch.manual_seed(manual_seed)
         att_model = WbAttacker(label_dim=args.num_class, loss_dim=1, out_dim_list=out_dim, grad_dim_list=grad_dim, 
                                out_keys=out_keys, model_keys=model_keys, num_filters=4, device=device)
         att_model.to(device)
@@ -112,19 +112,60 @@ def run(args, graph, model, device, history, name):
     }
     id_dict = {}
 
-    for met in metric:
-        te_loss, te_auc, org_id  = eval_att_wb_step(model=att_model, device=device, loader=te_loader, 
-                                           metrics=metric_dict[met], criterion=torch.nn.BCELoss(), mode='best')
-        
-        for i in org_id:
-            if f"{int(i)}" in id_dict.keys():
-                id_dict[f"{int(i)}"] += 1
-            else:
-                id_dict[f"{int(i)}"] = 1
+    # idx = torch.Tensor([]).to(device)
+    # pred = torch.Tensor([]).to(device)
+    # mem_lab = torch.Tensor([]).to(device)
 
-        wandb.summary[f'BEST TEST {met}'] = te_auc
-        rprint(f"Attack {met}: {te_auc}")
+    node_dict = {}
+
+    for run in range(10):
+
+        for bi, d in enumerate(te_loader):
+            features, target = d
+            org_id, label, loss_tensor, out_dict, grad_dict = features
+            feat = (label, loss_tensor, out_dict, grad_dict)
+            target = target.to(device)
+            predictions = model(feat)
+            predictions = torch.nn.functional.sigmoid(predictions)
+
+            org_id = org_id.detach().tolist()
+            predictions = predictions.detach().tolist()
+            target = target.detach().tolist()
+
+            for i, key in enumerate(org_id):
+                if key in node_dict.keys():
+                    node_dict[key]['pred'].append(predictions[i])
+                else:
+                    node_dict[key] = {
+                        'label': target[i],
+                        'pred': [predictions[i]]
+                    }
+
+    idx = []
+    lab = []
+    pred = []
+
+    for key in node_dict.keys():
+
+        idx.append(key)
+        lab.append(node_dict[key]['label'])
+        pred.append(sum(node_dict[key]['pred']) / 10)
+    
+    idx = torch.Tensor(idx)
+    lab = torch.Tensor(lab)
+    pred = torch.Tensor(pred)
+
+    pred_round = pred.round()
+    indx = torch.logical_not(torch.logical_xor(pred_round.int(), lab.int())).nonzero(as_tuple=True)[0]
+    correct_predicted_node = idx[indx].int().tolist()
+
+    for m in metric:
+        
+        met = metric_dict[m]
+        perf = met(pred, lab)
+        wandb.summary[f'BEST TEST {m}'] = perf
+        rprint(f"Attack {m}: {perf}")
 
     
-    wandb.summary[f'Node Correct / times'] = id_dict
+    wandb.summary[f'Node Correct / times'] = correct_predicted_node
     return model_hist, att_hist

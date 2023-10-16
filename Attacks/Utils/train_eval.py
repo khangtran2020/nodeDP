@@ -266,6 +266,7 @@ def eval_att_wb_step(model, device, loader, metrics, criterion, mode='train'):
     model.zero_grad()
     val_loss = 0
     num_data = 0.0
+    
     if mode == 'train':
         for bi, d in enumerate(loader):
             features, target = d
