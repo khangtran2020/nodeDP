@@ -155,7 +155,7 @@ def run(args, graph, model, device, history, name):
         link_model.to(device)
         link_opt = init_optimizer(optimizer_name=args.optimizer, model=link_model, lr=0.001, weight_decay=1e-4)
         link_model = train_link_attack(args=args, tr_loader=linktr_loader, te_loader=linkte_loader,
-                                    link_model=link_model, epochs=200, optimizer=link_opt,
+                                    link_model=link_model, epochs=500, optimizer=link_opt,
                                     name=name['att'], device=device, history=att_hist)
         
         link_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_link.pt"))
