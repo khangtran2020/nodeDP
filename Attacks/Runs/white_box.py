@@ -126,6 +126,7 @@ def run(args, graph, model, device, history, name):
             feat = (label, loss_tensor, out_dict, grad_dict)
             target = target.to(device)
             predictions = att_model(feat)
+            predictions = torch.squeeze(predictions, dim=-1)
             predictions = torch.nn.functional.sigmoid(predictions)
 
             org_id = org_id.detach().tolist()
