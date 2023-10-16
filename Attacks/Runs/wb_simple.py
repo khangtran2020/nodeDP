@@ -302,6 +302,7 @@ def run(args, graph, model, device, history, name):
     pred = torch.Tensor(pred)
 
     pred_round = pred.round()
+    rprint(f"Prediction distribution: {pred_round.unique(return_counts=True)}")
     indx = torch.logical_not(torch.logical_xor(pred_round.int(), lab.int())).nonzero(as_tuple=True)[0]
     correct_predicted_node = idx[indx].int().tolist()
 
