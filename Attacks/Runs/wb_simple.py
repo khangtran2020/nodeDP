@@ -248,5 +248,70 @@ def run(args, graph, model, device, history, name):
         att_model = train_wb_attack(args=args, tr_loader=tr_loader, te_loader=te_loader, weight=lab_weight, 
                                     attack_model=att_model, epochs=args.att_epochs, optimizer=att_opt,
                                     name=name['att'], device=device, history=att_hist)
+    
+    rprint("\n\n============== BEGIN EVALUATING ==============")
+    att_model.load_state_dict(torch.load(args.save_path + f"{name['att']}_attack.pt"))
+    # rprint(f"Attack model: {att_model}")
+    metric = ['auc', 'acc', 'pre', 'rec', 'f1']
+    metric_dict = {
+        'auc': torchmetrics.classification.BinaryAUROC().to(device),
+        'acc': torchmetrics.classification.BinaryAccuracy().to(device),
+        'pre': torchmetrics.classification.BinaryPrecision().to(device),
+        'rec': torchmetrics.classification.BinaryRecall().to(device),
+        'f1': torchmetrics.classification.BinaryF1Score().to(device)
+    }
+
+    node_dict = {}
+
+    for run in range(5):
+
+        for bi, d in enumerate(te_loader):
+            features, target = d
+            org_id, label, loss_tensor, out_dict, grad_dict = features
+            feat = (label, loss_tensor, out_dict, grad_dict)
+            target = target.to(device)
+            predictions = att_model(feat)
+            predictions = torch.squeeze(predictions, dim=-1)
+            predictions = torch.nn.functional.sigmoid(predictions)
+
+            org_id = org_id.detach().tolist()
+            predictions = predictions.detach().tolist()
+            target = target.detach().tolist()
+
+            for i, key in enumerate(org_id):
+                if key in node_dict.keys():
+                    node_dict[key]['pred'].append(predictions[i])
+                else:
+                    node_dict[key] = {
+                        'label': target[i],
+                        'pred': [predictions[i]]
+                    }
+
+    idx = []
+    lab = []
+    pred = []
+
+    for key in node_dict.keys():
+
+        idx.append(key)
+        lab.append(node_dict[key]['label'])
+        pred.append(sum(node_dict[key]['pred']) / 10)
+    
+    idx = torch.Tensor(idx)
+    lab = torch.Tensor(lab)
+    pred = torch.Tensor(pred)
+
+    pred_round = pred.round()
+    indx = torch.logical_not(torch.logical_xor(pred_round.int(), lab.int())).nonzero(as_tuple=True)[0]
+    correct_predicted_node = idx[indx].int().tolist()
+
+    for m in metric:
         
+        met = metric_dict[m]
+        perf = met(pred, lab)
+        wandb.summary[f'BEST TEST {m}'] = perf
+        rprint(f"Attack {m}: {perf}")
+
+    
+    wandb.summary[f'Node Correct / times'] = correct_predicted_node
     return model_hist, att_hist

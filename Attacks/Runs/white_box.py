@@ -110,11 +110,6 @@ def run(args, graph, model, device, history, name):
         'rec': torchmetrics.classification.BinaryRecall().to(device),
         'f1': torchmetrics.classification.BinaryF1Score().to(device)
     }
-    id_dict = {}
-
-    # idx = torch.Tensor([]).to(device)
-    # pred = torch.Tensor([]).to(device)
-    # mem_lab = torch.Tensor([]).to(device)
 
     node_dict = {}
 
